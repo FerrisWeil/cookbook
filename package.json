@@ -1,0 +1,19 @@
+{
+  "name": "cookbook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted family recipe app. Public portfolio repo; recipes stay on the NAS.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @cookbook/shared && npm run build -w @cookbook/api && npm run build -w @cookbook/mcp && npm run build -w @cookbook/web",
+    "lint": "npm run build -w @cookbook/shared && npm run lint --workspaces --if-present",
+    "test": "npm run build -w @cookbook/shared && npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
