@@ -18,7 +18,7 @@ Recipes, notes, and other family data need a real database that can grow. The fi
 
 Use Postgres. Start small and grow over time. **Do not freeze a recipe data model in this repository yet.** Use schema migrations from day one so later model work is additive, not a dump-and-restore.
 
-Which migration *tool* we standardize on is a separate, still-unconfirmed choice: [0010](0010-migration-tooling.md).
+The migration tool is [0010](0010-migration-tooling.md), accepted 2026-10-26: numbered SQL files applied by the API.
 
 ## Consequences
 

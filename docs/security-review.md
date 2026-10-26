@@ -1,6 +1,6 @@
 # Security review
 
-Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file.
+Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). Status is **accepted** (2026-10-26, merged means accepted). The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file. The accepted Unraid file will be `docker-compose.unraid.yml` once [0017](decisions/0017-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
 
 Authors use this list before opening a pull request. The PR body stays the short template. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory that CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. Taylor said so on 2026-10-25. gitleaks and `pnpm audit --audit-level=high` are what block a clean PR. There is no second review bot.
 
@@ -9,7 +9,7 @@ Authors use this list before opening a pull request. The PR body stays the short
 - New or updated direct dependencies, and why this PR needs them.
 - Who maintains each one, and whether it is abandoned.
 - Install scripts. `pnpm-workspace.yaml` `allowBuilds` is the gate. Today the only entry is `esbuild`.
-- `pnpm audit --audit-level=high` result. High severity fails CI once this ADR is accepted. Moderate findings are listed here and do not fail CI.
+- `pnpm audit --audit-level=high` result. High severity fails CI. Moderate findings are listed here and do not fail CI.
 
 ## Secrets and env
 
@@ -30,7 +30,7 @@ Authors use this list before opening a pull request. The PR body stays the short
 ## Images and Compose
 
 - Image, capabilities, mounts, and env for each service this PR changes.
-- Read the local Compose file and `deploy/nas/docker-compose.yml` separately.
+- Read the local Compose file and the Unraid file separately. The Unraid file is `docker-compose.unraid.yml` once [0017](decisions/0017-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
 
 ## Data and logging
 
@@ -38,7 +38,7 @@ Authors use this list before opening a pull request. The PR body stays the short
 
 ## Postgres
 
-Accepted baseline. The local Compose file applies it. The NAS file is still the single superuser on one shared network until the agent that owns `deploy/nas/` applies the same rules.
+Accepted baseline. The local Compose file applies it. The Unraid file is still the single superuser on one shared network until the agent that owns `deploy/nas/` applies the same rules.
 
 ### Password
 
@@ -56,7 +56,7 @@ Three values, so the app password is not the superuser password:
 
 Options:
 
-1. **Three roles, as above** (proposed). A compromised request path cannot `DROP TABLE`.
+1. **Three roles, as above** (accepted). A compromised request path cannot `DROP TABLE`.
 2. **One `NOSUPERUSER` owner** for both migrations and requests. One fewer password. The app role can still drop the tables it owns.
 3. **Keep the image superuser as the app role** and only require a strong password. Simplest, and it is the access the containers have today.
 
@@ -70,7 +70,7 @@ Web, MCP, and the Tailscale sidecars are on a separate `app` network. They reach
 
 Options:
 
-1. **Unpublished port, internal network shared only with the API** (proposed).
+1. **Unpublished port, internal network shared only with the API** (accepted).
 2. **Unpublished port, one network for every container.** A compromised web or MCP container can still connect to `db:5432`.
 3. **Bind `127.0.0.1:5432` on the local file only.** Convenient for host `psql`, and it leaves a `ports:` key in the file.
 
@@ -78,10 +78,10 @@ Options:
 
 The password stops a container or dependency that can open a TCP connection, and it stops a later Compose edit that publishes `5432` from exposing a database whose password is in the repo. It does not stop someone with a shell on the NAS, or someone who can read the data directory. Postgres does not encrypt that directory. Unraid disk encryption is the control for a disk that leaves the house.
 
-When this is accepted, the README will say:
+The follow-up README text is:
 
-* `data/postgres` (the NAS bind mount) is mode `0700`, owned by the account that runs Docker, and is not an SMB or NFS share. `.env` is mode `0600` in the same way.
-* Backups are `pg_dump` while Postgres is running, written somewhere with those same permissions. Copying `data/postgres` is for a stopped database only, because a hot copy can be corrupt.
+* `$COOKBOOK_DATA_DIR/postgres` (the NAS bind mount; default `/mnt/user/appdata/cookbook/postgres`) is not an SMB or NFS share. After first start the Postgres image owns that directory. Do not chown it back to the Unraid account while the database is running. `.env` is mode `0600` and is not a share.
+* Backups are `pg_dump` while Postgres is running, written somewhere with those same permissions. Copying `postgres/` is for a stopped database only, because a hot copy can be corrupt.
 * Restores load a dump into an empty volume. Roles and passwords come from `.env` again.
 
 ## Automation after acceptance

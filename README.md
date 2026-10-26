@@ -64,7 +64,7 @@ features/           Per-feature docs
 deploy/nas/         Unraid Compose (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Local Postgres roles and supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). The NAS compose file is separate. See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Local Postgres roles and supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). Language, migration tooling, test tooling, the parallel-agent convention, the security review, and the Unraid production stack are accepted. See [docs](docs/README.md). The accepted Unraid file is `docker-compose.unraid.yml` at the repo root. That file is not in the tree yet. The NAS command above is still the skeleton at `deploy/nas/docker-compose.yml`.
 
 ## Development without Docker
 
