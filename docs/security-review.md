@@ -91,3 +91,5 @@ When this is accepted, the README will say:
 * Dependabot security updates only, for npm, GitHub Actions, and Docker. No weekly bump-all.
 
 Out of scope: Socket, Snyk, and a standing second review model.
+
+Supply-chain rows beyond this checklist (Dependabot grouping, install scripts, Action SHA pins, image digests) are proposed in [0014](decisions/0014-supply-chain.md) and [supply chain](supply-chain.md). They are not in force.
