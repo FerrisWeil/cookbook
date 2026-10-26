@@ -159,8 +159,8 @@ Steady state pins `COOKBOOK_IMAGE_TAG` to a `sha-` tag. The example file uses `l
 
 Update:
 
-1. Dump the database (above).
-2. Set `COOKBOOK_IMAGE_TAG` to the new `sha-` tag.
+1. Dump the database (above), from the repo root.
+2. Set `COOKBOOK_IMAGE_TAG` in `.env` to the new `sha-` tag.
 3. `docker compose --env-file .env -f docker-compose.unraid.yml pull api web mcp`
 4. `docker compose --env-file .env -f docker-compose.unraid.yml up -d api web mcp`
 5. Check `http://cookbook/` and `http://cookbook-mcp:8787/health` from a tailnet device.
