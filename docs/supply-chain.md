@@ -1,6 +1,6 @@
 # Supply chain
 
-Proposal for [0014](decisions/0014-supply-chain.md). Status is **proposed**. Do not treat this as in force, and do not add Dependabot, audit flags, pin files, or Compose changes, until Taylor confirms the numbered items in that ADR.
+Detail for [0014](decisions/0014-supply-chain.md). Status is **accepted** (Taylor, 2026-10-25, agent chat). The feature PR applies it. This page does not edit `deploy/nas/`.
 
 ## Already decided
 
@@ -15,7 +15,7 @@ These stay as 0013 wrote them:
 * The database has no `ports:` key. It sits on an internal network with the API only. `docker compose exec db psql` is how a human reaches it. Binding `127.0.0.1:5432` was considered in 0013 and rejected, because a `ports:` key is the edit a later change widens to every interface.
 * Socket and Snyk are out. A password does not encrypt `data/postgres`. Backups and directory modes are the ones 0013 names (`0700` for the data directory, `0600` for `.env`, `pg_dump` while Postgres is running).
 
-The local Compose file still publishes `5432` and still falls back to the password `cookbook`. The NAS file still connects the API as the superuser on one shared network. That is unfinished implementation of an accepted ADR, not an open design question. If Taylor confirms item 6, the feature PR does the local half. It does not edit `deploy/nas/` either way.
+The local Compose file still publishes `5432` and still falls back to the password `cookbook`. The NAS file still connects the API as the superuser on one shared network. That is unfinished implementation. The feature PR does the local half. It does not edit `deploy/nas/`.
 
 ## 1. Dependabot and Renovate
 
@@ -40,9 +40,9 @@ Recommendation: Dependabot. Revisit Renovate in a new ADR if GitHub's graph is s
 
 0013 says Dependabot opens security updates only, and rejects a weekly bump-all. That sentence is the one item 1 of 0014 would supersede. A weekly bump of every package as its own PR is noise. A weekly bump that never happens is how a household app stays on abandoned releases. Grouping is the middle.
 
-Proposed `dependabot.yml` shape, written in the feature PR, not in this one:
+Accepted `dependabot.yml` shape, written in the feature PR:
 
-* `npm` at `/`, weekly. One group for `minor` and `patch`. Major updates do not match that group, so each major is its own PR. `cooldown.default-days` matches the release age below: 1 when the age is 1440 minutes, 7 when it is 10080. Cooldown applies to version updates only.
+* `npm` at `/`, weekly. One group for `minor` and `patch`. Major updates do not match that group, so each major is its own PR. `cooldown.default-days: 1`. Cooldown applies to version updates only.
 * `github-actions` at `/`, weekly, one group for every Action.
 * `docker` at `/`, weekly, one group for `minor` and `patch`. A major image bump is its own PR. This covers the Dockerfiles.
 * `docker-compose` at `/`, weekly, the same minor/patch group. `directory: /` includes `docker-compose.yml` and `deploy/nas/docker-compose.yml`. A Dependabot PR may edit the NAS file to bump an image. That is the point of the bot. Hand-editing that file is still reserved for the agent that owns the production stack.
@@ -50,7 +50,7 @@ Proposed `dependabot.yml` shape, written in the feature PR, not in this one:
 * Groups do not set `applies-to: security-updates`. Security PRs stay ungrouped so one CVE is not stuck behind a bundle.
 * No automerge. No reviewers block that auto-approves.
 
-`cooldown` does not delay security updates. `minimumReleaseAge` does, because pnpm will refuse a release younger than the age on any install, including a security bump. With 1440 minutes, a security PR opened the hour a patch is published can fail CI until the next day. Dependabot rebases. For an app that is not on the public internet, that wait is acceptable. Item 5 is where the age is chosen.
+`cooldown` does not delay security updates. `minimumReleaseAge` does, because pnpm will refuse a release younger than one day on any install, including a security bump. A security PR opened the hour a patch is published can fail CI until the next day. Dependabot rebases. For an app that is not on the public internet, that wait is accepted.
 
 ### How an update PR is reviewed
 
@@ -81,7 +81,7 @@ Taylor confirms the filled checklist is enough. He does not read every changelog
 | `dependency-review-action` | The PR diff, from GitHub's graph | Same blind spot as npm alerts on this lockfile, plus another Action to pin |
 | Trivy or Grype | Image CVEs | A third scanner and registry rate limits. Digest pins plus Dependabot docker updates come first |
 
-Proposed operational rules, on top of the threshold 0013 already set:
+Operational rules, on top of the threshold 0013 already set:
 
 * `pnpm check` runs `pnpm audit --audit-level=high` with no ignore flags.
 * `pnpm-workspace.yaml` sets `audit.level: high` so a local `pnpm audit` matches CI.
@@ -111,7 +111,7 @@ pnpm 11 and later default `minimumReleaseAge` to 1440 minutes, and that default 
 
 * Set `minimumReleaseAge: 1440`.
 * `minimumReleaseAgeExclude` starts empty. An entry is a checklist item.
-* 10080 minutes (seven days) is the stricter alternative, and it is what the pnpm repo uses for itself. It also delays security fixes by a week. 1440 is the proportionate choice for this app. Taylor can pick 10080 instead of 1440 without reopening the rest.
+* 10080 minutes (seven days) was the stricter alternative. Taylor accepted 1440.
 
 `blockExoticSubdeps` defaults to true. Transitive dependencies must come from the registry, not from a git URL or a raw tarball. Leave the default. Do not set it to false.
 
@@ -175,7 +175,7 @@ Priority 3, not recommended now:
 * An auth scheme for the HTTP API. There are no recipe routes yet. Tailscale is the boundary ([0002](decisions/0002-tailscale-only.md)). Decide auth with the first feature that returns a recipe.
 * The local MCP dev token. [0007](decisions/0007-public-repo-secrets.md) allows `local-dev-token-not-for-nas` on the local Compose file only. That exception does not extend to database passwords.
 
-## Feature PR, if these items are accepted
+## Feature PR
 
 One PR after 0014 merges. Files it is expected to touch:
 
