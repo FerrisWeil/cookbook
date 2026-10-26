@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img">
+  <title>Phone wireframe: settings, theme only</title>
+  <rect width="390" height="844" fill="#f6f1e9"/>
+  <text x="16" y="36" fill="#5c5348" font-family="system-ui, sans-serif" font-size="12">safe area</text>
+  <text x="16" y="88" fill="#2b241c" font-family="Georgia, serif" font-size="32">Settings</text>
+  <rect x="16" y="124" width="358" height="88" rx="12" fill="#efe6d6" stroke="#7d7264"/>
+  <text x="32" y="160" fill="#2b241c" font-family="system-ui, sans-serif" font-size="18">Theme</text>
+  <text x="32" y="188" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">System</text>
+  <text x="16" y="252" fill="#5c5348" font-family="system-ui, sans-serif" font-size="13">First paint follows the system. Nothing else on this screen.</text>
+</svg>

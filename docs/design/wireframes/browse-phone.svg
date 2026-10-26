@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img">
+  <title>Phone wireframe: recipe list, one card fill, no theme control</title>
+  <rect width="390" height="844" fill="#f6f1e9"/>
+  <text x="16" y="36" fill="#5c5348" font-family="system-ui, sans-serif" font-size="12">safe area</text>
+  <text x="16" y="88" fill="#2b241c" font-family="Georgia, serif" font-size="32">Recipes</text>
+  <rect x="16" y="116" width="358" height="96" rx="12" fill="#efe6d6" stroke="#7d7264"/>
+  <text x="32" y="156" fill="#2b241c" font-family="Georgia, serif" font-size="22">Example: Tomato lentils</text>
+  <text x="32" y="184" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Placeholder meta · fields undecided</text>
+  <rect x="16" y="228" width="358" height="96" rx="12" fill="#efe6d6" stroke="#7d7264"/>
+  <text x="32" y="268" fill="#2b241c" font-family="Georgia, serif" font-size="22">Example: Weeknight oats</text>
+  <text x="32" y="296" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Placeholder meta · fields undecided</text>
+  <text x="16" y="360" fill="#5c5348" font-family="system-ui, sans-serif" font-size="13">Example data. One card fill. No theme control.</text>
+  <text x="16" y="800" fill="#5c5348" font-family="system-ui, sans-serif" font-size="12">last line stays above the safe area</text>
+</svg>

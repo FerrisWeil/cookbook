@@ -1,38 +1,44 @@
-# Local / cloud-agent stack. Publishes ports on the host.
+# Local / cloud-agent stack. Publishes the web, API, and MCP ports on the host.
+# Postgres is not published. Reach it with `docker compose exec db psql`.
 # NAS deploy: docker compose -f deploy/nas/docker-compose.yml
 # (no host ports, Tailscale only).
 #
-# extra_hosts + published ports: services reach each other via the host
-# gateway so this file still works when Docker bridge ICC is unavailable
-# (some nested VMs). Unraid networking does not need this.
+# Web reaches the API through the published host port (extra_hosts) so this
+# file still works when Docker bridge traffic between containers is blocked.
+# The API reaches Postgres by the Docker DNS name `db` on the internal
+# network. That path needs working bridge traffic. GitHub CI and Unraid have
+# it. Do not publish 5432 to paper over a VM that does not.
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36
     environment:
-      POSTGRES_USER: cookbook
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cookbook}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Set POSTGRES_SUPERUSER_PASSWORD}
       POSTGRES_DB: cookbook
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:?Set POSTGRES_MIGRATOR_PASSWORD}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD}
     volumes:
       - cookbook_pg:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cookbook -d cookbook"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cookbook"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks:
+      - db
 
   api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    extra_hosts:
-      - "db:host-gateway"
     environment:
-      POSTGRES_USER: cookbook
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cookbook}
+      POSTGRES_APP_USER: cookbook_app
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD}
+      POSTGRES_MIGRATOR_USER: cookbook_migrator
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:?Set POSTGRES_MIGRATOR_PASSWORD}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       POSTGRES_DB: cookbook
@@ -45,6 +51,9 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    networks:
+      - db
+      - app
 
   mcp:
     build:
@@ -58,6 +67,8 @@ services:
       PORT: "8787"
     ports:
       - "8787:8787"
+    networks:
+      - app
 
   web:
     build:
@@ -70,6 +81,13 @@ services:
         condition: service_healthy
     ports:
       - "8080:80"
+    networks:
+      - app
 
 volumes:
   cookbook_pg:
+
+networks:
+  db:
+    internal: true
+  app:

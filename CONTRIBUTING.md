@@ -17,7 +17,11 @@ In-repo skills link to this file. They do not copy it.
 
 Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type and whether it needs an ADR (`yes` or `no`). Nothing is an accepted decision until Taylor confirms it in chat. Merged means accepted.
 
-Every pull request fills the [security checklist](docs/security-review.md) before it is marked ready. That applies while [0013](docs/decisions/0013-security-review.md) still says proposed.
+**Merged means accepted** (Taylor, 2026-10-26). Once an ADR pull request is merged to `master`, every ADR in it is accepted, including a file whose Status line still says Proposed. Record that by setting Status to accepted and Confirmed to the merge date, or to the earlier chat confirmation. That is why 0008 and 0010–0013 are accepted: foundation PR #1 merged while those files still said Proposed. A change of mind after merge is a new ADR that supersedes the old one. Do not rewrite a merged decision in place.
+
+Do not merge an ADR pull request while a decision in it is still unconfirmed. Keep that pull request draft, and leave Status as Proposed, until Taylor confirms in chat and the Status lines are updated. The feature pull request waits for those Status lines to say accepted. Merging a draft that still says Proposed would accept those ADRs under the rule above, which is why the draft stays a draft.
+
+Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request.
 
 | Type | Meaning | Required with the pull request |
 | --- | --- | --- |
@@ -50,7 +54,7 @@ One command starts the whole local stack, including seed data:
 docker compose up --build
 ```
 
-That is the path cloud agents use. NAS deploy does not publish host ports:
+That is the path cloud agents use. NAS deploy does not publish host ports. The accepted Unraid file is `docker-compose.unraid.yml` at the repo root ([0015](docs/decisions/0015-unraid-compose-manager.md)–[0020](docs/decisions/0020-update-and-rollback.md)). It is not in the tree yet, so the command below is still the skeleton: it builds on the NAS and reads a repo-root `.env`.
 
 ```bash
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
@@ -62,5 +66,5 @@ This repo is public. Never commit `.env`, tokens, Tailscale keys, or real recipe
 
 ## Templates
 
-* [ADR](docs/templates/adr.md) — context, options considered, decision, consequences, status
+* [ADR](docs/templates/adr.md) — problem, options considered, decision, consequences, amendments, status
 * [Feature](docs/templates/feature.md) — what it does, acceptance checks, how to run it

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img">
+  <title>Phone wireframe: example recipe, opaque Back above the title</title>
+  <rect width="390" height="844" fill="#1c1915"/>
+  <text x="16" y="36" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="12">safe area</text>
+  <rect x="16" y="52" width="88" height="44" rx="8" fill="#2a2520" stroke="#8a7d6b"/>
+  <text x="60" y="79" text-anchor="middle" fill="#f3ecdf" font-family="system-ui, sans-serif" font-size="16">Back</text>
+  <text x="16" y="148" fill="#f3ecdf" font-family="Georgia, serif" font-size="28">Example: Tomato lentils</text>
+  <text x="16" y="180" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="14">Placeholder meta · fields undecided</text>
+  <rect x="16" y="208" width="358" height="120" rx="12" fill="#2a2520" stroke="#8a7d6b"/>
+  <text x="32" y="256" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Example body text.</text>
+  <text x="32" y="288" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Not a schema. Not a real meal.</text>
+  <text x="16" y="800" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="12">last line stays above the safe area</text>
+</svg>

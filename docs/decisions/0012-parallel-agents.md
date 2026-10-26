@@ -1,10 +1,10 @@
 # 0012. Parallel feature agents
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-25
-* Confirmed: (none — do not treat as accepted)
+* Confirmed: Taylor, 2026-10-26, agent chat (merged means accepted; foundation PR #1 merged 2026-10-26)
 
-> **Proposed.** Taylor has not confirmed this in chat. Nothing in this ADR is in force. The follow-up (CI sequence check, per-run Compose project, feature-folder loaders) waits for confirmation.
+The convention is in force. The follow-up (CI sequence check, per-run Compose project, feature-folder loaders, removing the hand-edited index tables) is not implemented yet.
 
 ## Context
 
@@ -18,11 +18,11 @@ Taylor's constraints: a feature owns a folder and registers by being present; mi
 2. **Timestamps or branch prefixes on migrations and ADRs.** Agents almost never pick the same name. Taylor has ruled timestamps out for migrations, and he will consolidate numbers before production. Prefixed names also sort in an order the migration runner must not apply.
 3. **A claim registry.** A shared `features/index.ts`, a `NEXT` file, or a port broker that every agent edits. That file becomes the conflict. Worse than a CI failure on the occasional duplicate number.
 
-## Decision (proposed)
+## Decision
 
-Use option 1. Keep one shared migration directory and one shared ADR directory, with a sequence check instead of a lockfile. Give each concurrent local stack its own Compose project, its own web, API, and MCP host ports, and its own Postgres volume. Postgres itself is not published on the host. That access rule is [0013](0013-security-review.md), also proposed. Leave the NAS Compose file as the single-project, no-published-ports deploy ([0002](0002-tailscale-only.md)).
+Use option 1. Keep one shared migration directory and one shared ADR directory, with a sequence check instead of a lockfile. Give each concurrent local stack its own Compose project, its own web, API, and MCP host ports, and its own Postgres volume. Postgres itself is not published on the host. That access rule is [0013](0013-security-review.md). Leave the NAS Compose file as the single-project, no-published-ports deploy ([0002](0002-tailscale-only.md)).
 
-## Consequences (if accepted)
+## Consequences
 
 * Extends the layout in [0009](0009-repo-layout.md): `features/<slug>/` holds the feature doc and any code that feature owns. pnpm stays the only package manager.
 * Extends [0004](0004-postgres-migrations.md): numbers are four digits, contiguous from `0001`, with no timestamps. Tooling choice remains [0010](0010-migration-tooling.md).

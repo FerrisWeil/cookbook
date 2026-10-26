@@ -8,11 +8,16 @@ This repository is public (portfolio). Recipes and personal notes live only in t
 
 ## Quick start (laptops and cloud agents)
 
-One command starts the web app, API, Postgres, and MCP server, with seed data:
+Copy the example env file, set three database passwords, then start the web app, API, Postgres, and MCP server with seed data:
 
 ```bash
+cp .env.example .env
+# Put a new value in each POSTGRES_SUPERUSER_PASSWORD, POSTGRES_MIGRATOR_PASSWORD,
+# and POSTGRES_APP_PASSWORD. Generate each with: openssl rand -base64 24
 docker compose up --build
 ```
+
+Postgres is not published on the host. `docker compose exec db psql -U postgres` reaches it. The API connects as `cookbook_app`. Migrations use `cookbook_migrator`. Neither role is a superuser.
 
 | Service | URL |
 | --- | --- |
@@ -36,7 +41,7 @@ Stop with `docker compose down`. Data lives in the `cookbook_pg` volume.
 Access is Tailscale-only, with tag-based grants, plus a bearer token on MCP. See [0001](docs/decisions/0001-self-host-on-unraid.md) and [0002](docs/decisions/0002-tailscale-only.md).
 
 ```bash
-cp .env.example .env   # set MCP_AUTH_TOKEN, POSTGRES_PASSWORD, TS_WEB_AUTHKEY, TS_MCP_AUTHKEY
+cp .env.example .env   # set MCP_AUTH_TOKEN, POSTGRES_PASSWORD, the three local POSTGRES_* passwords, TS_WEB_AUTHKEY, TS_MCP_AUTHKEY
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
 ```
 
@@ -59,7 +64,7 @@ features/           Per-feature docs
 deploy/nas/         Unraid Compose (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Language, migration tooling, test tooling, the parallel-agent convention, and the security review (including Postgres access) are still **proposed**. See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Local Postgres roles and supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). Language, migration tooling, test tooling, the parallel-agent convention, the security review, and the Unraid production stack are accepted. See [docs](docs/README.md). The accepted Unraid file is `docker-compose.unraid.yml` at the repo root. That file is not in the tree yet. The NAS command above is still the skeleton at `deploy/nas/docker-compose.yml`.
 
 ## Development without Docker
 
@@ -71,7 +76,7 @@ pnpm install
 pnpm check
 ```
 
-The API accepts `DATABASE_URL`, or `POSTGRES_USER` and `POSTGRES_PASSWORD` (the password is encoded when the URL is built from parts). MCP expects `MCP_AUTH_TOKEN`. Prefer Compose unless you are iterating on one process.
+The API accepts `DATABASE_URL` and `MIGRATOR_DATABASE_URL` together, or `POSTGRES_APP_USER`, `POSTGRES_APP_PASSWORD`, `POSTGRES_MIGRATOR_USER`, and `POSTGRES_MIGRATOR_PASSWORD` (passwords are encoded when the URL is built from parts). MCP expects `MCP_AUTH_TOKEN`. Prefer Compose unless you are iterating on one process.
 
 ## Working agreements
 
