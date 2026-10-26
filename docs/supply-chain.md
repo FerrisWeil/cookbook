@@ -8,8 +8,8 @@ Taylor confirmed [0013](decisions/0013-security-review.md) on 2026-10-26 by trea
 
 These stay as 0013 wrote them:
 
-* Every PR fills the checklist in [security review](security-review.md). Taylor confirms the filled checklist. There is no second review bot.
-* `pnpm audit --audit-level=high` fails CI. Moderate advisories are listed on the checklist and do not fail CI.
+* The author uses the checklist in [security review](security-review.md). The PR includes a Security section only when that review finds a problem or an exception. Taylor, 2026-10-25. There is no second review bot.
+* `pnpm audit --audit-level=high` fails CI. A moderate advisory is named in the PR when one exists, and does not fail CI.
 * gitleaks stays inside `pnpm check`.
 * Postgres uses `cookbook_app` for requests and `cookbook_migrator` for migrations. The image superuser is init-only. Passwords come from the env file. Compose has no default password.
 * The database has no `ports:` key. It sits on an internal network with the API only. `docker compose exec db psql` is how a human reaches it. Binding `127.0.0.1:5432` was considered in 0013 and rejected, because a `ports:` key is the edit a later change widens to every interface.
@@ -54,15 +54,7 @@ Accepted `dependabot.yml` shape, written in the feature PR:
 
 ### How an update PR is reviewed
 
-Same bar as any other PR under 0013. The person or agent who wants it merged fills the checklist. They paste:
-
-* `pnpm audit --audit-level=high` output.
-* Whether `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude` changed. A change names the package or the GHSA and why.
-* For an npm PR: the lockfile diff is the update, and no install script was added.
-* For an Actions PR: the diff is a full SHA and its version comment.
-* For an image PR: the diff is a tag and a digest, and no `ports:` key was added.
-
-Taylor confirms the filled checklist is enough. He does not read every changelog. Merging the PR does not require a new ADR.
+CI is the merge bar. The author checks [security review](security-review.md) and writes a Security section only for a hit: audit output when it is not clean, a change to `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude`, a new install script, an Action that is not a full SHA, an image without a digest, or a new `ports:` key. A clean diff has no Security section. Taylor does not read every changelog. Merging the PR does not require a new ADR.
 
 ## 2. Vulnerability scanning in CI
 
@@ -133,19 +125,19 @@ Floating tags in the tree today: `postgres:16-alpine`, `node:22-alpine`, `nginx:
 * Images built from this repo (`api`, `web`, `mcp`) stay `build:` entries. They are not pulled by digest.
 * The feature PR pins Dockerfiles and the root `docker-compose.yml` only.
 
-## 4. Checklist rows to add
+## 4. Extra checks for the author
 
-[security review](security-review.md) already covers dependencies, secrets, auth, network, Compose, and logging. The feature PR appends these rows. It does not rewrite the 0013 list.
+[security review](security-review.md) already covers dependencies, secrets, auth, network, Compose, and logging. These rows sit with that list. They are not copied into the PR template. A PR mentions one only when it fails.
 
 * Lockfile updated in the same PR as any manifest or `packageManager` change, or `n/a` with the files opened.
 * `allowBuilds` and `minimumReleaseAgeExclude` are unchanged, or each new entry is named.
 * `audit.ignore` is unchanged, or each GHSA is named.
-* `pnpm audit --audit-level=high` output is pasted. Moderate advisories are listed and do not fail CI.
+* `pnpm audit --audit-level=high` is clean. A moderate advisory is named in the PR and does not fail CI.
 * Actions this PR touches are full SHAs. `permissions` are unchanged, or the new permission is named and is not on a `pull_request` job.
 * Third-party image refs this PR touches include a digest. No new `ports:` key. Postgres is still unpublished.
 * Logs, fixtures, and screenshots still contain no recipes, notes, or tokens. This row is already in 0013; it stays.
 
-The PR template gains the same list, including the 0013 sections, so a reviewer does not have to assemble it from two docs. Docs-only PRs still fill it. `n/a` still requires the files that were opened.
+The PR template stays short: What, Why, ADRs, Demo, How to run. Taylor, 2026-10-25: a Security section is added only when there is a finding.
 
 ## 5. Requirements for the NAS stack and GHCR
 

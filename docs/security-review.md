@@ -2,7 +2,7 @@
 
 Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file.
 
-Every pull request fills the checklist below in the PR body before the PR is marked ready. Docs-only PRs fill it too. Each item names a path or pastes the command output that shows the result. `n/a` is allowed only together with the files that were opened. Taylor confirms the filled checklist is enough. There is no second review bot.
+Authors use this list before opening a pull request. The PR body stays the short template. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory that CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. Taylor said so on 2026-10-25. gitleaks and `pnpm audit --audit-level=high` are what block a clean PR. There is no second review bot.
 
 ## Dependencies
 
@@ -94,12 +94,12 @@ Out of scope: Socket, Snyk, and a standing second review model.
 
 ## Supply chain
 
-Accepted in [0014](decisions/0014-supply-chain.md). Detail is in [supply chain](supply-chain.md).
+Accepted in [0014](decisions/0014-supply-chain.md). Detail is in [supply chain](supply-chain.md). Mention a line in the PR only when it is not true.
 
-- Lockfile updated in the same PR as any manifest or `packageManager` change, or `n/a` with the files that were opened.
-- `allowBuilds` and `minimumReleaseAgeExclude` are unchanged, or each new entry is named.
-- `audit.ignore` is unchanged, or each GHSA is named.
-- `pnpm audit --audit-level=high` output is pasted. Moderate advisories are listed and do not fail CI.
-- Actions this PR touches are full SHAs. `permissions` are unchanged, or the new permission is named and is not on a `pull_request` job.
-- Third-party image refs this PR touches include a digest. No new `ports:` key. Postgres is still unpublished on the local file.
-- `deploy/nas/docker-compose.yml` was not edited, or the PR that owns that file says why.
+- A manifest or `packageManager` change updates the lockfile in the same PR.
+- `allowBuilds` and `minimumReleaseAgeExclude` are unchanged.
+- `audit.ignore` is unchanged.
+- `pnpm audit --audit-level=high` is clean. A moderate advisory is named in the PR and does not fail CI.
+- Actions this PR touches are full SHAs. `permissions` are unchanged, and a `pull_request` job does not gain a new one.
+- Third-party image refs this PR touches include a digest. Postgres stays unpublished on the local file.
+- `deploy/nas/docker-compose.yml` was left to the agent that owns it.
