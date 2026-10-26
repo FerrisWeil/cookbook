@@ -21,21 +21,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-
-      - name: Secret scan
-        run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_x64.tar.gz \
-            | tar -xz gitleaks
-          ./gitleaks detect --source . --no-banner --redact --exit-code 1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
 
   smoke:
     runs-on: ubuntu-latest
@@ -43,20 +37,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Full-stack smoke
-        run: |
-          docker compose up --build -d --wait
-          curl -fsS http://127.0.0.1:3000/health | tee /tmp/api-health.json
-          grep -q '"status":"ok"' /tmp/api-health.json
-          curl -fsS http://127.0.0.1:3000/health/ready | tee /tmp/api-ready.json
-          grep -q '"database":"up"' /tmp/api-ready.json
-          grep -q '"seed":true' /tmp/api-ready.json
-          curl -fsS http://127.0.0.1:8787/health | tee /tmp/mcp-health.json
-          grep -q '"status":"ok"' /tmp/mcp-health.json
-          code=$(curl -sS -o /tmp/mcp-unauth.json -w '%{http_code}' http://127.0.0.1:8787/mcp)
-          test "$code" = "401"
-          curl -fsS http://127.0.0.1:8080 | tee /tmp/web.html
-          grep -q "Cookbook" /tmp/web.html
-          curl -fsS http://127.0.0.1:8080/api/health/ready | tee /tmp/web-api.json
-          grep -q '"database":"up"' /tmp/web-api.json
-          docker compose down
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm smoke

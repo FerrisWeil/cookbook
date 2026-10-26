@@ -10,8 +10,11 @@
     "lint": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
-    "@cookbook/shared": "*",
+    "@cookbook/shared": "workspace:*",
     "@modelcontextprotocol/node": "^2.1.2",
     "@modelcontextprotocol/server": "^2.4.0",
     "zod": "^4.1.12"

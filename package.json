@@ -4,16 +4,16 @@
   "private": true,
   "type": "module",
   "description": "Self-hosted family recipe app. Public portfolio repo; recipes stay on the NAS.",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "build": "npm run build -w @cookbook/shared && npm run build -w @cookbook/api && npm run build -w @cookbook/mcp && npm run build -w @cookbook/web",
-    "lint": "npm run build -w @cookbook/shared && npm run lint --workspaces --if-present",
-    "test": "npm run build -w @cookbook/shared && npm run test --workspaces --if-present"
-  },
+  "packageManager": "pnpm@12.15.0",
   "engines": {
     "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/api build && pnpm --filter @cookbook/mcp build && pnpm --filter @cookbook/web build",
+    "lint": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/shared lint && pnpm --filter @cookbook/api lint && pnpm --filter @cookbook/mcp lint && pnpm --filter @cookbook/web lint",
+    "test": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/shared test && pnpm --filter @cookbook/api test && pnpm --filter @cookbook/mcp test",
+    "secrets": "bash scripts/secrets.sh",
+    "smoke": "bash scripts/smoke.sh",
+    "check": "pnpm lint && pnpm test && pnpm build && pnpm secrets"
   }
 }

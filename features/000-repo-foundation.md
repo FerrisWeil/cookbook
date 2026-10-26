@@ -1,7 +1,7 @@
 # Feature: repo foundation
 
 * Status: in progress
-* Related ADRs: [0001](../docs/decisions/0001-self-host-on-unraid.md)–[0007](../docs/decisions/0007-public-repo-secrets.md) accepted; [0008](../docs/decisions/0008-typescript-stack.md)–[0011](../docs/decisions/0011-test-tooling.md) proposed
+* Related ADRs: [0001](../docs/decisions/0001-self-host-on-unraid.md)–[0007](../docs/decisions/0007-public-repo-secrets.md) and [0009](../docs/decisions/0009-repo-layout.md) accepted; [0008](../docs/decisions/0008-typescript-stack.md), [0010](../docs/decisions/0010-migration-tooling.md), and [0011](../docs/decisions/0011-test-tooling.md) proposed
 * Demo: Compose smoke in CI; local `docker compose up --build`
 
 ## What it does
@@ -16,7 +16,9 @@ Gives the public cookbook repo a layout, working agreements, accepted ADRs, prop
 - [ ] MCP `/mcp` without a bearer token returns 401
 - [ ] MCP `hello` tool returns a structured greeting when authorized
 - [ ] Postgres has migrations applied and a seed row in `app_meta`
-- [ ] CI runs lint, unit tests, secret scanning, and a Compose smoke
+- [ ] `pnpm check` runs lint, unit tests, build, and secret scanning
+- [ ] `pnpm smoke` runs the Compose stack and health checks
+- [ ] CI calls `pnpm check` and `pnpm smoke` and does not repeat those steps
 - [ ] `.env` cannot be committed; `.env.example` has placeholders only
 
 ## How to run it

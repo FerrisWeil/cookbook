@@ -19,6 +19,15 @@ Every feature is tested end to end both **manually** and **in code**.
 * Functional tests use a real browser to prove the feature works and does not regress.
 * **Do not write functional tests until Taylor confirms the feature works end to end.** Demo first: screenshots or a recording on the PR, or Taylor runs it locally. Then add the browser tests.
 
+## Checks
+
+`pnpm` is the only JavaScript package manager ([0009](docs/decisions/0009-repo-layout.md)). CI installs dependencies and then runs these commands. The steps live in the scripts, not in the workflow file.
+
+```bash
+pnpm check   # lint, unit tests, build, secret scan
+pnpm smoke   # docker compose up --build and health checks
+```
+
 ## Full stack
 
 One command starts the whole local stack, including seed data:

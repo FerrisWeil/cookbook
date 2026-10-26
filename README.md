@@ -57,16 +57,16 @@ features/           Per-feature docs
 deploy/nas/         Unraid Compose (no host ports)
 ```
 
-Language, workspace tooling, migration tooling, and test tooling are **proposed**, not accepted. See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Language, migration tooling, and test tooling are still **proposed**. See [docs](docs/README.md).
 
 ## Development without Docker
 
+Requires Node 22 and Corepack (pnpm is pinned in `package.json`).
+
 ```bash
-cp .env.example .env   # optional; Compose does not need this locally
-npm install
-npm run lint
-npm test
-npm run build
+corepack enable
+pnpm install
+pnpm check
 ```
 
 API and MCP expect `DATABASE_URL` / `MCP_AUTH_TOKEN` when run on the host. Prefer Compose unless you are iterating on one process.

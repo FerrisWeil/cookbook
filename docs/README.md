@@ -21,7 +21,7 @@ Templates:
 | [0006](decisions/0006-one-repo-one-mcp.md) | One repo; one MCP container per NAS project | accepted |
 | [0007](decisions/0007-public-repo-secrets.md) | Public portfolio repo; secrets stay out of git | accepted |
 | [0008](decisions/0008-typescript-stack.md) | Language and framework stack | **proposed** |
-| [0009](decisions/0009-repo-layout.md) | Repo layout and monorepo tooling | **proposed** |
+| [0009](decisions/0009-repo-layout.md) | Repo layout and pnpm workspaces | accepted |
 | [0010](decisions/0010-migration-tooling.md) | Postgres migration tooling | **proposed** |
 | [0011](decisions/0011-test-tooling.md) | Test tooling | **proposed** |
 

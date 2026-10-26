@@ -1,12 +1,15 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-COPY packages/shared/package.json packages/shared/
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/mcp/package.json apps/mcp/
 COPY apps/web/package.json apps/web/
-RUN npm ci
+COPY packages/shared/package.json packages/shared/
+RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY apps/web apps/web
-RUN npm run build -w @cookbook/web
+RUN pnpm --filter @cookbook/web build
 
 FROM nginx:1.27-alpine
 RUN apk add --no-cache wget

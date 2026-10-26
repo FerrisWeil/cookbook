@@ -27,6 +27,6 @@ Use TypeScript everywhere:
 
 ## Consequences (if accepted)
 
-* One `npm` toolchain, one lint/test command at the repo root.
+* One TypeScript toolchain across web, API, and MCP. The package manager is [0009](0009-repo-layout.md).
 * React is the UI library for later recipe screens. The skeleton is a single status page, not a design system.
 * Switching to Python or Go later is a new ADR that supersedes this one.
