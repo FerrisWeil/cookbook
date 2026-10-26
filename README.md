@@ -59,7 +59,7 @@ features/           Per-feature docs
 deploy/nas/         Unraid Compose (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Language, migration tooling, test tooling, the parallel-agent convention, and the security review (including Postgres access) are still **proposed**. See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Language, migration tooling, test tooling, the parallel-agent convention, the security review, and the Unraid production stack are accepted. See [docs](docs/README.md). The accepted Unraid file is `docker-compose.unraid.yml` at the repo root. That file is not in the tree yet. The command below is still the skeleton.
 
 ## Development without Docker
 

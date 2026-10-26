@@ -1,8 +1,8 @@
 # Parallel feature agents
 
-Proposal for [0012](decisions/0012-parallel-agents.md). Status is **proposed**. The commands and checks below are the convention to adopt after Taylor confirms. They are not implemented yet.
+Convention for [0012](decisions/0012-parallel-agents.md). Status is **accepted** (2026-10-26, merged means accepted). The commands and checks below are in force as the way to work. The sequence script, per-run Compose project, feature-folder loaders, and removal of the hand-edited index tables are not implemented yet.
 
-One agent on a single checkout keeps Compose project `cookbook`, published ports `3000` / `8787` / `8080`, and volume `cookbook_cookbook_pg`. Postgres is not a published port. That rule is [0013](decisions/0013-security-review.md), still proposed.
+One agent on a single checkout keeps Compose project `cookbook`, published ports `3000` / `8787` / `8080`, and volume `cookbook_cookbook_pg`. [0013](decisions/0013-security-review.md) says Postgres is not a published port. The root compose file still publishes `5432` until that follow-up lands.
 
 ## 1. A feature owns a folder
 
@@ -22,7 +22,7 @@ Migrations stay in `db/migrations/`, not inside the feature folder. Applied orde
 
 Options:
 
-1. **Glob the folder** (proposed). No shared list. A feature with no code is still a valid docs-only folder.
+1. **Glob the folder** (accepted). No shared list. A feature with no code is still a valid docs-only folder.
 2. **Each feature is a workspace package** that the root `package.json` depends on. Every feature edits the root manifest and the lockfile.
 3. **Keep a hand-edited `features/README.md` table** (what the repo does today). Two agents conflict on that file every time.
 
@@ -48,7 +48,7 @@ There is no `NEXT` file. Two agents can claim the same number; CI is the merge-t
 
 Options for the claim itself:
 
-1. **Highest plus one, CI as the backstop** (proposed). No extra tooling.
+1. **Highest plus one, CI as the backstop** (accepted). No extra tooling.
 2. **A committed counter file.** Every migration PR conflicts on it.
 3. **Timestamps.** Ruled out. They avoid clashes and they are the scheme Taylor does not want.
 
@@ -67,7 +67,7 @@ Offset `10` publishes API `3010`, MCP `8797`, and web `8090`. Container ports st
 
 Options:
 
-1. **Project name plus a port offset, defaults unchanged** (proposed).
+1. **Project name plus a port offset, defaults unchanged** (accepted).
 2. **Publish no host ports** and use only the Docker network. The browser and `curl` on the host cannot reach the app. The local file publishes ports because that is how laptops and this cloud VM reach the stack.
 3. **A port broker** that assigns ports across agents. More machinery than two env vars.
 
@@ -85,11 +85,11 @@ ADR files stay `docs/decisions/NNNN-slug.md`, contiguous, same check and the sam
 
 Options:
 
-1. **Keep sequential ids and CI** (proposed). Matches migrations and the ids already used in these docs.
+1. **Keep sequential ids and CI** (accepted). Matches migrations and the ids already used in these docs.
 2. **Slug-only filenames.** A number clash goes away. So do the short ids (`0004`, `0009`) the other docs link to. Two agents who pick the same slug still collide.
 3. **Date prefixes** (`20261025-parallel-agents.md`). Two ADRs in one day share a prefix, and acceptance order is not file order. Timestamps are already ruled out for migrations; using them only for ADRs splits the convention.
 
-When this is accepted, delete the status table in `docs/README.md`. Each ADR already has a Status line. Maintaining the table means every ADR PR edits the same file. `features/README.md` loses its table for the same reason. The folders are the index.
+Delete the status table in `docs/README.md` in the follow-up that adds the sequence check. Each ADR already has a Status line. Maintaining the table means every ADR PR edits the same file. `features/README.md` loses its table for the same reason. The folders are the index. This acceptance leaves both tables in place so the production rows stay visible until that follow-up.
 
 ## 6. Other shared files
 
@@ -102,8 +102,8 @@ When this is accepted, delete the status table in `docs/README.md`. Each ADR alr
 | `apps/api/src/index.ts`, `apps/mcp` entry, `apps/web/src/App.tsx` | One glob loader each, added once in the follow-up. Features do not edit these. |
 | `docker/nginx.conf` | One `/api/` proxy and the SPA fallback. New screens are client routes. |
 | `db/seed.sql` | Platform seed only. Feature rows go in `features/<slug>/seed.sql`, applied in slug order. |
-| `deploy/nas/docker-compose.yml` | Not edited per feature. A new container is an ADR. |
+| `docker-compose.unraid.yml` | Not edited per feature. A new container is an ADR. The skeleton is still `deploy/nas/docker-compose.yml` until the production feature moves it. |
 | `.env.example` | Append a key. Leave existing lines in place. |
 | `.github/workflows/ci.yml` | Still only `pnpm check` and `pnpm smoke`. |
 
-Out of scope until Taylor confirms those decisions separately: the language stack ([0008](decisions/0008-typescript-stack.md)), migration tooling ([0010](decisions/0010-migration-tooling.md)), test tooling ([0011](decisions/0011-test-tooling.md)), and the security review ([0013](decisions/0013-security-review.md)).
+Accepted separately, and unchanged by this convention: the language stack ([0008](decisions/0008-typescript-stack.md)), migration tooling ([0010](decisions/0010-migration-tooling.md)), test tooling ([0011](decisions/0011-test-tooling.md)), and the security review ([0013](decisions/0013-security-review.md)).

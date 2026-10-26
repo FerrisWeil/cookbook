@@ -4,7 +4,9 @@
 * Date: YYYY-MM-DD
 * Confirmed: Taylor, YYYY-MM-DD, agent chat (accepted only)
 
-> **Proposed ADRs are not decisions.** Do not mark `accepted` until Taylor confirms in this agent chat.
+> **Proposed ADRs are not decisions.** Do not mark `accepted` until Taylor confirms in this agent chat. Keep the pull request draft until then.
+
+> **Merged means accepted** (Taylor, 2026-10-26). A pull request merged to `master` accepts the ADRs it contains. If this file merges while Status is still `proposed`, treat it as accepted as of the merge date and update this line. Do not merge it in that state unless Taylor has confirmed the decision. Do not rewrite a merged decision in place; supersede it with a new ADR.
 
 ## Context
 
