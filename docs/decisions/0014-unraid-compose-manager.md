@@ -2,7 +2,7 @@
 
 * Status: accepted
 * Date: 2026-10-26
-* Confirmed: Taylor, 2026-10-26, agent chat
+* Confirmed: Taylor, 2026-10-26, agent chat. Same night: one Compose Manager stack, one env file, UI label set in Unraid.
 
 The skeleton is still `deploy/nas/docker-compose.yml` and still builds on the NAS. The feature PR puts the Unraid file at `docker-compose.unraid.yml`.
 
@@ -18,12 +18,17 @@ The skeleton is still `deploy/nas/docker-compose.yml` and still builds on the NA
 
 ## Decision
 
-Use option 1. Taylor starts the stack from Unraid's Compose Manager, pointed at `docker-compose.unraid.yml` in the repo root and the env file under `COOKBOOK_DATA_DIR`. The same file is what SSH runs. It sits next to the dev file so it is easy to find. The dev file keeps the name `docker-compose.yml`, so a plain `docker compose up` does not start the NAS stack. This repo does not grow an `unraid/*.xml` template.
+Use option 1. One Compose Manager stack runs the whole app: Postgres, API, web, MCP, and both Tailscale sidecars. Taylor points that stack at two paths and no others:
+
+* Compose file: `docker-compose.unraid.yml` at the repo root
+* Env file: `.env` in that same directory
+
+Every secret for every service is in that one env file. There is no per-service env file and no second production compose file. SSH uses the same pair. The dev file keeps the name `docker-compose.yml`, so a plain `docker compose up` does not start the NAS stack. This repo does not grow an `unraid/*.xml` template, and it does not set the stack's UI label. Taylor edits that label in the Compose Manager UI.
 
 This does not supersede [0001](0001-self-host-on-unraid.md). It settles the UI that ADR left open.
 
 ## Consequences
 
-* The feature PR documents the Compose Manager clicks in `docs/unraid-setup.md`. It does not add XML.
+* The feature PR documents the Compose Manager clicks in `docs/unraid-setup.md`: one stack, those two paths, and the UI label left for Taylor to type. It does not add XML or a label in git.
 * A new container on the NAS is still an ADR ([parallel agents](../parallel-agents.md)).
 * nas-mcp stays the reference for GHCR and for `tag:nas-mcp`-style tags, not for the Unraid template.

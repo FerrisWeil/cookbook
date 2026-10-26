@@ -2,7 +2,7 @@
 
 * Status: accepted
 * Date: 2026-10-26
-* Confirmed: Taylor, 2026-10-26, agent chat
+* Confirmed: Taylor, 2026-10-26, agent chat. Same night: the one env file sits beside the compose file, not in this data directory.
 
 The path default is already in the skeleton. The backup steps are not a script yet. The feature guide writes them.
 
@@ -12,7 +12,7 @@ The path default is already in the skeleton. The backup steps are not a script y
 
 ## Options considered
 
-1. **One `COOKBOOK_DATA_DIR`, default `/mnt/user/appdata/cookbook`, with `pg_dump` as the backup.** Subdirectories for Postgres, each Tailscale state dir, the env file, and dump output. The directory is not an SMB or NFS share. Recommended.
+1. **One `COOKBOOK_DATA_DIR`, default `/mnt/user/appdata/cookbook`, with `pg_dump` as the backup.** Subdirectories for Postgres, each Tailscale state dir, and dump output. The directory is not an SMB or NFS share. The env file is not in this directory. Recommended.
 2. **Unraid appdata backup (CA Backup) as the only backup.** One plugin, and a copy of a running Postgres data directory can be corrupt.
 3. **Copy `postgres/` while the container is running.** Fast, and unsafe for the same reason.
 
@@ -20,9 +20,10 @@ The path default is already in the skeleton. The backup steps are not a script y
 
 Use option 1.
 
+The one env file is `.env` next to `docker-compose.unraid.yml`. Mode `0600`. Compose Manager and SSH both read it. It is not mounted into a container, and it is not copied into `COOKBOOK_DATA_DIR`.
+
 | Path under `COOKBOOK_DATA_DIR` | What it is |
 | --- | --- |
-| `.env` | Secrets. Mode `0600`. Compose reads it on the host. It is not mounted into a container. |
 | `postgres/` | Database files. The Postgres image sets the owner on first start. Do not chown it back while the database is running. |
 | `tailscale-web/` | Web node state. |
 | `tailscale-mcp/` | MCP node state. |

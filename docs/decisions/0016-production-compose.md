@@ -30,5 +30,5 @@ The feature PR teaches the API to use the migrator role for migrations and `cook
 
 * `pnpm smoke` renders `docker-compose.unraid.yml` with dummy values and does not start it. The `db` healthcheck uses `pg_isready -U postgres`. `pnpm check` includes a unit test that the file names the three images and has no `build:` or `ports:` key.
 * An existing `postgres/` directory from the skeleton must be renamed before first boot. The init script runs only on an empty data directory. There are no family recipes in that directory ([0004](0004-postgres-migrations.md)).
-* Placeholder env keys live in `deploy/nas/.env.example`. The feature PR points the root `.env.example` at that file and removes the NAS-only keys from the root example so the two templates do not disagree. Local compose still starts with no env file.
+* Placeholder keys for that one env file live in the root `.env.example`. There is no second example. Local compose still starts with no env file.
 * This is the ADR that allows the feature PR to add `docker-compose.unraid.yml` and delete `deploy/nas/docker-compose.yml`. Later features still leave the Unraid file alone ([parallel agents](../parallel-agents.md)).

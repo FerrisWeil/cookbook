@@ -6,16 +6,17 @@ nas-mcp is the reference for the registry workflow, the manual public-package st
 
 ## Deploy (0014)
 
-Taylor uses Unraid's Compose Manager plugin (install it if it is not already on the box) and points it at:
+Taylor already runs Unraid's Compose Manager. One stack is the whole app. In that stack's settings he sets two paths, from a checkout that is not an SMB or NFS share:
 
-* Compose file: `docker-compose.unraid.yml` at the root of a checkout that is not an SMB or NFS share. Nginx and Tailscale config stay in `deploy/nas/`.
-* Env file: `$COOKBOOK_DATA_DIR/.env`
+* Compose file: `docker-compose.unraid.yml` at the repo root. Nginx and Tailscale config stay in `deploy/nas/`.
+* Env file: `.env` in that same directory. Every secret for every service goes in this file. Compose Manager does not get a second env file.
 
-SSH uses the same two paths:
+The stack name and UI label are whatever he types in that screen. The repo does not store them.
+
+SSH, from the repo root, uses the same pair:
 
 ```bash
-docker compose --env-file "$COOKBOOK_DATA_DIR/.env" \
-  -f docker-compose.unraid.yml up -d
+docker compose --env-file .env -f docker-compose.unraid.yml up -d
 ```
 
 There is no `up --build` on this path, and no `unraid/*.xml` in this repo.
@@ -125,22 +126,21 @@ Health on the tailnet, after the feature is up: `http://cookbook/` and `http://c
 
 ## Data, backups, permissions (0018)
 
-`COOKBOOK_DATA_DIR` defaults to `/mnt/user/appdata/cookbook`. The directory is not an SMB or NFS share. `.env` is mode `0600` and is not mounted into a container.
+`COOKBOOK_DATA_DIR` defaults to `/mnt/user/appdata/cookbook`. The directory is not an SMB or NFS share. `.env` next to the compose file is mode `0600` and is not mounted into a container.
 
 | Path | Contents |
 | --- | --- |
-| `.env` | Secrets |
 | `postgres/` | Database files. The image owns this after first start. |
 | `tailscale-web/` | Web node state |
 | `tailscale-mcp/` | MCP node state |
 | `backups/` | Dump files |
 
-Supported backup, while Postgres is running, written from the Unraid shell. Write to a new file and replace the previous dump only after `pg_dump` exits 0, so a failed dump does not truncate the last good copy:
+Supported backup, while Postgres is running, written from the repo root on the Unraid shell. Write to a new file and replace the previous dump only after `pg_dump` exits 0, so a failed dump does not truncate the last good copy:
 
 ```bash
 dump="$COOKBOOK_DATA_DIR/backups/cookbook.dump"
 tmp="${dump}.partial"
-docker compose --env-file "$COOKBOOK_DATA_DIR/.env" \
+docker compose --env-file .env \
   -f docker-compose.unraid.yml exec -T -u postgres db \
   pg_dump -d cookbook -Fc > "$tmp"
 mv "$tmp" "$dump"
@@ -161,8 +161,8 @@ Update:
 
 1. Dump the database (above).
 2. Set `COOKBOOK_IMAGE_TAG` to the new `sha-` tag.
-3. `docker compose --env-file "$COOKBOOK_DATA_DIR/.env" -f docker-compose.unraid.yml pull api web mcp`
-4. `docker compose --env-file "$COOKBOOK_DATA_DIR/.env" -f docker-compose.unraid.yml up -d api web mcp`
+3. `docker compose --env-file .env -f docker-compose.unraid.yml pull api web mcp`
+4. `docker compose --env-file .env -f docker-compose.unraid.yml up -d api web mcp`
 5. Check `http://cookbook/` and `http://cookbook-mcp:8787/health` from a tailnet device.
 
 Rollback is steps 2–5 with the previous sha. If the old API will not boot because a migration ran, restore the dump from step 1 into an empty `postgres/` directory. There is no down migration ([0010](decisions/0010-migration-tooling.md)).
@@ -178,7 +178,7 @@ That PR adds:
 * `docker-compose.unraid.yml` at the repo root, as described above, including `TS_EXTRA_ARGS`, no `TS_SERVE_CONFIG`, and a `db` healthcheck of `pg_isready -U postgres -d cookbook`. Delete `deploy/nas/docker-compose.yml`.
 * `deploy/nas/nginx.conf` listening on `0.0.0.0:80`, and MCP `BIND_HOST=0.0.0.0`
 * `db/init` as a shell script, and the API's two-password path
-* `deploy/nas/.env.example` with placeholders only. The root `.env.example` loses its NAS-only keys and points at that file. [0012](decisions/0012-parallel-agents.md) says to append keys and leave lines in place. This feature is the exception, so the two templates do not describe two different NAS stacks. Later features append.
+* The root `.env.example` is the only example. It lists every key that one `.env` needs. Local compose still starts without it. Later features append keys ([0012](decisions/0012-parallel-agents.md)).
 * `.github/workflows/docker.yml`
 * `docs/unraid-setup.md`, leading with the public-package step
 * `features/unraid-production/feature.md`
@@ -187,4 +187,4 @@ That PR adds:
 
 ## Confirmed
 
-Taylor, 2026-10-26, agent chat. Compose Manager, GHCR linux/amd64, the Postgres rules, the Tailscale tags with Serve deferred, the data directory, and sha pins. The Unraid compose file is `docker-compose.unraid.yml` at the repo root. The dev file stays `docker-compose.yml`.
+Taylor, 2026-10-26, agent chat. Compose Manager, GHCR linux/amd64, the Postgres rules, the Tailscale tags with Serve deferred, the data directory, and sha pins. The Unraid compose file is `docker-compose.unraid.yml` at the repo root. The dev file stays `docker-compose.yml`. One Compose Manager stack, one `.env` beside that compose file, and the UI label is set in Unraid.
