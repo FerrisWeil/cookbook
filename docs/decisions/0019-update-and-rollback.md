@@ -1,10 +1,10 @@
 # 0019. Update and rollback
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
+* Confirmed: Taylor, 2026-10-26, agent chat
 
-> **Proposed.** Taylor has not confirmed this in chat. Nothing pulls new images on a timer.
+Nothing pulls new images on a timer. The feature PR does not add a scheduler.
 
 ## Context
 
@@ -16,7 +16,7 @@
 2. **Track `latest`.** Fewer edits. The next `docker compose pull` takes whatever `main` last published, including a bad build.
 3. **Watchtower or another auto-puller.** Unattended upgrades on the only copy of the recipes.
 
-## Decision (proposed)
+## Decision
 
 Use option 1. The env file sets the tag. There is no default in the compose file, so a missing tag fails closed. The example file may contain `latest` so the first pull works before a sha exists. The setup guide's last step replaces that with the sha from the Actions run that just published.
 
@@ -24,7 +24,7 @@ Update: `pg_dump` ([0018](0018-data-dir-and-backups.md)), set the new sha, `dock
 
 `postgres:16-alpine` and `tailscale/tailscale:stable` are not this tag. Moving them is an edit to the compose file, and it gets a dump first.
 
-## Consequences (if accepted)
+## Consequences
 
 * No Watchtower container, and no Unraid auto-update on these three images.
 * Rollback of the app is a tag change. Rollback of the schema is a dump restore.

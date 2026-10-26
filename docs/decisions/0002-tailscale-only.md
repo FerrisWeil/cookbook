@@ -18,7 +18,7 @@ Cookbook is used only by the family on a private network. Chef is cloud-hosted a
 
 Do not expose Cookbook to the public internet. On the NAS, access is only over Tailscale with limited-access, tag-based grants.
 
-* Do not publish host ports in `deploy/nas/docker-compose.yml`.
+* Do not publish host ports in the Unraid compose file. That file is `deploy/nas/docker-compose.yml` until [0016](0016-production-compose.md) moves it to `docker-compose.unraid.yml`.
 * The cookbook MCP container is its own tailnet device (see [0006](0006-one-repo-one-mcp.md)).
 * The family web app is a separate tailnet device so browsing recipes does not share the MCP node.
 * Advertise distinct tags (for example `tag:cookbook-web` and `tag:cookbook-mcp`). ACL grants are least-privilege: family devices to the web node; `tag:bot` (Chef) to the MCP ports only.
@@ -29,4 +29,4 @@ Do not expose Cookbook to the public internet. On the NAS, access is only over T
 * Clients must be on the tailnet. Chef needs a Tailscale identity, not a public URL.
 * Tailscale ACLs are the network boundary. They are not a substitute for the MCP bearer token ([0003](0003-mcp-bearer-token.md)).
 * Root `docker-compose.yml` still publishes ports for local and cloud-agent runs. That file is not the NAS deploy path.
-* Deferring Tailscale Serve, and using `tag:cookbook` instead of the example `tag:cookbook-web`, is [0017](0017-tailscale-sidecars.md) (proposed). Until that ADR is accepted, Serve stays allowed and the skeleton tag `tag:cookbook-web` stays as it is. Funnel stays off either way.
+* Tailscale Serve is deferred, and the web tag is `tag:cookbook` rather than the example `tag:cookbook-web` ([0017](0017-tailscale-sidecars.md)). The skeleton still serves over Tailscale and still advertises `tag:cookbook-web` until the feature PR. Funnel stays off.

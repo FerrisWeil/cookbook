@@ -1,6 +1,6 @@
 # Unraid production stack
 
-Proposal for [0014](decisions/0014-unraid-compose-manager.md) through [0019](decisions/0019-update-and-rollback.md). **Not in force.** Taylor has not confirmed these decisions. The files under `deploy/nas/` still build on the NAS and still turn on Tailscale Serve.
+Accepted detail for [0014](decisions/0014-unraid-compose-manager.md) through [0019](decisions/0019-update-and-rollback.md). Taylor confirmed this in chat on 2026-10-26, including a repo-root Unraid file and linux/amd64 only. The skeleton under `deploy/nas/` still builds on the NAS and still turns on Tailscale Serve until the feature PR.
 
 nas-mcp is the reference for the registry workflow, the manual public-package step, and tags shaped like `tag:nas-mcp`: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp). It is not the template to copy. That repo is one container. This one is not.
 
@@ -8,14 +8,14 @@ nas-mcp is the reference for the registry workflow, the manual public-package st
 
 Taylor uses Unraid's Compose Manager plugin (install it if it is not already on the box) and points it at:
 
-* Compose file: `deploy/nas/docker-compose.yml` in a checkout that is not an SMB or NFS share
+* Compose file: `docker-compose.unraid.yml` at the root of a checkout that is not an SMB or NFS share. Nginx and Tailscale config stay in `deploy/nas/`.
 * Env file: `$COOKBOOK_DATA_DIR/.env`
 
 SSH uses the same two paths:
 
 ```bash
 docker compose --env-file "$COOKBOOK_DATA_DIR/.env" \
-  -f deploy/nas/docker-compose.yml up -d
+  -f docker-compose.unraid.yml up -d
 ```
 
 There is no `up --build` on this path, and no `unraid/*.xml` in this repo.
@@ -52,11 +52,11 @@ Do this once per package, after the first green Docker run on `main`, and before
 
 The feature guide (`docs/unraid-setup.md`) leads with this section. A private package is not how the NAS authenticates.
 
-If the NAS is ARM, [0015](decisions/0015-ghcr-images.md) option 2 (also publish `linux/arm64`) replaces the amd64-only choice. Say so before the feature PR. The recommendation assumes amd64.
+The NAS is a PC running Unraid, not an Apple Silicon machine. Publish linux/amd64 only.
 
 ## Production Compose (0016)
 
-One NAS file: `deploy/nas/docker-compose.yml`. No second prod file. No `build:` key. No `ports:` key. No fixed network `name:`.
+One Unraid file: `docker-compose.unraid.yml` at the repo root. `docker-compose.yml` stays the dev stack. No `build:` key. No `ports:` key. No fixed network `name:`. The feature PR deletes `deploy/nas/docker-compose.yml`. Mounts that used to be `./nginx.conf` and `./tailscale` become `./deploy/nas/nginx.conf` and `./deploy/nas/tailscale`, because the compose file moved and those files did not.
 
 `COOKBOOK_IMAGE_TAG` has no default in the file (`${COOKBOOK_IMAGE_TAG:?...}`). All three app images use it, so they stay on one commit.
 
@@ -78,7 +78,7 @@ Postgres, matching [0013](decisions/0013-security-review.md) and [security revie
 * `db/init` is a shell script mounted into `docker-entrypoint-initdb.d`, not a `.sql` file. The Postgres image runs `.sql` through `psql` with no environment substitution, so a SQL file cannot see the passwords. The `db` service receives `POSTGRES_MIGRATOR_PASSWORD` and `POSTGRES_APP_PASSWORD` for that script. The script creates `cookbook_migrator` (no superuser) and `cookbook_app` (DML only), runs `ALTER DATABASE cookbook OWNER TO cookbook_migrator`, and sets `ALTER DEFAULT PRIVILEGES FOR ROLE cookbook_migrator` so later tables the migrator creates are usable by `cookbook_app`. The image's first-boot database would otherwise stay owned by `postgres`. The superuser is init-only. App containers still do not receive the superuser password.
 * The API uses the migrator role while migrating and seeding, then the app role for requests, when those two passwords are set. When they are absent, it keeps the current single-password path so the root compose file still starts with no env file.
 
-The feature PR does not edit the root compose file. [0013](decisions/0013-security-review.md) still wants that file locked down. That remains its own follow-up unless Taylor pulls it into this feature.
+The feature PR does not edit the dev compose file. [0013](decisions/0013-security-review.md) still wants that file locked down. Taylor left that as its own follow-up.
 
 Init SQL runs on an empty data directory only. If `postgres/` already exists from the skeleton, stop the stack and rename the directory before the first boot of this file.
 
@@ -141,7 +141,7 @@ Supported backup, while Postgres is running, written from the Unraid shell. Writ
 dump="$COOKBOOK_DATA_DIR/backups/cookbook.dump"
 tmp="${dump}.partial"
 docker compose --env-file "$COOKBOOK_DATA_DIR/.env" \
-  -f deploy/nas/docker-compose.yml exec -T -u postgres db \
+  -f docker-compose.unraid.yml exec -T -u postgres db \
   pg_dump -d cookbook -Fc > "$tmp"
 mv "$tmp" "$dump"
 chmod 600 "$dump"
@@ -161,8 +161,8 @@ Update:
 
 1. Dump the database (above).
 2. Set `COOKBOOK_IMAGE_TAG` to the new `sha-` tag.
-3. `docker compose --env-file "$COOKBOOK_DATA_DIR/.env" -f deploy/nas/docker-compose.yml pull api web mcp`
-4. `docker compose --env-file "$COOKBOOK_DATA_DIR/.env" -f deploy/nas/docker-compose.yml up -d api web mcp`
+3. `docker compose --env-file "$COOKBOOK_DATA_DIR/.env" -f docker-compose.unraid.yml pull api web mcp`
+4. `docker compose --env-file "$COOKBOOK_DATA_DIR/.env" -f docker-compose.unraid.yml up -d api web mcp`
 5. Check `http://cookbook/` and `http://cookbook-mcp:8787/health` from a tailnet device.
 
 Rollback is steps 2–5 with the previous sha. If the old API will not boot because a migration ran, restore the dump from step 1 into an empty `postgres/` directory. There is no down migration ([0010](decisions/0010-migration-tooling.md)).
@@ -171,11 +171,11 @@ No Watchtower. `pull` and `up` name `api`, `web`, and `mcp` so a routine sha bum
 
 ## Feature PR
 
-Start it only after Taylor has confirmed these ADRs in chat, their Status lines say accepted, and this pull request is merged. A merge while they are still Proposed would accept them under the merged-means-accepted rule, so this pull request stays draft. Do not start the feature PR from a draft merge. No Playwright in that PR. Taylor confirms the stack by running it before any browser tests ([0011](decisions/0011-test-tooling.md)).
+Start it after this ADR pull request is merged. No Playwright in that PR. Taylor confirms the stack by running it before any browser tests ([0011](decisions/0011-test-tooling.md)).
 
 That PR adds:
 
-* The production compose file described above, by editing `deploy/nas/docker-compose.yml`, including `TS_EXTRA_ARGS`, no `TS_SERVE_CONFIG`, and a `db` healthcheck of `pg_isready -U postgres -d cookbook`
+* `docker-compose.unraid.yml` at the repo root, as described above, including `TS_EXTRA_ARGS`, no `TS_SERVE_CONFIG`, and a `db` healthcheck of `pg_isready -U postgres -d cookbook`. Delete `deploy/nas/docker-compose.yml`.
 * `deploy/nas/nginx.conf` listening on `0.0.0.0:80`, and MCP `BIND_HOST=0.0.0.0`
 * `db/init` as a shell script, and the API's two-password path
 * `deploy/nas/.env.example` with placeholders only. The root `.env.example` loses its NAS-only keys and points at that file. [0012](decisions/0012-parallel-agents.md) says to append keys and leave lines in place. This feature is the exception, so the two templates do not describe two different NAS stacks. Later features append.
@@ -183,13 +183,8 @@ That PR adds:
 * `docs/unraid-setup.md`, leading with the public-package step
 * `features/unraid-production/feature.md`
 
-`pnpm smoke` renders the NAS file with dummy values and does not start Tailscale or the NAS project. The rendered config must name the three `ghcr.io/ferrisweil/cookbook-*` images and `BIND_HOST: 0.0.0.0` for MCP, and must not contain a published port, a `build:` key, `MCP_ALLOW_DEV_TOKEN`, `TS_SERVE_CONFIG`, or `:-cookbook`. It must not still require `BIND_HOST: 127.0.0.1`. `pnpm check` runs a `node:test` that reads the compose file, `deploy/nas/nginx.conf`, and the workflow file and fails on the same mistakes. The test does not run Docker or Tailscale.
+`pnpm smoke` renders `docker-compose.unraid.yml` with dummy values and does not start Tailscale or that project. The rendered config must name the three `ghcr.io/ferrisweil/cookbook-*` images and `BIND_HOST: 0.0.0.0` for MCP, and must not contain a published port, a `build:` key, `MCP_ALLOW_DEV_TOKEN`, `TS_SERVE_CONFIG`, or `:-cookbook`. It must not still require `BIND_HOST: 127.0.0.1`. `pnpm check` runs a `node:test` that reads that compose file, `deploy/nas/nginx.conf`, and the workflow file and fails on the same mistakes. The test does not run Docker or Tailscale.
 
-## Confirm before anything here is accepted
+## Confirmed
 
-1. Compose Manager and one compose file, no Unraid XML.
-2. GHCR, amd64, three image names, and Taylor sets each package public by hand.
-3. Production file pulls images; Postgres matches 0013; the root compose file waits for the 0013 follow-up.
-4. Sidecars, `tag:cookbook` and `tag:cookbook-mcp`, `tag:bot` on MCP only, Serve deferred. Deferring Serve means the PWA will not install from `http://cookbook/` until a later ADR.
-5. `COOKBOOK_DATA_DIR` layout, `pg_dump` as the backup, directory not shared.
-6. Pin a `sha-` tag; rollback is that pin, or a dump restore if a migration ran.
+Taylor, 2026-10-26, agent chat. Compose Manager, GHCR linux/amd64, the Postgres rules, the Tailscale tags with Serve deferred, the data directory, and sha pins. The Unraid compose file is `docker-compose.unraid.yml` at the repo root. The dev file stays `docker-compose.yml`.

@@ -1,10 +1,10 @@
 # 0017. Tailscale sidecars; Serve deferred
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
+* Confirmed: Taylor, 2026-10-26, agent chat
 
-> **Proposed.** Taylor has not confirmed this in chat. The NAS file still mounts a Serve config and binds web and MCP to loopback.
+The skeleton still mounts a Serve config and binds web and MCP to loopback. The feature PR changes that in `docker-compose.unraid.yml`.
 
 ## Context
 
@@ -16,13 +16,13 @@
 2. **Keep Serve on, as the skeleton and as 0002 allow.** Tailnet HTTPS on 443, listeners on 127.0.0.1. Needs MagicDNS and HTTPS certificates before the first boot.
 3. **Bake Tailscale into each image, as the nas-mcp Unraid template does.** Drops the sidecar. [0014](0014-unraid-compose-manager.md) is the reason we can keep sidecars.
 
-## Decision (proposed)
+## Decision
 
 Use option 1. API and Postgres are not tailnet nodes. The web nginx proxies `/api/` to the API on the app network. Listeners bind `0.0.0.0` inside the sidecar network namespace so the tailnet IP answers. That address is not a host port.
 
-If accepted, this supersedes the Serve allowance in [0002](0002-tailscale-only.md) and replaces that ADR's example tag `tag:cookbook-web` with `tag:cookbook`, matching the hostname the way `tag:nas-mcp` matches its hostname. `tag:cookbook-mcp` is unchanged. Funnel stays off. A later ADR can turn Serve on. Until that later ADR, `http://cookbook/` is not a secure context, so the installable PWA in [0005](0005-v1-scope.md) does not install from the production URL.
+This supersedes the Serve allowance in [0002](0002-tailscale-only.md) and replaces that ADR's example tag `tag:cookbook-web` with `tag:cookbook`, matching the hostname the way `tag:nas-mcp` matches its hostname. `tag:cookbook-mcp` is unchanged. Funnel stays off. A later ADR can turn Serve on. Until that later ADR, `http://cookbook/` is not a secure context, so the installable PWA in [0005](0005-v1-scope.md) does not install from the production URL.
 
-## Consequences (if accepted)
+## Consequences
 
 * The feature PR removes `TS_SERVE_CONFIG`, sets `TS_EXTRA_ARGS` to `--advertise-tags=tag:cookbook` and `--advertise-tags=tag:cookbook-mcp`, binds web nginx to `0.0.0.0:80` in `deploy/nas/nginx.conf`, and sets MCP `BIND_HOST` to `0.0.0.0`. Loopback was only right while Serve proxied to it. `scripts/smoke.sh` stops requiring `BIND_HOST: 127.0.0.1`. The Serve JSON files stay in the repo and are not mounted.
 * Grants do not include port 443.

@@ -1,10 +1,10 @@
 # 0018. Data directory, backups, and permissions
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
+* Confirmed: Taylor, 2026-10-26, agent chat
 
-> **Proposed.** Taylor has not confirmed this in chat. The path default is already in the NAS file. The backup steps are not a script yet.
+The path default is already in the skeleton. The backup steps are not a script yet. The feature guide writes them.
 
 ## Context
 
@@ -16,7 +16,7 @@
 2. **Unraid appdata backup (CA Backup) as the only backup.** One plugin, and a copy of a running Postgres data directory can be corrupt.
 3. **Copy `postgres/` while the container is running.** Fast, and unsafe for the same reason.
 
-## Decision (proposed)
+## Decision
 
 Use option 1.
 
@@ -30,7 +30,7 @@ Use option 1.
 
 Take `pg_dump -Fc` while Postgres is running. Write a partial file and move it into `backups/` only after `pg_dump` exits 0, mode `0600`, so a failed dump does not erase the previous one. Restore with `pg_restore` into an empty `postgres/` directory after the init script has created the roles. Passwords come from `.env` again. Copy `postgres/` only when the database is stopped. An appdata backup of the whole directory is optional and is a consistent copy only when the stack is stopped.
 
-## Consequences (if accepted)
+## Consequences
 
 * The array must be started before this directory exists to write ([0001](0001-self-host-on-unraid.md)).
 * Losing a Tailscale directory means logging that node in again. It is not inside the SQL dump. Copying those two directories while the stack is up is fine.

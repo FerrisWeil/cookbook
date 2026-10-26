@@ -49,7 +49,7 @@ One command starts the whole local stack, including seed data:
 docker compose up --build
 ```
 
-That is the path cloud agents use. NAS deploy does not publish host ports. The command below still builds on the NAS and still reads a repo-root `.env`. Published images and an env file at `$COOKBOOK_DATA_DIR/.env` are [0014](docs/decisions/0014-unraid-compose-manager.md)–[0019](docs/decisions/0019-update-and-rollback.md) and are not in force yet.
+That is the path cloud agents use. NAS deploy does not publish host ports. The accepted Unraid file is `docker-compose.unraid.yml` at the repo root ([0014](docs/decisions/0014-unraid-compose-manager.md)–[0019](docs/decisions/0019-update-and-rollback.md)). It is not in the tree yet, so the command below is still the skeleton: it builds on the NAS and reads a repo-root `.env`.
 
 ```bash
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d

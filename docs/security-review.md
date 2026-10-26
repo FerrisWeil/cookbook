@@ -30,7 +30,7 @@ Every pull request fills the checklist below in the PR body before the PR is mar
 ## Images and Compose
 
 - Image, capabilities, mounts, and env for each service this PR changes.
-- Read the local Compose file and `deploy/nas/docker-compose.yml` separately.
+- Read the local Compose file and the Unraid file separately. The Unraid file is `docker-compose.unraid.yml` once [0016](decisions/0016-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
 
 ## Data and logging
 

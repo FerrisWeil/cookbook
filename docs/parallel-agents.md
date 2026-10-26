@@ -89,7 +89,7 @@ Options:
 2. **Slug-only filenames.** A number clash goes away. So do the short ids (`0004`, `0009`) the other docs link to. Two agents who pick the same slug still collide.
 3. **Date prefixes** (`20261025-parallel-agents.md`). Two ADRs in one day share a prefix, and acceptance order is not file order. Timestamps are already ruled out for migrations; using them only for ADRs splits the convention.
 
-Delete the status table in `docs/README.md` in the follow-up that adds the sequence check. Each ADR already has a Status line. Maintaining the table means every ADR PR edits the same file. `features/README.md` loses its table for the same reason. The folders are the index. This acceptance PR leaves both tables in place so the new proposed rows are visible until that follow-up.
+Delete the status table in `docs/README.md` in the follow-up that adds the sequence check. Each ADR already has a Status line. Maintaining the table means every ADR PR edits the same file. `features/README.md` loses its table for the same reason. The folders are the index. This acceptance leaves both tables in place so the production rows stay visible until that follow-up.
 
 ## 6. Other shared files
 
@@ -102,7 +102,7 @@ Delete the status table in `docs/README.md` in the follow-up that adds the seque
 | `apps/api/src/index.ts`, `apps/mcp` entry, `apps/web/src/App.tsx` | One glob loader each, added once in the follow-up. Features do not edit these. |
 | `docker/nginx.conf` | One `/api/` proxy and the SPA fallback. New screens are client routes. |
 | `db/seed.sql` | Platform seed only. Feature rows go in `features/<slug>/seed.sql`, applied in slug order. |
-| `deploy/nas/docker-compose.yml` | Not edited per feature. A new container is an ADR. |
+| `docker-compose.unraid.yml` | Not edited per feature. A new container is an ADR. The skeleton is still `deploy/nas/docker-compose.yml` until the production feature moves it. |
 | `.env.example` | Append a key. Leave existing lines in place. |
 | `.github/workflows/ci.yml` | Still only `pnpm check` and `pnpm smoke`. |
 

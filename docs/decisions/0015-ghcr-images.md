@@ -1,10 +1,10 @@
 # 0015. Publish images to GHCR
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
+* Confirmed: Taylor, 2026-10-26, agent chat
 
-> **Proposed.** Taylor has not confirmed this in chat. Nothing is published to GHCR from this repo yet.
+Nothing is published to GHCR from this repo yet. The feature PR adds the workflow.
 
 ## Context
 
@@ -13,12 +13,12 @@ The NAS should not compile the app ([0016](0016-production-compose.md)). nas-mcp
 ## Options considered
 
 1. **GitHub Actions pushes linux/amd64 images to GHCR on `main`.** `GITHUB_TOKEN` with `packages: write`. Tags `latest` and `sha-<short>`. Pull requests build and do not push. Taylor sets each package **public** in the GitHub UI after the first publish. Recommended.
-2. **Also publish linux/arm64.** nas-mcp does this. These images are Node builds, and QEMU arm64 makes CI slow. Choose this if the NAS is ARM.
+2. **Also publish linux/arm64.** nas-mcp does this. These images are Node builds, and QEMU arm64 makes CI slow. The NAS is a PC running Unraid, not an Apple Silicon machine, so this build is unused.
 3. **Build on the NAS, or push to Docker Hub.** Building on the NAS is the skeleton's current command. Docker Hub is a second account. GHCR is the registry nas-mcp already uses.
 
-## Decision (proposed)
+## Decision
 
-Use option 1 unless Taylor says the NAS is ARM. In that case use option 2 (publish amd64 and arm64) and do not leave amd64 as a silent default. Three images, one workflow file `.github/workflows/docker.yml`, separate from CI:
+Use option 1. Taylor confirmed the NAS is a PC running Unraid, so the images are linux/amd64 only. Three images, one workflow file `.github/workflows/docker.yml`, separate from CI:
 
 * `ghcr.io/ferrisweil/cookbook-api`
 * `ghcr.io/ferrisweil/cookbook-web`
@@ -28,7 +28,7 @@ Postgres and Tailscale stay the upstream images named in [0016](0016-production-
 
 Actions cannot mark a package public with `GITHUB_TOKEN`. GitHub creates each package private on first push. The setup guide must say, before any pull, that Taylor opens each package and sets visibility to Public. Until he does, Unraid pulls fail.
 
-## Consequences (if accepted)
+## Consequences
 
 * The first `latest` tag exists only after this workflow has succeeded on `main`.
 * `ci.yml` stays `pnpm check` and `pnpm smoke` ([0009](0009-repo-layout.md)).
