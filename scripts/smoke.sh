@@ -38,10 +38,17 @@ export POSTGRES_APP_PASSWORD="$(openssl rand -hex 24)"
 
 docker compose up --build -d --wait
 
-if docker compose port db 5432 >/dev/null 2>&1; then
-  echo "local compose published Postgres" >&2
-  exit 1
-fi
+# `docker compose port` exits 0 for an EXPOSE with no host binding and prints
+# ":0". HostConfig.PortBindings is empty unless the Compose file publishes.
+db_id="$(docker compose ps -q db)"
+bindings="$(docker inspect --format '{{json .HostConfig.PortBindings}}' "$db_id")"
+case "$bindings" in
+  "" | null | {}) ;;
+  *)
+    echo "local compose published Postgres: ${bindings}" >&2
+    exit 1
+    ;;
+esac
 
 app_super=$(docker compose exec -T db psql -U postgres -d cookbook -tAc "SELECT rolsuper FROM pg_roles WHERE rolname = 'cookbook_app'" | tr -d '[:space:]')
 migrator_super=$(docker compose exec -T db psql -U postgres -d cookbook -tAc "SELECT rolsuper FROM pg_roles WHERE rolname = 'cookbook_migrator'" | tr -d '[:space:]')
