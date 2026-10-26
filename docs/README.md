@@ -2,7 +2,7 @@
 
 Durable decisions live in [decisions/](decisions/). An ADR records a decision that rarely changes. [CONTRIBUTING.md](../CONTRIBUTING.md) says when a change needs an ADR.
 
-How we work lives in [CONTRIBUTING.md](../CONTRIBUTING.md). The proposed in-repo agent skills are in [agent skills](agent-skills.md). Feature pages live in [features/](../features/).
+How we work lives in [CONTRIBUTING.md](../CONTRIBUTING.md). In-repo agent skills are in [agent skills](agent-skills.md). Feature pages live in [features/](../features/).
 
 Templates:
 
