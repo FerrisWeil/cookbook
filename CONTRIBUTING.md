@@ -57,5 +57,5 @@ This repo is public. Never commit `.env`, tokens, Tailscale keys, or real recipe
 
 ## Templates
 
-* [ADR](docs/templates/adr.md) — problem, options considered, decision, consequences, status
+* [ADR](docs/templates/adr.md) — problem, options considered, decision, consequences, amendments, status
 * [Feature](docs/templates/feature.md) — what it does, acceptance checks, how to run it

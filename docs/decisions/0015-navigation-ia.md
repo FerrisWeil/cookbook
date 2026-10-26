@@ -4,7 +4,7 @@
 * Date: 2026-10-26
 * Confirmed: Taylor, 2026-10-26, agent chat
 
-Shell chrome is [0019](0019-floating-glass-chrome.md). The screens below are unchanged.
+Shell chrome is [0019](0019-floating-glass-chrome.md). ~~The screens below are unchanged.~~
 
 ## Problem
 
@@ -18,11 +18,11 @@ The first version needs a place to find a recipe and a place to read it, without
 
 ## Decision
 
-Use option 1.
+~~Use option 1.~~
 
 * `/` is the list. Each card shows an example title and `Placeholder meta · fields undecided`. The card opens the recipe.
 * `/recipes/:id` is one recipe to read. The id is an opaque string. The page shows the title, the same placeholder meta line, and the recipe body as placeholder text. It does not name schema fields.
-* Phone and desktop are the same two screens. Desktop is the wider layout from [0017](0017-tokens-accessibility-iphone.md). There is no second nav destination.
+* ~~Phone and desktop are the same two screens. Desktop is the wider layout from [0017](0017-tokens-accessibility-iphone.md). There is no second nav destination.~~
 * Back returns to the list.
 * If the list cannot load, the list screen says so. The foundation status card is not the home screen.
 
@@ -32,7 +32,15 @@ Wireframes are in [information architecture](../design/information-architecture.
 
 ## Consequences
 
-* The feature PR builds the list and the viewer with example data. It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel.
+* ~~The feature PR builds the list and the viewer with example data. It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel.~~
 * Those later screens, and any real field list, wait for their own decisions. The schema is not chosen here.
 * Client routes only. No new nginx locations.
 * How the list and the viewer are framed is [0019](0019-floating-glass-chrome.md), not a left rail, a tall header, or a bottom bar.
+
+## Amendments
+
+### 2026-10-25
+
+v1 screens are the recipe list, the recipe viewer, and settings. Settings holds the theme selector and nothing else. The list and the recipe do not. The first paint follows the system setting.
+
+The feature PR builds those three screens with example data. It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel. Phone and desktop are the same screens. Desktop is the wider layout from [0017](0017-tokens-accessibility-iphone.md).

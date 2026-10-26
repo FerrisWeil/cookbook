@@ -1,18 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img">
-  <title>Wide wireframe: recipe list, glass cards, floating theme control, no rail</title>
+  <title>Wide wireframe: recipe list, one card fill, no rail and no theme control</title>
   <rect width="1200" height="800" fill="#f6f1e9"/>
-  <ellipse cx="860" cy="180" rx="220" ry="140" fill="#3d5a40" opacity="0.18"/>
   <text x="80" y="88" fill="#2b241c" font-family="Georgia, serif" font-size="40">Recipes</text>
-  <rect x="80" y="120" width="720" height="88" rx="16" fill="#ffffff" fill-opacity="0.72" stroke="#ffffff"/>
+  <rect x="80" y="120" width="720" height="88" rx="12" fill="#efe6d6" stroke="#7d7264"/>
   <text x="104" y="158" fill="#2b241c" font-family="Georgia, serif" font-size="24">Example: Tomato lentils</text>
   <text x="104" y="186" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
-  <rect x="80" y="224" width="720" height="88" rx="16" fill="#ffffff" fill-opacity="0.72" stroke="#ffffff"/>
+  <rect x="80" y="224" width="720" height="88" rx="12" fill="#efe6d6" stroke="#7d7264"/>
   <text x="104" y="262" fill="#2b241c" font-family="Georgia, serif" font-size="24">Example: Weeknight oats</text>
   <text x="104" y="290" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
-  <rect x="80" y="328" width="720" height="88" rx="16" fill="#ffffff" fill-opacity="0.72" stroke="#ffffff"/>
+  <rect x="80" y="328" width="720" height="88" rx="12" fill="#efe6d6" stroke="#7d7264"/>
   <text x="104" y="366" fill="#2b241c" font-family="Georgia, serif" font-size="24">Example: Citrus chicken</text>
   <text x="104" y="394" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
-  <rect x="980" y="700" width="140" height="48" rx="24" fill="#ffffff" fill-opacity="0.82" stroke="#ffffff"/>
-  <text x="1050" y="730" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Theme</text>
-  <text x="80" y="760" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Same chrome as the phone. No sidebar.</text>
+  <text x="80" y="460" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Wider content. No sidebar. No theme control.</text>
 </svg>

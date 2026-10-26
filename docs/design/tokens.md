@@ -4,7 +4,7 @@ Detail for [0017](../decisions/0017-tokens-accessibility-iphone.md). Status is *
 
 Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot. The feature PR locks the same pairs in a unit test so a later edit cannot quietly drop under the bar.
 
-The file format (CSS variables versus a Tailwind theme) follows [0016](../decisions/0016-design-system-approach.md). The hex values can move to another format if Taylor picks a different approach.
+The file format (CSS variables versus another format inside the UI package) follows [0016](../decisions/0016-design-system-approach.md). The hex values can move with that format.
 
 ## Color
 
@@ -13,10 +13,10 @@ Light values are the foundation page: paper, ink, herb, and the existing warn pa
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
 | `--bg` | `#f6f1e9` | `#1c1915` | Page |
-| `--bg-elevated` | `#efe6d6` | `#2a2520` | Cards, top bar |
+| `--bg-elevated` | `#efe6d6` | `#2a2520` | Cards, one fill |
 | `--text` | `#2b241c` | `#f3ecdf` | Body and titles |
 | `--text-muted` | `#5c5348` | `#c4b8a5` | Meta that still meets 4.5:1 |
-| `--accent` | `#3d5a40` | `#c5d4c0` | Links, selected nav, focus |
+| `--accent` | `#3d5a40` | `#c5d4c0` | Links, focus |
 | `--accent-contrast` | `#f6f1e9` | `#1c1915` | Text on an accent fill |
 | `--danger` | `#8a3b2a` | `#f0c2b6` | Error text |
 | `--danger-bg` | `#f3ddd6` | `#3a2924` | Error surface |
@@ -57,13 +57,13 @@ No webfont files and no Google Fonts request.
 --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 ```
 
-Recipes use the serif stack (the foundation choice; Iowan Old Style is on iOS). Nav, buttons, and inputs use the sans stack so a control is not mistaken for a sentence.
+Recipes use the serif stack (the foundation choice; Iowan Old Style is on iOS). Controls and inputs use the sans stack so a control is not mistaken for a sentence.
 
 | Token | Size | Line height | Use |
 | --- | --- | --- | --- |
 | `--text-title` | 1.75rem | 1.2 | Screen title and recipe name. 2.25rem from 48rem up |
-| `--text-body` | 1.125rem | 1.5 | Ingredients, steps, descriptions |
-| `--text-ui` | 1rem | 1.3 | Nav, buttons, inputs. Never smaller on an input |
+| `--text-body` | 1.125rem | 1.5 | Body text |
+| `--text-ui` | 1rem | 1.3 | Buttons and inputs. Never smaller on an input |
 | `--text-meta` | 0.875rem | 1.4 | Secondary meta only. Still 4.5:1 |
 
 Root font size stays the browser default so iOS text settings and pinch zoom can enlarge the page. Do not set `font-size` on `html` to a pixel value.
@@ -83,10 +83,9 @@ Root font size stays the browser default so iOS text settings and pinch zoom can
 | `--radius-card` | 0.75rem |
 | `--radius-control` | 0.5rem |
 | `--hit` | 2.75rem |
-| `--nav-height` | 3.5rem |
 | `--read` | 65ch |
 
-Page padding is `--space-4` on a phone and `--space-5` from the wide breakpoint up. Gap between two targets is at least `--space-2`.
+Page padding is `--space-4` on a phone and `--space-5` from the wide breakpoint up. The end of the page adds at least `--space-7` plus the safe-area inset, so the last line stays clear of any control and of the home indicator. Gap between two targets is at least `--space-2`.
 
 ## Accessibility baseline
 
@@ -95,8 +94,9 @@ Floor is WCAG 2.2 level AA on the screens this design system ships.
 * Text contrast 4.5:1. Non-text boundaries that show a control's edge, 3:1, using `--border`.
 * Primary targets 44×44 CSS pixels, above the 24×24 AA minimum, per the kitchen principles.
 * Focus: 2px solid `--focus`, offset by 2px. Never remove the outline without that replacement.
-* Keyboard: every nav item, card, button, and field is reachable on desktop. Order follows the DOM.
-* Name and role come from the element. An icon-only control is out of scope; the theme control's accessible name includes the current choice.
+* Keyboard: every control, card, and field is reachable on desktop. Order follows the DOM.
+* Name and role come from the element. The theme control's accessible name includes the current choice. It is on the settings screen.
+* `prefers-reduced-transparency: reduce` uses the same opaque control fill. Floating controls do not switch to a translucent fill.
 * Headings stay in order on each screen. One `h1`.
 * `prefers-reduced-motion: reduce` disables transitions. Nothing moves by default except a focus ring. No information depends on animation.
 * State is a word as well as a color. "Could not load" is text, not a red card alone.
@@ -109,7 +109,7 @@ The default CSS is the phone. There is one min-width query.
 | Name | Query | Layout |
 | --- | --- | --- |
 | phone | default | One column. Floating actions ([0019](../decisions/0019-floating-glass-chrome.md)), not a bottom bar. |
-| wide | `min-width: 48rem` | Same chrome, wider content. No left rail. Content column caps near `65ch` on the list. |
+| wide | `min-width: 48rem` | Same chrome, wider content. Content column caps near `65ch` on the list. |
 
 No tablet layout and no compact density. A desktop browser window narrower than 48rem gets the phone layout, which is the right fallback.
 
@@ -119,7 +119,7 @@ The manifest, apple touch icon, and `apple-mobile-web-app-capable` already exist
 
 * Viewport meta: `width=device-width, initial-scale=1, viewport-fit=cover`. Do not add `maximum-scale=1` or `user-scalable=no`.
 * Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. Floating controls sit inside that padding, above the home indicator. There is no bottom bar ([0019](../decisions/0019-floating-glass-chrome.md)).
-* The shell uses `min-height: 100dvh`, not `100vh`, so Safari's toolbars do not cover the nav.
+* The shell uses `min-height: 100dvh`, not `100vh`, so Safari's toolbars do not cover the page.
 * `apple-mobile-web-app-status-bar-style` is `default`. The OS keeps status-bar contrast. Safe-area padding is still applied so a later style change does not slide the title under the clock.
 * `theme-color` is updated to `--bg` of the active theme (light `#f6f1e9`, dark `#1c1915`). The manifest `background_color` and `theme_color` stay the light pair for the install splash. iOS does not reliably read a dark `theme_color` from the manifest.
 * Inputs are 1rem or larger (principle 3).
@@ -128,4 +128,4 @@ The manifest, apple touch icon, and `apple-mobile-web-app-capable` already exist
 
 ## Theme storage
 
-`localStorage` key `cookbook-theme` is `light`, `dark`, or `system`. Missing or unreadable storage means `system`. The first visit follows the device. Changing the control writes the key. This is per browser, not per person, and it is not synced to Postgres.
+`localStorage` key `cookbook-theme` is `light`, `dark`, or `system`. Missing or unreadable storage means `system`. The first paint follows the system setting. The selector is on the settings screen, not on the list or the recipe. Changing it writes the key. This is per browser, not per person, and it is not synced to Postgres.

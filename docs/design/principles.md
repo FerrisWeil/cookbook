@@ -18,7 +18,7 @@ Body text can be read with the phone propped up or held away. Zoom stays availab
 
 ## Light and dark
 
-Both themes exist. The first paint follows the device, and a control on the page can override it for this browser.
+Both themes exist. The first paint follows the system setting. The selector is on the settings screen, not on the list or the recipe.
 
 ## Honest offline
 

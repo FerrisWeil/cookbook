@@ -21,8 +21,8 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 
 If [0016](../decisions/0016-design-system-approach.md) is accepted, the feature PR adds `/guide`.
 
-* Not in the Browse / Search nav.
-* Renders the components on example data: colors in both themes, type scale, button, field, card, article, load and error messages.
+* Not linked from the list, the recipe, or settings.
+* Renders the components on example data: colors in both themes, type scale, button, card, article, load and error messages.
 * Taylor can open `https://<tailnet-web>/guide` on his iPhone after a deploy. That visit is in addition to the PR images, not a replacement. Review has to be possible before he deploys.
 
 ## Tests in the design-system feature PR
@@ -32,11 +32,13 @@ Allowed:
 * `node:test` for the contrast pairs in [tokens](tokens.md) and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
 * The web package grows a `test` script, and the root `pnpm test` runs it, so `pnpm check` covers it.
 
-Not allowed until Taylor confirms the feature in chat:
+Not allowed until the feature has been demoed and confirmed in chat:
 
 * Playwright
 * any other real-browser test
 * a screenshot-diff suite
+
+When those browser tests exist, they drive the UI and check behavior. They cover the list, the recipe, an empty list, and a failed load. This doc does not add a framework.
 
 Also not part of that PR: Testing Library, jsdom, or a React test renderer. Components are shown on `/guide` and in the PR images. Adding a DOM test library is a dependency, and [0016](../decisions/0016-design-system-approach.md) is the decision that would have to allow it.
 

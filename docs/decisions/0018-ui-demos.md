@@ -31,3 +31,11 @@ What to attach is in [UI demos](../design/demo.md).
 * A UI PR without both captures is not ready to confirm.
 * Confirming a feature in chat is the gate for Playwright, written up against [0011](0011-test-tooling.md) when that ADR itself is accepted. This ADR does not turn 0011 on.
 * `/guide` is a review surface. It is not a cooking screen and it is not linked from the recipe list.
+
+## Amendments
+
+### 2026-10-25
+
+Browser tests still wait until the feature has been demoed and confirmed. This amendment does not add a test framework.
+
+When those tests are written, they drive the UI and check behavior. They cover every state: the list, the recipe, an empty list, and a failed load.

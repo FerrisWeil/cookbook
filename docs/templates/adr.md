@@ -25,3 +25,12 @@ The choice, in one short paragraph. Include the why.
 ## Consequences
 
 What becomes easier, harder, or off-limits. Name follow-up work that is *not* decided here.
+
+## Amendments
+
+When a later decision changes one sentence, do not rewrite it in place and do not open a new ADR for that sentence.
+
+* Strike the old sentence where it stands.
+* Add an Amendments section. Date it. State the replacement.
+
+Do not quote or narrate chat. The Confirmed line records acceptance. The Amendments section is the decision that now holds. Detail docs show that decision, not the struck sentence.
