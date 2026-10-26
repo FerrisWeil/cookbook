@@ -11,26 +11,37 @@ Hard rules from Taylor (2026-10-25). They apply to every agent working in this r
 3. Default Grok effort is high. Do not use extra-high (`xhigh`) unless high cannot meet Taylor's standard.
 4. Context window stays at 256k. Ask Taylor before using a larger window. This is to save usage.
 
-## Two PRs per feature
+In-repo skills link to this file. They do not copy it.
 
-Every feature is two pull requests:
+## Work types
 
-1. **ADR PR** — durable decisions only: what we chose, why, and options considered. Link details into `docs/` files. ADRs rarely change. A change of mind is a **new** ADR that supersedes the old one. Features may not need an ADR; spikes and bug fixes can skip this PR.
-2. **Feature PR** — the implementation. Every feature is documented under `features/`, even when it had no ADR.
-
-Nothing is an accepted decision until Taylor confirms it in the agent chat. Unconfirmed write-ups stay **Proposed** in the ADR (see `docs/templates/adr.md`). Do not set Status to accepted, and do not mark an ADR PR ready, until those confirmations exist.
+Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type and whether it needs an ADR (`yes` or `no`). Nothing is an accepted decision until Taylor confirms it in chat. Merged means accepted.
 
 **Merged means accepted** (Taylor, 2026-10-26). Once an ADR pull request is merged to `master`, every ADR in it is accepted, including a file whose Status line still says Proposed. Record that by setting Status to accepted and Confirmed to the merge date, or to the earlier chat confirmation. That is why 0008 and 0010–0013 are accepted: foundation PR #1 merged while those files still said Proposed. A change of mind after merge is a new ADR that supersedes the old one. Do not rewrite a merged decision in place.
 
 Do not merge an ADR pull request while a decision in it is still unconfirmed. Keep that pull request draft, and leave Status as Proposed, until Taylor confirms in chat and the Status lines are updated. The feature pull request waits for those Status lines to say accepted. Merging a draft that still says Proposed would accept those ADRs under the rule above, which is why the draft stays a draft.
 
-## Tests
+Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request.
 
-Every feature is tested end to end both **manually** and **in code**.
+| Type | Meaning | Required with the pull request |
+| --- | --- | --- |
+| Feature | New user-facing behavior | A page under `features/`, and a demo (screenshots or a recording) before Taylor confirms. Functional Playwright tests only after he confirms it works. |
+| Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. No `features/` page. |
+| Docs | Documentation and workflow rules only | The doc change. |
+| Bug | A fix for broken behavior | A regression test that proves the fix, in this pull request. |
+| Spike | A throwaway experiment | Labeled as a spike. Commits on a branch. No pull request. Never a commit on `master`. |
+| Chore | A chore or dependency update, including Dependabot | A lighter review. |
+| Security fix | A bug with priority | Handle it before other bugs. |
 
-* Unit tests cover functions and classes. They live next to the app they test (`apps/*/test`).
-* Functional tests use a real browser to prove the feature works and does not regress.
-* **Do not write functional tests until Taylor confirms the feature works end to end.** Demo first: screenshots or a recording on the PR, or Taylor runs it locally. Then add the browser tests.
+**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)).
+
+Taylor confirmed the same day when to ask, and when a plan is committed.
+
+Ask in chat, and do not edit, only for an architecture decision or a feature decision Taylor has not already confirmed. Architecture means the Decision axis above: hard to reverse, or real alternatives (an ADR). A feature decision is user-facing behavior that was not already named. When the agent wants feedback, word each item as a question. Put every question in one chat message. Include the reasoning, and a recommendation when a reasonable one exists. Taylor answers the ones he wants.
+
+Design updates and fixes do not wait for approval. Do them, then prove them. Do not expand scope.
+
+A plan stays in the chat and, when there is a pull request, in the pull request description. Do not commit a plan file. Commit writing only when the change is an ADR, or the documentation itself is the work.
 
 ## Checks
 
@@ -40,6 +51,8 @@ Every feature is tested end to end both **manually** and **in code**.
 pnpm check   # lint, unit tests, build, secret scan
 pnpm smoke   # docker compose up --build and health checks
 ```
+
+Unit tests for functions and classes live next to the app they test (`apps/*/test`). What else a pull request must show is in [Work types](#work-types).
 
 ## Full stack
 

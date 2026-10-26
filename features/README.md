@@ -1,6 +1,6 @@
 # Features
 
-One page per feature, even when the feature had no ADR. Use [the template](../docs/templates/feature.md).
+A Feature pull request adds a page here, from [the template](../docs/templates/feature.md). Other work types do not. See [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 | Doc | Status |
 | --- | --- |

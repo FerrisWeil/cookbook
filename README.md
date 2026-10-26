@@ -80,7 +80,7 @@ The API accepts `DATABASE_URL` and `MIGRATOR_DATABASE_URL` together, or `POSTGRE
 
 ## Working agreements
 
-See [CONTRIBUTING.md](CONTRIBUTING.md): two PRs per feature (ADR then implementation), no accepted ADR without Taylor's confirmation, no browser tests until a manual demo is confirmed, one-command full stack.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for work types, agent rules, and checks.
 
 ## License
 

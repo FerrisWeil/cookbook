@@ -3,7 +3,7 @@ description: Sub-agent model rules. Apply before starting any sub-agent.
 alwaysApply: true
 ---
 
-Before starting a sub-agent, follow the Agents section in CONTRIBUTING.md. Those rules apply to every agent in this repo.
+Before starting a sub-agent, follow the Agents section in CONTRIBUTING.md. Those rules apply to every agent in this repo. Work types are in that file. Do not copy them. When to ask, and when a plan is committed, is in Work types. Do not copy that rule.
 
 1. Sub-agents may be started only with Composer 2.5 (`composer-2.5`) or Grok 4.7 (`grok-4.7-high` by default). Never a `-fast` variant. Never Claude, GPT, Gemini, or any other family.
 2. Use Grok 4.7, not Grok 4.6 (`cursor-grok-4.6-*`). They are the same price. Use 4.6 only when you have a specific reason 4.7 cannot do the job, and say that reason.

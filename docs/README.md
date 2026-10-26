@@ -1,8 +1,8 @@
 # Docs
 
-Durable decisions live in [decisions/](decisions/). They rarely change. A change of mind is a new ADR that supersedes the old one.
+Durable decisions live in [decisions/](decisions/). An ADR records a decision that rarely changes. [CONTRIBUTING.md](../CONTRIBUTING.md) says when a change needs an ADR.
 
-How we work, including the two-PR workflow, lives in [CONTRIBUTING.md](../CONTRIBUTING.md). Feature-by-feature docs live in [features/](../features/).
+How we work lives in [CONTRIBUTING.md](../CONTRIBUTING.md). In-repo agent skills are in [agent skills](agent-skills.md). Feature pages live in [features/](../features/).
 
 Templates:
 

@@ -1,6 +1,6 @@
 # Security review
 
-Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). Status is **accepted** (2026-10-26, merged means accepted). The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file. The accepted Unraid file will be `docker-compose.unraid.yml` once [0017](decisions/0017-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
+Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). Status is **accepted** (2026-10-26, merged means accepted). Taylor confirmed the same day that every pull request is checked against this list. The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file. The accepted Unraid file will be `docker-compose.unraid.yml` once [0017](decisions/0017-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
 
 Authors use this list before opening a pull request. The PR body stays the short template. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory that CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. Taylor said so on 2026-10-25. gitleaks and `pnpm audit --audit-level=high` are what block a clean PR. There is no second review bot.
 

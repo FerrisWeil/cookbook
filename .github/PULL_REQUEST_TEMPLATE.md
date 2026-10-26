@@ -1,3 +1,11 @@
+## Type
+
+- Type: Feature | Task | Docs | Bug | Spike | Chore | Security fix
+- ADR: yes | no
+- Link:
+
+Rules for the type and for the ADR axis: CONTRIBUTING.md.
+
 ## What
 
 ## Why
@@ -9,13 +17,13 @@ Merged means accepted (Taylor, 2026-10-26): an ADR merged to `master` is accepte
 - Accepted (Taylor confirmed in chat, or already merged to `master`):
 - Proposed (this PR stays draft until Taylor confirms these):
 
-## Security
-
-Add this section only when `docs/security-review.md` finds a problem or an exception. A clean change leaves it out.
-
 ## Demo
 
-Screenshots or a recording, **or** Taylor ran it locally. Functional tests wait until that confirmation.
+Fill this when the type requires a demo. The rule is in CONTRIBUTING.md.
+
+## Security
+
+Run `docs/security-review.md` before this PR is marked ready. Add this section only when that checklist finds a problem or an exception. A clean change leaves it out.
 
 ## How to run
 
