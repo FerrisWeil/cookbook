@@ -17,15 +17,17 @@ In-repo skills link to this file. They do not copy it.
 
 Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type and whether it needs an ADR (`yes` or `no`). Nothing is an accepted decision until Taylor confirms it in chat. Merged means accepted.
 
+Every pull request fills the [security checklist](docs/security-review.md) before it is marked ready. That applies while [0013](docs/decisions/0013-security-review.md) still says proposed.
+
 | Type | Meaning | Required with the pull request |
 | --- | --- | --- |
 | Feature | New user-facing behavior | A page under `features/`, and a demo (screenshots or a recording) before Taylor confirms. Functional Playwright tests only after he confirms it works. |
 | Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. No `features/` page. |
 | Docs | Documentation and workflow rules only | The doc change. |
-| Bug | A fix for broken behavior | A regression test that proves the fix. |
-| Spike | A throwaway experiment | Labeled as a spike. May be committed directly. |
-| Chore | A chore or dependency update, including Dependabot | A lighter review, and the [security checklist](docs/security-review.md). |
-| Security fix | A bug with priority | The [security checklist](docs/security-review.md), every time. |
+| Bug | A fix for broken behavior | A regression test that proves the fix, in this pull request. |
+| Spike | A throwaway experiment | Labeled as a spike. Commits on a branch. No pull request. Never a commit on `master`. |
+| Chore | A chore or dependency update, including Dependabot | A lighter review. |
+| Security fix | A bug with priority | Handle it before other bugs. |
 
 **Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)).
 

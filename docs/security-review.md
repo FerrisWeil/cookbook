@@ -1,6 +1,6 @@
 # Security review
 
-Proposal for [0013](decisions/0013-security-review.md). Status is **proposed**. Do not treat this checklist as in force, and do not change Compose, until Taylor confirms it in chat.
+Taylor confirmed (2026-10-26, agent chat) that every pull request fills this checklist now. [0013](decisions/0013-security-review.md) may still say proposed. Leave Compose changes to that ADR.
 
 Every pull request fills the checklist below in the PR body before the PR is marked ready. Docs-only PRs fill it too. Each item names a path or pastes the command output that shows the result. `n/a` is allowed only together with the files that were opened. Taylor confirms the filled checklist is enough. There is no second review bot.
 
