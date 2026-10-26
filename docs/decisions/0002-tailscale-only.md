@@ -29,3 +29,4 @@ Do not expose Cookbook to the public internet. On the NAS, access is only over T
 * Clients must be on the tailnet. Chef needs a Tailscale identity, not a public URL.
 * Tailscale ACLs are the network boundary. They are not a substitute for the MCP bearer token ([0003](0003-mcp-bearer-token.md)).
 * Root `docker-compose.yml` still publishes ports for local and cloud-agent runs. That file is not the NAS deploy path.
+* Deferring Tailscale Serve, and using `tag:cookbook` instead of the example `tag:cookbook-web`, is [0017](0017-tailscale-sidecars.md) (proposed). Until that ADR is accepted, Serve stays allowed and the skeleton tag `tag:cookbook-web` stays as it is. Funnel stays off either way.

@@ -1,10 +1,10 @@
 # 0011. Test tooling
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-25
-* Confirmed: (none — do not treat as accepted)
+* Confirmed: Taylor, 2026-10-26, agent chat (merged means accepted; foundation PR #1 merged 2026-10-26)
 
-> **Proposed.** Taylor has not confirmed this in chat. The foundation skeleton implements option A for unit tests. Functional (browser) tests are intentionally not wired yet.
+The foundation skeleton implements this choice for unit tests. Functional (browser) tests stay unwired until Taylor confirms a feature by demo.
 
 ## Context
 
@@ -16,11 +16,11 @@ Working agreement: every feature is tested in code. Unit tests cover functions a
 2. **Vitest + Playwright** — Better DX and watch mode, another framework both API and web must agree on.
 3. **Jest + Playwright** — Familiar, slower, more config, no benefit at this size.
 
-## Decision (proposed)
+## Decision
 
 Use Node's built-in test runner with `tsx` for unit tests. Add Playwright only after a feature has a confirmed manual demo. CI runs lint, unit tests, and secret scanning. CI does not run browser tests until they exist.
 
-## Consequences (if accepted)
+## Consequences
 
 * Foundation CI is green without Playwright.
 * The first recipe feature PR is two steps: demo, then (after Taylor confirms) browser tests.

@@ -20,13 +20,19 @@ Templates:
 | [0005](decisions/0005-v1-scope.md) | v1: web PWA, API, Postgres, cookbook MCP | accepted |
 | [0006](decisions/0006-one-repo-one-mcp.md) | One repo; one MCP container per NAS project | accepted |
 | [0007](decisions/0007-public-repo-secrets.md) | Public portfolio repo; secrets stay out of git | accepted |
-| [0008](decisions/0008-typescript-stack.md) | Language and framework stack | **proposed** |
+| [0008](decisions/0008-typescript-stack.md) | Language and framework stack | accepted |
 | [0009](decisions/0009-repo-layout.md) | Repo layout and pnpm workspaces | accepted |
-| [0010](decisions/0010-migration-tooling.md) | Postgres migration tooling | **proposed** |
-| [0011](decisions/0011-test-tooling.md) | Test tooling | **proposed** |
-| [0012](decisions/0012-parallel-agents.md) | Parallel feature agents | **proposed** |
-| [0013](decisions/0013-security-review.md) | Security review and Postgres access | **proposed** |
+| [0010](decisions/0010-migration-tooling.md) | Postgres migration tooling | accepted |
+| [0011](decisions/0011-test-tooling.md) | Test tooling | accepted |
+| [0012](decisions/0012-parallel-agents.md) | Parallel feature agents | accepted |
+| [0013](decisions/0013-security-review.md) | Security review and Postgres access | accepted |
+| [0014](decisions/0014-unraid-compose-manager.md) | Unraid deploy via Compose Manager | **proposed** |
+| [0015](decisions/0015-ghcr-images.md) | Publish images to GHCR | **proposed** |
+| [0016](decisions/0016-production-compose.md) | Production Compose file | **proposed** |
+| [0017](decisions/0017-tailscale-sidecars.md) | Tailscale sidecars; Serve deferred | **proposed** |
+| [0018](decisions/0018-data-dir-and-backups.md) | Data directory, backups, permissions | **proposed** |
+| [0019](decisions/0019-update-and-rollback.md) | Update and rollback | **proposed** |
 
-[0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing.
+[0012](decisions/0012-parallel-agents.md) is accepted. The convention is in [parallel-agents.md](parallel-agents.md). Its sequence check and the removal of this hand-edited table are still follow-up. [0013](decisions/0013-security-review.md) is accepted. The checklist is in [security-review.md](security-review.md). The production stack is proposed in [0014](decisions/0014-unraid-compose-manager.md)–[0019](decisions/0019-update-and-rollback.md), with the detail in [unraid production](unraid-production.md). Those six are not in force.
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).

@@ -4,8 +4,14 @@
 
 ## ADRs
 
-- Accepted (Taylor confirmed in chat):
-- Proposed (do not merge as accepted):
+Merged means accepted (Taylor, 2026-10-26): an ADR merged to `main` is accepted. Do not mark this PR ready while a decision below is still unconfirmed.
+
+- Accepted (Taylor confirmed in chat, or already merged to `main`):
+- Proposed (this PR stays draft until Taylor confirms these):
+
+## Security review
+
+Fill `docs/security-review.md` before marking this PR ready (ADR 0013). `n/a` names the files opened.
 
 ## Demo
 

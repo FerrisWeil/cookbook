@@ -22,5 +22,5 @@ The app, API, DB, and the cookbook MCP live in this one repo. On the NAS, run **
 
 * This repository is the cookbook product, not a generic MCP factory.
 * Other NAS MCPs (for example nas-mcp) stay in their own repos and containers.
-* Layout and workspace tooling inside this repo are still unconfirmed: [0009](0009-repo-layout.md).
+* Layout and workspace tooling are [0009](0009-repo-layout.md).
 * NAS Compose gives the MCP sidecar a distinct hostname and auth key from the web sidecar.

@@ -18,7 +18,11 @@ Every feature is two pull requests:
 1. **ADR PR** — durable decisions only: what we chose, why, and options considered. Link details into `docs/` files. ADRs rarely change. A change of mind is a **new** ADR that supersedes the old one. Features may not need an ADR; spikes and bug fixes can skip this PR.
 2. **Feature PR** — the implementation. Every feature is documented under `features/`, even when it had no ADR.
 
-Nothing is an accepted decision until Taylor confirms it in the agent chat. Unconfirmed write-ups stay **Proposed** in the ADR (see `docs/templates/adr.md`). Do not mark an ADR PR ready until those confirmations exist.
+Nothing is an accepted decision until Taylor confirms it in the agent chat. Unconfirmed write-ups stay **Proposed** in the ADR (see `docs/templates/adr.md`). Do not set Status to accepted, and do not mark an ADR PR ready, until those confirmations exist.
+
+**Merged means accepted** (Taylor, 2026-10-26). Once an ADR pull request is merged to `main`, every ADR in it is accepted, including a file whose Status line still says Proposed. Record that by setting Status to accepted and Confirmed to the merge date, or to the earlier chat confirmation. That is why 0008 and 0010–0013 are accepted: foundation PR #1 merged while those files still said Proposed. A change of mind after merge is a new ADR that supersedes the old one. Do not rewrite a merged decision in place.
+
+Do not merge an ADR pull request while a decision in it is still unconfirmed. Keep that pull request draft, and leave Status as Proposed, until Taylor confirms in chat and the Status lines are updated. The feature pull request waits for those Status lines to say accepted. Merging a draft that still says Proposed would accept those ADRs under the rule above, which is why the draft stays a draft.
 
 ## Tests
 
@@ -45,7 +49,7 @@ One command starts the whole local stack, including seed data:
 docker compose up --build
 ```
 
-That is the path cloud agents use. NAS deploy does not publish host ports:
+That is the path cloud agents use. NAS deploy does not publish host ports. The command below still builds on the NAS and still reads a repo-root `.env`. Published images and an env file at `$COOKBOOK_DATA_DIR/.env` are [0014](docs/decisions/0014-unraid-compose-manager.md)–[0019](docs/decisions/0019-update-and-rollback.md) and are not in force yet.
 
 ```bash
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d

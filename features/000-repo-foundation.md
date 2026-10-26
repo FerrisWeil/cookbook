@@ -1,7 +1,7 @@
 # Feature: repo foundation
 
 * Status: in progress
-* Related ADRs: [0001](../docs/decisions/0001-self-host-on-unraid.md)–[0007](../docs/decisions/0007-public-repo-secrets.md) and [0009](../docs/decisions/0009-repo-layout.md) accepted; [0008](../docs/decisions/0008-typescript-stack.md), [0010](../docs/decisions/0010-migration-tooling.md), and [0011](../docs/decisions/0011-test-tooling.md) proposed
+* Related ADRs: [0001](../docs/decisions/0001-self-host-on-unraid.md)–[0013](../docs/decisions/0013-security-review.md) accepted (0008 and 0010–0013 accepted 2026-10-26 because the foundation PR merged)
 * Demo: Compose smoke in CI; local `docker compose up --build`
 
 ## What it does
