@@ -1,0 +1,26 @@
+{
+  "name": "@cookbook/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "lint": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@cookbook/shared": "workspace:*",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.8",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

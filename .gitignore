@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.pnpm-store/
+dist/
+data/
+coverage/
+.DS_Store
+*.log
+*.tsbuildinfo
+apps/web/dist
+apps/*/.vite
+.idea/
+.vscode/

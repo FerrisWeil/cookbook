@@ -1,0 +1,84 @@
+const DEFAULT_PORT = 8787;
+const DEFAULT_BIND_HOST = "127.0.0.1";
+const DEFAULT_HOSTNAME = "cookbook-mcp";
+const MIN_TOKEN_LENGTH = 16;
+const DEV_TOKEN = "local-dev-token-not-for-nas";
+const PLACEHOLDER_TOKENS = new Set([
+  "replace-with-a-long-random-token",
+  "replace-me",
+]);
+
+export type Config = {
+  authToken: string;
+  bindHost: string;
+  port: number;
+  hostname: string;
+  allowedHosts: string[];
+};
+
+function required(env: NodeJS.Dict<string>, name: string): string {
+  const value = env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `${name} is required. Generate one with: openssl rand -hex 32`,
+    );
+  }
+  return value;
+}
+
+function parsePort(value: string | undefined): number {
+  if (!value) {
+    return DEFAULT_PORT;
+  }
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`PORT must be an integer 1-65535, got ${value}`);
+  }
+  return port;
+}
+
+function parseList(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+export function loadConfig(env: NodeJS.Dict<string> = process.env): Config {
+  const authToken = required(env, "MCP_AUTH_TOKEN");
+  if (PLACEHOLDER_TOKENS.has(authToken)) {
+    throw new Error(
+      "MCP_AUTH_TOKEN is a public placeholder. Generate one with: openssl rand -hex 32",
+    );
+  }
+  if (authToken === DEV_TOKEN && env.MCP_ALLOW_DEV_TOKEN?.trim() !== "1") {
+    throw new Error(
+      "MCP_AUTH_TOKEN is the local dev token. Set MCP_ALLOW_DEV_TOKEN=1 only for local compose, never on the NAS",
+    );
+  }
+  if (authToken.length < MIN_TOKEN_LENGTH) {
+    throw new Error(
+      `MCP_AUTH_TOKEN must be at least ${MIN_TOKEN_LENGTH} characters`,
+    );
+  }
+
+  const hostname = env.MCP_HOSTNAME?.trim() || DEFAULT_HOSTNAME;
+  const extraHosts = parseList(env.MCP_ALLOWED_HOSTS);
+
+  return {
+    authToken,
+    bindHost: env.BIND_HOST?.trim() || DEFAULT_BIND_HOST,
+    port: parsePort(env.PORT),
+    hostname,
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      "::1",
+      hostname,
+      ...extraHosts,
+    ],
+  };
+}

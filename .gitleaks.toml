@@ -1,0 +1,15 @@
+title = "cookbook"
+
+# A config file replaces the built-in rules unless it extends them.
+# Without this, `pnpm check` can pass with zero detectors.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local-only Compose defaults, never used on the NAS"
+regexes = [
+  '''local-dev-token-not-for-nas''',
+]
+paths = [
+  '''^\.gitleaks\.toml$''',
+]
