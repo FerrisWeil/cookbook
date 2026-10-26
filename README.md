@@ -75,7 +75,7 @@ The API accepts `DATABASE_URL`, or `POSTGRES_USER` and `POSTGRES_PASSWORD` (the 
 
 ## Working agreements
 
-See [CONTRIBUTING.md](CONTRIBUTING.md): two PRs per feature (ADR then implementation), no accepted ADR without Taylor's confirmation, no browser tests until a manual demo is confirmed, one-command full stack.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for work types, agent rules, and checks.
 
 ## License
 

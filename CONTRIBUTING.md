@@ -11,22 +11,23 @@ Hard rules from Taylor (2026-10-25). They apply to every agent working in this r
 3. Default Grok effort is high. Do not use extra-high (`xhigh`) unless high cannot meet Taylor's standard.
 4. Context window stays at 256k. Ask Taylor before using a larger window. This is to save usage.
 
-## Two PRs per feature
+In-repo skills link to this file. They do not copy it.
 
-Every feature is two pull requests:
+## Work types
 
-1. **ADR PR** — durable decisions only: what we chose, why, and options considered. Link details into `docs/` files. ADRs rarely change. A change of mind is a **new** ADR that supersedes the old one. Features may not need an ADR; spikes and bug fixes can skip this PR.
-2. **Feature PR** — the implementation. Every feature is documented under `features/`, even when it had no ADR.
+Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type and whether it needs an ADR (`yes` or `no`). Nothing is an accepted decision until Taylor confirms it in chat. Merged means accepted.
 
-Nothing is an accepted decision until Taylor confirms it in the agent chat. Unconfirmed write-ups stay **Proposed** in the ADR (see `docs/templates/adr.md`). Do not mark an ADR PR ready until those confirmations exist.
+| Type | Meaning | Required with the pull request |
+| --- | --- | --- |
+| Feature | New user-facing behavior | A page under `features/`, and a demo (screenshots or a recording) before Taylor confirms. Functional Playwright tests only after he confirms it works. |
+| Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. No `features/` page. |
+| Docs | Documentation and workflow rules only | The doc change. |
+| Bug | A fix for broken behavior | A regression test that proves the fix. |
+| Spike | A throwaway experiment | Labeled as a spike. May be committed directly. |
+| Chore | A chore or dependency update, including Dependabot | A lighter review, and the [security checklist](docs/security-review.md). |
+| Security fix | A bug with priority | The [security checklist](docs/security-review.md), every time. |
 
-## Tests
-
-Every feature is tested end to end both **manually** and **in code**.
-
-* Unit tests cover functions and classes. They live next to the app they test (`apps/*/test`).
-* Functional tests use a real browser to prove the feature works and does not regress.
-* **Do not write functional tests until Taylor confirms the feature works end to end.** Demo first: screenshots or a recording on the PR, or Taylor runs it locally. Then add the browser tests.
+**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)).
 
 ## Checks
 
@@ -36,6 +37,8 @@ Every feature is tested end to end both **manually** and **in code**.
 pnpm check   # lint, unit tests, build, secret scan
 pnpm smoke   # docker compose up --build and health checks
 ```
+
+Unit tests for functions and classes live next to the app they test (`apps/*/test`). What else a pull request must show is in [Work types](#work-types).
 
 ## Full stack
 

@@ -1,15 +1,18 @@
+## Type
+
+- Type: Feature | Task | Docs | Bug | Spike | Chore | Security fix
+- ADR: yes | no
+- Link:
+
+Rules for the type and for the ADR axis: CONTRIBUTING.md.
+
 ## What
 
 ## Why
 
-## ADRs
-
-- Accepted (Taylor confirmed in chat):
-- Proposed (do not merge as accepted):
-
 ## Demo
 
-Screenshots or a recording, **or** Taylor ran it locally. Functional tests wait until that confirmation.
+Fill this when the type requires a demo. The rule is in CONTRIBUTING.md.
 
 ## How to run
 
