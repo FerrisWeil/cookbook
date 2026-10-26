@@ -24,7 +24,7 @@ This supersedes the Unraid path in [0001](0001-self-host-on-unraid.md) and [0009
 
 The feature PR teaches the API to use the migrator role for migrations and `cookbook_app` for requests when those env vars are set. When they are absent, the API keeps today's single `POSTGRES_USER` / `POSTGRES_PASSWORD` path so `docker compose up --build` still needs no env file ([0007](0007-public-repo-secrets.md)).
 
-The root compose file is unchanged in that feature PR. [0013](0013-security-review.md) still requires the local follow-up (no published `5432`, no default password, same roles). This ADR sequences that work. It does not cancel it.
+`docker-compose.yml` is unchanged in that feature PR. [0013](0013-security-review.md) still requires the local follow-up (no published `5432`, no default password, same roles). This ADR sequences that work. It does not cancel it.
 
 ## Consequences
 
