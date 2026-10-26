@@ -4,7 +4,7 @@
 * Date: 2026-10-26
 * Confirmed: (none — do not treat as accepted)
 
-> **Proposed.** Taylor has not confirmed this in chat. Nothing in this ADR is in force. Wireframes show example recipes, not household data.
+> **Proposed.** Taylor marked this as needing changes on 2026-10-26 and did not spell the change out. The revision below is the reading of that, plus what he said about fullscreen reading and live updates. It is not confirmed.
 
 ## Context
 
@@ -25,6 +25,8 @@ Use option 1.
 * Phone: a top bar and a bottom nav (Browse, Search), padded for the iPhone safe areas. Wide screens (the breakpoint in [0017](0017-tokens-accessibility-iphone.md)): the same two items in a left rail.
 * Routes: `/` favorites, `/search` search, `/recipes/:id` one recipe. The id is an opaque string. The page shows a title and placeholder blocks. Ingredients, steps, and notes in the sketches are layout regions, not a claim that the schema has those columns.
 * The recipe screen keeps Back and the nav. Both are large. Leaving a recipe does not depend on a swipe.
+* Wide screens add Full screen on the recipe. It hides the rail and fills the window. Exit full screen is a visible control of at least 44px. The phone recipe stays one column with the nav; it does not gain a second mode.
+* The open recipe re-renders when its data changes. No control has to be pressed. Chef's chat is not a panel in this app. The feature PR, if this is accepted, demonstrates that with example data only. It does not open a socket.
 * Plan has a wireframe and no route. It is not in the nav until a later feature is accepted.
 * The foundation status card leaves the home screen. If the list cannot load, Browse says that the API is unreachable. Database health is not a cooking task. The foundation feature's home-page status check is then history; this ADR does not edit that feature doc.
 

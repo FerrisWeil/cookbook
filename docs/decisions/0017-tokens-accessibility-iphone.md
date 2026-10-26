@@ -1,10 +1,8 @@
 # 0017. Tokens, accessibility, and iPhone layout
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
-
-> **Proposed.** Taylor has not confirmed this in chat. Nothing in this ADR is in force.
+* Confirmed: Taylor, 2026-10-26, agent chat
 
 ## Context
 
@@ -18,7 +16,7 @@ The numbers, contrast table, and iPhone rules are in [tokens](../design/tokens.m
 2. **A new brand palette and a webfont.** More "designed", a network request before text is right, and a license to keep track of in a public repo.
 3. **Phone, tablet, and desktop breakpoints, plus a compact density.** Three layouts to maintain for two people and two stated devices (desktop browser and iPhone). iPad was not requested.
 
-## Decision (proposed)
+## Decision
 
 Use option 1. Values live in [tokens](../design/tokens.md). In short:
 
@@ -29,7 +27,7 @@ Use option 1. Values live in [tokens](../design/tokens.md). In short:
 * Accessibility floor is WCAG 2.2 AA, with 44px primary targets (stricter than the 24px guideline) because of [0014](0014-kitchen-ui-principles.md). Visible focus, zoom allowed, `prefers-reduced-motion` honored, state not shown by color alone.
 * iPhone: `viewport-fit=cover`, padding from `env(safe-area-inset-*)`, `min-height: 100dvh`, no `maximum-scale`. Status bar style stays `default`. Theme color meta follows the active theme. The manifest already makes the app installable; this ADR adds no service worker.
 
-## Consequences (if accepted)
+## Consequences
 
 * The feature PR applies these tokens in `apps/web` and checks the contrast pairs with a unit test. It does not add a font file or a new package.
 * Changing a hex value later can be a doc edit if the contrast bar still holds. Changing the breakpoint model or dropping AA is a new ADR.

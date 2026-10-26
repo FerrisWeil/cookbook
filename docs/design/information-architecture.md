@@ -34,6 +34,10 @@ A skip link is the first focusable control: "Skip to content".
 
 The recipe screen shows a Back link of at least 44px and leaves the nav in place. Back returns to the list you came from when that list is Browse or Search; otherwise it returns to `/`.
 
+On a wide screen the recipe also offers Full screen. The rail hides, the article fills the window, and Exit full screen stays on screen. The phone does not add this mode.
+
+Whatever is on screen for that recipe is replaced when new data arrives. The sketches do not show a chat panel. Chef stays a separate app.
+
 ## Screens
 
 ### Browse
@@ -56,7 +60,9 @@ One `h1`, the example title. Then a muted line that reads `Placeholder meta · f
 
 ![Phone wireframe of one example recipe in the dark theme](wireframes/recipe-phone.svg)
 
-![Wide wireframe of a recipe with ingredients beside steps](wireframes/recipe-desktop.svg)
+![Wide wireframe of a recipe with a side column](wireframes/recipe-desktop.svg)
+
+![Wide wireframe of the same recipe fullscreen, with a note that the page can update on its own](wireframes/recipe-fullscreen.svg)
 
 ### Plan (not v1)
 

@@ -1,6 +1,6 @@
 # UI demos
 
-Detail for [0018](../decisions/0018-ui-demos.md). Status is **proposed**.
+Detail for [0018](../decisions/0018-ui-demos.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
 
 Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). [0011](../decisions/0011-test-tooling.md) is a separate proposal and is not turned on by this doc.
 

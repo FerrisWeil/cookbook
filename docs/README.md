@@ -29,11 +29,11 @@ Templates:
 | [0014](decisions/0014-kitchen-ui-principles.md) | Kitchen UI principles | **proposed** |
 | [0015](decisions/0015-navigation-ia.md) | Navigation and information architecture | **proposed** |
 | [0016](decisions/0016-design-system-approach.md) | Design system approach | **proposed** |
-| [0017](decisions/0017-tokens-accessibility-iphone.md) | Tokens, accessibility, and iPhone layout | **proposed** |
-| [0018](decisions/0018-ui-demos.md) | How UI work is demoed | **proposed** |
+| [0017](decisions/0017-tokens-accessibility-iphone.md) | Tokens, accessibility, and iPhone layout | accepted |
+| [0018](decisions/0018-ui-demos.md) | How UI work is demoed | accepted |
 
 [0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing.
 
-[0014](decisions/0014-kitchen-ui-principles.md) through [0018](decisions/0018-ui-demos.md) are proposals for the web UI. Detail and wireframes are in [design/](design/). None of that is in force.
+[0017](decisions/0017-tokens-accessibility-iphone.md) and [0018](decisions/0018-ui-demos.md) are accepted. [0014](decisions/0014-kitchen-ui-principles.md), [0015](decisions/0015-navigation-ia.md), and [0016](decisions/0016-design-system-approach.md) are still proposals. Detail and wireframes are in [design/](design/).
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).

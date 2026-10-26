@@ -1,8 +1,8 @@
 # Tokens, accessibility, breakpoints, iPhone
 
-Detail for [0017](../decisions/0017-tokens-accessibility-iphone.md). Status is **proposed**.
+Detail for [0017](../decisions/0017-tokens-accessibility-iphone.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
 
-Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot. The feature PR, if this is accepted, locks the same pairs in a unit test so a later edit cannot quietly drop under the bar.
+Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot. The feature PR locks the same pairs in a unit test so a later edit cannot quietly drop under the bar.
 
 The file format (CSS variables versus a Tailwind theme) follows [0016](../decisions/0016-design-system-approach.md). The hex values can move to another format if Taylor picks a different approach.
 

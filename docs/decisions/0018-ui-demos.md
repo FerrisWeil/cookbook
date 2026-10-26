@@ -1,10 +1,8 @@
 # 0018. How UI work is demoed
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
-
-> **Proposed.** Taylor has not confirmed this in chat. Nothing in this ADR is in force.
+* Confirmed: Taylor, 2026-10-26, agent chat
 
 ## Context
 
@@ -18,7 +16,7 @@ What to attach is in [UI demos](../design/demo.md).
 2. **Playwright in the same PR as the first UI, including screenshot diffs.** Proves pixels in CI. He asked not to write functional browser tests until he has confirmed the feature, and a screenshot suite is a browser harness.
 3. **Taylor must install the build on an iPhone before any review.** Best device check, blocks cloud agents and makes every small CSS change wait on a phone.
 
-## Decision (proposed)
+## Decision
 
 Use option 1.
 
@@ -28,7 +26,7 @@ Use option 1.
 * Unit tests for token contrast and theme choice use the runner the skeleton already uses (`node:test`). This does not accept [0011](0011-test-tooling.md). No Testing Library, jsdom, or Playwright dependency is added for the design-system PR.
 * Functional browser tests are written only after Taylor confirms in chat that the feature works.
 
-## Consequences (if accepted)
+## Consequences
 
 * A UI PR without both captures is not ready for him to confirm.
 * Confirming a feature in chat is the gate for Playwright, written up against [0011](0011-test-tooling.md) when that ADR itself is accepted. This ADR does not turn 0011 on.
