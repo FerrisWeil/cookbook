@@ -88,6 +88,8 @@ When this is accepted, the README will say:
 
 * gitleaks stays inside `pnpm check`.
 * `pnpm audit --audit-level=high` joins `pnpm check`.
-* Dependabot security updates only, for npm, GitHub Actions, and Docker. No weekly bump-all.
+* Dependabot version and security updates follow [0014](decisions/0014-supply-chain.md). That decision supersedes the earlier "security updates only, no weekly bump-all" wording.
 
 Out of scope: Socket, Snyk, and a standing second review model.
+
+Supply-chain rows beyond this checklist (Dependabot grouping, install scripts, Action SHA pins, image digests) are accepted in [0014](decisions/0014-supply-chain.md) and spelled out in [supply chain](supply-chain.md). The feature PR appends them here and on the PR template.
