@@ -1,12 +1,12 @@
 # Information architecture
 
-Detail for [0015](../decisions/0015-navigation-ia.md).
+Detail for [0022](../decisions/0022-navigation-ia.md).
 
 v1 is three screens: a list of recipes, one recipe opened to read, and settings. Search, weekly planning, fullscreen, live updates, and a Chef panel are later. They are not drawn here.
 
 The feature PR adds example recipes in the repo. This docs PR does not. Titles start with `Example:`. Ids are explicit. Body text is a placeholder and does not name schema fields. The same data can show the list, one recipe, an empty list, and a failed load. That failed load is after the page has loaded. A real schema and API are later, and they are not the first UI PR.
 
-Chrome is [0019](../decisions/0019-floating-glass-chrome.md). See [chrome](chrome.md).
+Chrome is [0026](../decisions/0026-floating-glass-chrome.md). See [chrome](chrome.md).
 
 Wireframes use invented example recipes. They are not household data.
 
@@ -18,7 +18,7 @@ Wireframes use invented example recipes. They are not household data.
 | `/recipes/:id` | yes | One recipe. `:id` is explicit in the example data. |
 | `/settings` | yes | Theme only, for now. |
 
-`/guide` is the style guide from [0018](../decisions/0018-ui-demos.md). It is not part of this information architecture.
+`/guide` is the style guide from [0025](../decisions/0025-ui-demos.md). It is not part of this information architecture.
 
 ## Screens
 

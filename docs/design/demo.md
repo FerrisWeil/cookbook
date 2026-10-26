@@ -1,6 +1,6 @@
 # UI demos
 
-Detail for [0018](../decisions/0018-ui-demos.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
+Detail for [0025](../decisions/0025-ui-demos.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
 
 Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). [0011](../decisions/0011-test-tooling.md) is a separate proposal and is not turned on by this doc.
 
@@ -19,7 +19,7 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 
 ## Style guide
 
-If [0016](../decisions/0016-design-system-approach.md) is accepted, the feature PR adds `/guide`.
+If [0023](../decisions/0023-design-system-approach.md) is accepted, the feature PR adds `/guide`.
 
 * Not linked from the list, the recipe, or settings.
 * Renders the components on example data: colors in both themes, type scale, button, card, article, load and error messages.
@@ -40,7 +40,7 @@ Not allowed in the first UI feature PR, and not allowed until the feature has be
 
 When those browser tests exist, they drive the UI and check behavior. They cover the list, the recipe, an empty list, and a failed load. This doc does not add a framework.
 
-Also not part of that PR: Testing Library, jsdom, or a React test renderer. Components are shown on `/guide` and in the PR images. Adding a DOM test library is a dependency, and [0016](../decisions/0016-design-system-approach.md) is the decision that would have to allow it.
+Also not part of that PR: Testing Library, jsdom, or a React test renderer. Components are shown on `/guide` and in the PR images. Adding a DOM test library is a dependency, and [0023](../decisions/0023-design-system-approach.md) is the decision that would have to allow it.
 
 ## Confirming
 
