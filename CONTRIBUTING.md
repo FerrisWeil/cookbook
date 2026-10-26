@@ -37,7 +37,7 @@ Every pull request is checked against the [security checklist](docs/security-rev
 
 Taylor confirmed the same day when to ask, and when a plan is committed.
 
-Ask in chat, and do not edit, only for an architecture decision or a feature decision Taylor has not already confirmed. Architecture means the Decision axis above: hard to reverse, or real alternatives (an ADR). A feature decision is user-facing behavior that was not already named. Put every open question in one chat message. Taylor answers the ones he wants.
+Ask in chat, and do not edit, only for an architecture decision or a feature decision Taylor has not already confirmed. Architecture means the Decision axis above: hard to reverse, or real alternatives (an ADR). A feature decision is user-facing behavior that was not already named. When the agent wants feedback, word each item as a question. Put every question in one chat message. Include the reasoning, and a recommendation when a reasonable one exists. Taylor answers the ones he wants.
 
 Design updates and fixes do not wait for approval. Do them, then prove them. Do not expand scope.
 

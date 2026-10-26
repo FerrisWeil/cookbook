@@ -7,7 +7,7 @@ description: Use when asked to review, interrogate, or stress-test a change, or 
 
 Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it.
 
-Design updates and fixes are applied, then proved. Read [cookbook-verify](../cookbook-verify/SKILL.md). When to ask is [Work types](../../../CONTRIBUTING.md#work-types). An architecture or feature finding is a question in one chat message with the other open questions. It is not a silent edit, and it is not a packet waiting for Taylor to approve the details.
+Design updates and fixes are applied, then proved. Read [cookbook-verify](../cookbook-verify/SKILL.md). When to ask is [Work types](../../../CONTRIBUTING.md#work-types). An architecture or feature finding is a question in one chat message with the other open questions. The form of a question is in [Work types](../../../CONTRIBUTING.md#work-types). It is not a silent edit, and it is not a packet waiting for Taylor to approve the details.
 
 ## Setup
 
