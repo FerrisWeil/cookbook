@@ -1,10 +1,10 @@
 # Unraid production stack
 
-Accepted detail for [0014](decisions/0014-unraid-compose-manager.md) through [0019](decisions/0019-update-and-rollback.md). Taylor confirmed this in chat on 2026-10-26, including a repo-root Unraid file and linux/amd64 only. The skeleton under `deploy/nas/` still builds on the NAS and still turns on Tailscale Serve until the feature PR.
+Accepted detail for [0015](decisions/0015-unraid-compose-manager.md) through [0020](decisions/0020-update-and-rollback.md). Taylor confirmed this in chat on 2026-10-26, including a repo-root Unraid file and linux/amd64 only. The skeleton under `deploy/nas/` still builds on the NAS and still turns on Tailscale Serve until the feature PR.
 
 nas-mcp is the reference for the registry workflow, the manual public-package step, and tags shaped like `tag:nas-mcp`: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp). It is not the template to copy. That repo is one container. This one is not.
 
-## Deploy (0014)
+## Deploy (0015)
 
 Taylor already runs Unraid's Compose Manager. One stack is the whole app. In that stack's settings he sets two paths, from a checkout that is not an SMB or NFS share:
 
@@ -21,28 +21,28 @@ docker compose --env-file .env -f docker-compose.unraid.yml up -d
 
 There is no `up --build` on this path, and no `unraid/*.xml` in this repo.
 
-## Images (0015)
+## Images (0016)
 
 | Image | Who builds it |
 | --- | --- |
-| `ghcr.io/ferrisweil/cookbook-api` | This repo, on `main` |
-| `ghcr.io/ferrisweil/cookbook-web` | This repo, on `main` |
-| `ghcr.io/ferrisweil/cookbook-mcp` | This repo, on `main` |
+| `ghcr.io/ferrisweil/cookbook-api` | This repo, on `master` |
+| `ghcr.io/ferrisweil/cookbook-web` | This repo, on `master` |
+| `ghcr.io/ferrisweil/cookbook-mcp` | This repo, on `master` |
 | `postgres:16-alpine` | Upstream. Not `latest`. |
 | `tailscale/tailscale:stable` | Upstream. |
 
 `.github/workflows/docker.yml` (not `ci.yml`):
 
 * Pull requests build `linux/amd64` and do not push.
-* Pushes to `main`, and `workflow_dispatch`, build `linux/amd64` and push `latest` and `sha-<short>` (the short git SHA).
+* Pushes to `master`, and `workflow_dispatch`, build `linux/amd64` and push `latest` and `sha-<short>` (the short git SHA).
 * Login is `GITHUB_TOKEN` with `packages: write` on that job.
-* A pull request does not cancel a `main` publish that is already running.
+* A pull request does not cancel a `master` publish that is already running.
 
 ### Package visibility is a manual step
 
 GitHub creates each package **private** the first time Actions pushes it. `GITHUB_TOKEN` cannot change that. Unraid will fail the pull until Taylor sets each package to **Public**.
 
-Do this once per package, after the first green Docker run on `main`, and before the NAS pull:
+Do this once per package, after the first green Docker run on `master`, and before the NAS pull:
 
 1. Open the repo Packages list, or the direct page after it exists:
    * [cookbook-api](https://github.com/FerrisWeil/cookbook/pkgs/container/cookbook-api)
@@ -55,7 +55,7 @@ The feature guide (`docs/unraid-setup.md`) leads with this section. A private pa
 
 The NAS is a PC running Unraid, not an Apple Silicon machine. Publish linux/amd64 only.
 
-## Production Compose (0016)
+## Production Compose (0017)
 
 One Unraid file: `docker-compose.unraid.yml` at the repo root. `docker-compose.yml` stays the dev stack. No `build:` key. No `ports:` key. No fixed network `name:`. The feature PR deletes `deploy/nas/docker-compose.yml`. Mounts that used to be `./nginx.conf` and `./tailscale` become `./deploy/nas/nginx.conf` and `./deploy/nas/tailscale`, because the compose file moved and those files did not.
 
@@ -83,7 +83,7 @@ The feature PR does not edit the dev compose file. [0013](decisions/0013-securit
 
 Init SQL runs on an empty data directory only. If `postgres/` already exists from the skeleton, stop the stack and rename the directory before the first boot of this file.
 
-## Tailscale (0017)
+## Tailscale (0018)
 
 Exposed nodes are the web app and the MCP server. Each has its own sidecar, its own auth key, and its own tag. API and Postgres are not nodes.
 
@@ -124,7 +124,7 @@ Auth keys are reusable, not ephemeral, and pre-authorized if the tailnet require
 
 Health on the tailnet, after the feature is up: `http://cookbook/` and `http://cookbook-mcp:8787/health`. MCP calls still need the bearer token ([0003](decisions/0003-mcp-bearer-token.md)).
 
-## Data, backups, permissions (0018)
+## Data, backups, permissions (0019)
 
 `COOKBOOK_DATA_DIR` defaults to `/mnt/user/appdata/cookbook`. The directory is not an SMB or NFS share. `.env` next to the compose file is mode `0600` and is not mounted into a container.
 
@@ -153,7 +153,7 @@ Restore: rename `postgres/` aside, start only `db` so init creates the roles, `p
 
 Copying `tailscale-web/` and `tailscale-mcp/` while the stack is up is fine. Those directories are not in the SQL dump. Losing one means a new login with that node's auth key.
 
-## Update and rollback (0019)
+## Update and rollback (0020)
 
 Steady state pins `COOKBOOK_IMAGE_TAG` to a `sha-` tag. The example file uses `latest` only so the first pull has something to fetch. The guide then tells Taylor to replace it with the sha from that Actions run.
 

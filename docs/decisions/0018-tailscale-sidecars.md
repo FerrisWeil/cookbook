@@ -1,4 +1,4 @@
-# 0017. Tailscale sidecars; Serve deferred
+# 0018. Tailscale sidecars; Serve deferred
 
 * Status: accepted
 * Date: 2026-10-26
@@ -14,7 +14,7 @@ The skeleton still mounts a Serve config and binds web and MCP to loopback. The 
 
 1. **One official Tailscale sidecar per exposed service. Plain HTTP on the tailnet IP. Serve later.** Web hostname `cookbook` tagged `tag:cookbook`. MCP hostname `cookbook-mcp` tagged `tag:cookbook-mcp`. `tag:bot` may open MCP port 8787 only. Family devices may open web port 80. No host ports, no Funnel. Recommended.
 2. **Keep Serve on, as the skeleton and as 0002 allow.** Tailnet HTTPS on 443, listeners on 127.0.0.1. Needs MagicDNS and HTTPS certificates before the first boot.
-3. **Bake Tailscale into each image, as the nas-mcp Unraid template does.** Drops the sidecar. [0014](0014-unraid-compose-manager.md) is the reason we can keep sidecars.
+3. **Bake Tailscale into each image, as the nas-mcp Unraid template does.** Drops the sidecar. [0015](0015-unraid-compose-manager.md) is the reason we can keep sidecars.
 
 ## Decision
 

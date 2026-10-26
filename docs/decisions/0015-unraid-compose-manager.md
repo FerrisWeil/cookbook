@@ -1,4 +1,4 @@
-# 0014. Unraid deploy via Compose Manager
+# 0015. Unraid deploy via Compose Manager
 
 * Status: accepted
 * Date: 2026-10-26

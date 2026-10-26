@@ -1,4 +1,4 @@
-# 0018. Data directory, backups, and permissions
+# 0019. Data directory, backups, and permissions
 
 * Status: accepted
 * Date: 2026-10-26

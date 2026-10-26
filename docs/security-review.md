@@ -30,7 +30,7 @@ Every pull request fills the checklist below in the PR body before the PR is mar
 ## Images and Compose
 
 - Image, capabilities, mounts, and env for each service this PR changes.
-- Read the local Compose file and the Unraid file separately. The Unraid file is `docker-compose.unraid.yml` once [0016](decisions/0016-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
+- Read the local Compose file and the Unraid file separately. The Unraid file is `docker-compose.unraid.yml` once [0017](decisions/0017-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
 
 ## Data and logging
 
@@ -88,6 +88,8 @@ The follow-up README text is:
 
 * gitleaks stays inside `pnpm check`.
 * `pnpm audit --audit-level=high` joins `pnpm check`.
-* Dependabot security updates only, for npm, GitHub Actions, and Docker. No weekly bump-all.
+* Dependabot version and security updates follow [0014](decisions/0014-supply-chain.md). That decision supersedes the earlier "security updates only, no weekly bump-all" wording.
 
 Out of scope: Socket, Snyk, and a standing second review model.
+
+Supply-chain rows beyond this checklist (Dependabot grouping, install scripts, Action SHA pins, image digests) are accepted in [0014](decisions/0014-supply-chain.md) and spelled out in [supply chain](supply-chain.md). The feature PR appends them here and on the PR template.

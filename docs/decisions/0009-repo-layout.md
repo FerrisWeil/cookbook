@@ -34,4 +34,4 @@ Root `docker-compose.yml` is the one-command full stack for laptops and cloud ag
 * `pnpm install` at the repo root is the only JS install. The lockfile is `pnpm-lock.yaml`.
 * Docker builds use Corepack to activate the `packageManager` version and `pnpm install --frozen-lockfile`.
 * Changing package manager later is a new ADR that supersedes this one.
-* The Unraid compose file moves to `docker-compose.unraid.yml` at the repo root ([0016](0016-production-compose.md)). `deploy/nas` keeps nginx and Tailscale config. The skeleton compose file stays in `deploy/nas` until that feature lands.
+* The Unraid compose file moves to `docker-compose.unraid.yml` at the repo root ([0017](0017-production-compose.md)). `deploy/nas` keeps nginx and Tailscale config. The skeleton compose file stays in `deploy/nas` until that feature lands.
