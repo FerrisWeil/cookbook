@@ -57,7 +57,7 @@ features/           Per-feature docs
 deploy/nas/         Unraid Compose (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Language, migration tooling, and test tooling are still **proposed**. See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Language, migration tooling, test tooling, and the parallel-agent convention are still **proposed**. See [docs](docs/README.md).
 
 ## Development without Docker
 
