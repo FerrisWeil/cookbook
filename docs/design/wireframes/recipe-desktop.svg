@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img">
+  <title>Wide wireframe: example recipe, opaque Back above the title, no rail</title>
+  <rect width="1200" height="800" fill="#f6f1e9"/>
+  <rect x="80" y="40" width="88" height="44" rx="8" fill="#efe6d6" stroke="#7d7264"/>
+  <text x="124" y="68" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Back</text>
+  <text x="80" y="140" fill="#2b241c" font-family="Georgia, serif" font-size="40">Example: Tomato lentils</text>
+  <text x="80" y="176" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
+  <rect x="80" y="204" width="760" height="96" rx="12" fill="#efe6d6" stroke="#7d7264"/>
+  <text x="104" y="252" fill="#2b241c" font-family="Georgia, serif" font-size="20">Example body text. Not a schema. Not a real meal.</text>
+  <text x="80" y="360" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Opaque control. No sidebar. Text is not under the button.</text>
+</svg>
