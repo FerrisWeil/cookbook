@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img">
-  <title>Phone wireframe, dark theme: one example recipe</title>
+  <title>Phone wireframe: example recipe, floating Back, no header bar</title>
   <rect width="390" height="844" fill="#1c1915"/>
-  <rect width="390" height="47" fill="#2a2520"/>
-  <text x="16" y="29" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="13">safe area</text>
-  <rect x="16" y="64" width="88" height="44" rx="8" fill="#2a2520" stroke="#8a7d6b"/>
-  <text x="60" y="91" text-anchor="middle" fill="#f3ecdf" font-family="system-ui, sans-serif" font-size="16">Back</text>
-  <text x="16" y="168" fill="#f3ecdf" font-family="Georgia, serif" font-size="28">Example: Tomato lentils</text>
-  <text x="16" y="200" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="14">Placeholder meta · fields undecided</text>
-  <text x="16" y="260" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Example body text.</text>
-  <text x="16" y="292" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Not a schema. Not a real meal.</text>
-  <rect y="800" width="390" height="44" fill="#141210"/>
-  <text x="16" y="826" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="13">safe area</text>
+  <ellipse cx="80" cy="160" rx="120" ry="90" fill="#c5d4c0" opacity="0.16"/>
+  <text x="16" y="36" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="12">safe area</text>
+  <text x="16" y="120" fill="#f3ecdf" font-family="Georgia, serif" font-size="28">Example: Tomato lentils</text>
+  <text x="16" y="156" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="14">Placeholder meta · fields undecided</text>
+  <rect x="16" y="184" width="358" height="120" rx="16" fill="#2a2520" fill-opacity="0.72" stroke="#ffffff" stroke-opacity="0.35"/>
+  <text x="32" y="232" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Example body text.</text>
+  <text x="32" y="264" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Not a schema. Not a real meal.</text>
+  <rect x="16" y="736" width="96" height="48" rx="24" fill="#2a2520" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.45"/>
+  <text x="64" y="766" text-anchor="middle" fill="#f3ecdf" font-family="system-ui, sans-serif" font-size="16">Back</text>
+  <text x="16" y="828" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="12">safe area</text>
 </svg>

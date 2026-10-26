@@ -24,7 +24,7 @@ Both themes exist. The first paint follows the device, and a control on the page
 
 v1 does not ship an offline recipe library. That cache was left open in [0005](../decisions/0005-v1-scope.md) and stays open.
 
-If a fetch fails, the screen says so in words. The shell does not sit on a spinner with no text. Header and theme still render when the API is down, because they shipped with the page.
+If a fetch fails, the screen says so in words. The shell does not sit on a spinner with no text. Controls that shipped with the page still render when the API is down.
 
 ## Example data in git
 

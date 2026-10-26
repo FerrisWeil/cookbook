@@ -16,7 +16,7 @@ API and MCP do not depend on `@cookbook/ui`.
 
 ## Supply chain
 
-Prefer a library that is widely used and already maintained. Do not add a package for each widget just in case. That caution is not a ban. Taylor asked for the best UI, including a major library such as Tailwind when that is the right tool.
+Prefer a library that is widely used and already maintained. Do not add a package for each widget just in case. That caution is not a ban. A major library such as Tailwind is allowed when it is the right tool. Blur and translucency for [chrome](chrome.md) stay inside this package.
 
 React stays the React `apps/web` already has. The UI package does not install a second copy.
 

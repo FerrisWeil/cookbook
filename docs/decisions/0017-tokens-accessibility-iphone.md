@@ -4,17 +4,15 @@
 * Date: 2026-10-26
 * Confirmed: Taylor, 2026-10-26, agent chat
 
-## Context
+## Problem
 
-[0014](0014-kitchen-ui-principles.md) sets the bar (arm's length, both themes, 44px targets). The foundation page already uses paper `#f6f1e9`, ink `#2b241c`, and herb `#3d5a40`, with a web manifest and an apple touch icon. It is light-only, uses `100%` height rather than the dynamic viewport, and the viewport meta does not cover the iPhone safe area.
-
-The numbers, contrast table, and iPhone rules are in [tokens](../design/tokens.md).
+The foundation page has no shared measurements for type, color, contrast, or the iPhone safe area, so later screens will drift.
 
 ## Options considered
 
-1. **Keep the foundation palette, add a dark theme and semantic tokens, one breakpoint at 48rem, system fonts, WCAG 2.2 AA, safe-area padding.** Recommended. Familiar colors, no font download, phone layout is the default.
-2. **A new brand palette and a webfont.** More "designed", a network request before text is right, and a license to keep track of in a public repo.
-3. **Phone, tablet, and desktop breakpoints, plus a compact density.** Three layouts to maintain for two people and two stated devices (desktop browser and iPhone). iPad was not requested.
+1. **Keep the foundation palette, add a dark theme and semantic tokens, one breakpoint at 48rem, system fonts, WCAG 2.2 AA, safe-area padding.** Familiar colors, no font download, phone layout is the default.
+2. **A new brand palette and a webfont.** A network request before text is right, and a license to keep track of in a public repo.
+3. **Phone, tablet, and desktop breakpoints, plus a compact density.** Three layouts to maintain for two stated devices (desktop browser and iPhone).
 
 ## Decision
 
@@ -29,6 +27,7 @@ Use option 1. Values live in [tokens](../design/tokens.md). In short:
 
 ## Consequences
 
-* The feature PR applies these tokens in `apps/web` and checks the contrast pairs with a unit test. It does not add a font file or a new package.
-* Changing a hex value later can be a doc edit if the contrast bar still holds. Changing the breakpoint model or dropping AA is a new ADR.
+* The feature PR applies these tokens and checks the contrast pairs with a unit test. It does not add a font file.
+* Changing a hex value later can be a doc edit if the contrast bar still holds. Changing the breakpoint width or dropping AA is a new ADR.
 * Install remains Share → Add to Home Screen. Caching is still [0014](0014-kitchen-ui-principles.md), not a worker.
+* The bottom nav and left rail in the breakpoint bullet are superseded by [0019](0019-floating-glass-chrome.md). The `48rem` width, the contrast bar, and the other measurements stay.

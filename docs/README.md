@@ -31,9 +31,10 @@ Templates:
 | [0016](decisions/0016-design-system-approach.md) | Design system approach | accepted |
 | [0017](decisions/0017-tokens-accessibility-iphone.md) | Tokens, accessibility, and iPhone layout | accepted |
 | [0018](decisions/0018-ui-demos.md) | How UI work is demoed | accepted |
+| [0019](decisions/0019-floating-glass-chrome.md) | Floating glass chrome | accepted |
 
 [0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing.
 
-[0014](decisions/0014-kitchen-ui-principles.md) through [0018](decisions/0018-ui-demos.md) are accepted. Detail and wireframes are in [design/](design/).
+[0014](decisions/0014-kitchen-ui-principles.md) through [0019](decisions/0019-floating-glass-chrome.md) are accepted. [0019](decisions/0019-floating-glass-chrome.md) supersedes the heavy shell only. Detail and wireframes are in [design/](design/). The ADR template now uses Problem. Merged ADRs 0001–0013 still say Context.
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).

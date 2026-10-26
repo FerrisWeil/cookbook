@@ -108,8 +108,8 @@ The default CSS is the phone. There is one min-width query.
 
 | Name | Query | Layout |
 | --- | --- | --- |
-| phone | default | One column. Bottom nav. Recipe stacks its blocks. |
-| wide | `min-width: 48rem` | Left rail, `16rem`, instead of the bottom nav. Content column caps at `40rem` on Browse and Search. Recipe content may widen to `60rem`, with a secondary block in a `16rem` column beside the main one. |
+| phone | default | One column. Floating actions ([0019](../decisions/0019-floating-glass-chrome.md)), not a bottom bar. |
+| wide | `min-width: 48rem` | Same chrome, wider content. No left rail. Content column caps near `65ch` on the list. |
 
 No tablet layout and no compact density. A desktop browser window narrower than 48rem gets the phone layout, which is the right fallback.
 
@@ -118,7 +118,7 @@ No tablet layout and no compact density. A desktop browser window narrower than 
 The manifest, apple touch icon, and `apple-mobile-web-app-capable` already exist. This decision adds the page rules a home-screen install needs. It does not add a service worker.
 
 * Viewport meta: `width=device-width, initial-scale=1, viewport-fit=cover`. Do not add `maximum-scale=1` or `user-scalable=no`.
-* Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. The bottom nav's padding-bottom adds the bottom inset so the home indicator is not a hit target.
+* Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. Floating controls sit inside that padding, above the home indicator. There is no bottom bar ([0019](../decisions/0019-floating-glass-chrome.md)).
 * The shell uses `min-height: 100dvh`, not `100vh`, so Safari's toolbars do not cover the nav.
 * `apple-mobile-web-app-status-bar-style` is `default`. The OS keeps status-bar contrast. Safe-area padding is still applied so a later style change does not slide the title under the clock.
 * `theme-color` is updated to `--bg` of the active theme (light `#f6f1e9`, dark `#1c1915`). The manifest `background_color` and `theme_color` stay the light pair for the install splash. iOS does not reliably read a dark `theme_color` from the manifest.

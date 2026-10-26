@@ -6,9 +6,11 @@
 
 > **Proposed ADRs are not decisions.** Do not mark `accepted` until Taylor confirms in this agent chat.
 
-## Context
+Do not quote or narrate chat inside the ADR. The Confirmed line records acceptance. The rest states the decision.
 
-Why this decision is needed now. Link related docs rather than restating them.
+## Problem
+
+The problem this decision solves, in one short statement.
 
 ## Options considered
 

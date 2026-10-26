@@ -4,17 +4,15 @@
 * Date: 2026-10-26
 * Confirmed: Taylor, 2026-10-26, agent chat
 
-## Context
+Shell chrome is [0019](0019-floating-glass-chrome.md). The screens below are unchanged.
 
-Taylor said in chat on 2026-10-26 to stop overthinking information architecture and to start with the basics: a recipe list, and opening one recipe to read it. Search, weekly planning, fullscreen reading, live updates, and a Chef panel are later. They are not part of this decision.
+## Problem
 
-The recipe schema is not decided, so the viewer does not depend on a final field list. nginx already falls back unknown paths to the SPA (`docker/nginx.conf`); this ADR does not change that file.
-
-Wireframes are in [information architecture](../design/information-architecture.md). They use example titles and the line `Placeholder meta · fields undecided`.
+The first version needs a place to find a recipe and a place to read it, without extra destinations.
 
 ## Options considered
 
-1. **Two screens: a list of recipes, and one recipe opened from that list.** Taylor confirmed this.
+1. **Two screens: a list of recipes, and one recipe opened from that list.**
 2. **Browse, Search, and a Plan slot.** More navigation than the first version needs.
 3. **Search as its own destination, a fullscreen mode, or a Chef panel.** Later work. Not this decision.
 
@@ -30,8 +28,11 @@ Use option 1.
 
 The style-guide URL from [0018](0018-ui-demos.md) is a review page. It is not a screen in this information architecture.
 
+Wireframes are in [information architecture](../design/information-architecture.md).
+
 ## Consequences
 
 * The feature PR builds the list and the viewer with example data. It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel.
 * Those later screens, and any real field list, wait for their own decisions. The schema is not chosen here.
 * Client routes only. No new nginx locations.
+* How the list and the viewer are framed is [0019](0019-floating-glass-chrome.md), not a left rail, a tall header, or a bottom bar.

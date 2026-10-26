@@ -1,10 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img">
-  <title>Wide wireframe: one example recipe</title>
+  <title>Wide wireframe: example recipe, floating Back, no rail and no header bar</title>
   <rect width="1200" height="800" fill="#f6f1e9"/>
-  <rect x="80" y="40" width="88" height="44" rx="8" fill="#efe6d6" stroke="#7d7264"/>
-  <text x="124" y="68" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Back</text>
-  <text x="80" y="140" fill="#2b241c" font-family="Georgia, serif" font-size="40">Example: Tomato lentils</text>
-  <text x="80" y="176" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
-  <text x="80" y="240" fill="#2b241c" font-family="Georgia, serif" font-size="20">Example body text. Not a schema. Not a real meal.</text>
-  <text x="80" y="300" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Same screen as the phone, wider.</text>
+  <ellipse cx="980" cy="140" rx="180" ry="110" fill="#3d5a40" opacity="0.16"/>
+  <text x="80" y="120" fill="#2b241c" font-family="Georgia, serif" font-size="40">Example: Tomato lentils</text>
+  <text x="80" y="160" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
+  <rect x="80" y="192" width="760" height="120" rx="16" fill="#ffffff" fill-opacity="0.72" stroke="#ffffff"/>
+  <text x="104" y="248" fill="#2b241c" font-family="Georgia, serif" font-size="20">Example body text. Not a schema. Not a real meal.</text>
+  <rect x="80" y="700" width="96" height="48" rx="24" fill="#ffffff" fill-opacity="0.86" stroke="#ffffff"/>
+  <text x="128" y="730" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Back</text>
+  <text x="200" y="730" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Floating control. No sidebar.</text>
 </svg>
