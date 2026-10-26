@@ -21,6 +21,19 @@ describe("getReadyStatus", () => {
     });
   });
 
+  it("reports degraded when the database is up but seed is missing", async () => {
+    const client: SqlClient = {
+      async query() {
+        return { rowCount: 0, rows: [] };
+      },
+    };
+    assert.deepEqual(await getReadyStatus(client), {
+      status: "degraded",
+      database: "up",
+      seed: false,
+    });
+  });
+
   it("reports database down when the query fails", async () => {
     const client: SqlClient = {
       async query() {
@@ -65,6 +78,13 @@ describe("http health", () => {
     ready = { status: "ok", database: "up", seed: true };
     const response = await fetch(`${baseUrl}/health/ready`);
     assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), ready);
+  });
+
+  it("serves /health/ready as 503 when seed is missing", async () => {
+    ready = { status: "degraded", database: "up", seed: false };
+    const response = await fetch(`${baseUrl}/health/ready`);
+    assert.equal(response.status, 503);
     assert.deepEqual(await response.json(), ready);
   });
 

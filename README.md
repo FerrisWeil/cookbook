@@ -22,7 +22,7 @@ docker compose up --build
 | MCP health | http://localhost:8787/health |
 | MCP (bearer token required) | http://localhost:8787/mcp |
 
-Local MCP token (not for the NAS): `local-dev-token-not-for-nas`.
+Local MCP token (not for the NAS): `local-dev-token-not-for-nas`. Local compose sets `MCP_ALLOW_DEV_TOKEN=1` so that token can boot. The NAS file does not.
 
 ```bash
 curl -sS http://localhost:8787/health
@@ -36,11 +36,13 @@ Stop with `docker compose down`. Data lives in the `cookbook_pg` volume.
 Access is Tailscale-only, with tag-based grants, plus a bearer token on MCP. See [0001](docs/decisions/0001-self-host-on-unraid.md) and [0002](docs/decisions/0002-tailscale-only.md).
 
 ```bash
-cp .env.example .env   # set MCP_AUTH_TOKEN, POSTGRES_PASSWORD, TS_AUTHKEY
+cp .env.example .env   # set MCP_AUTH_TOKEN, POSTGRES_PASSWORD, TS_WEB_AUTHKEY, TS_MCP_AUTHKEY
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
 ```
 
-Do not publish host ports on the NAS. Do not enable Tailscale Funnel.
+State is stored under `COOKBOOK_DATA_DIR` (default `/mnt/user/appdata/cookbook`), with `postgres`, `tailscale-web`, and `tailscale-mcp` subdirectories. The web sidecar and the MCP sidecar each need their own Tailscale auth key. MCP and nginx listen on `127.0.0.1` inside the Tailscale network namespace, so Tailscale Serve on 443 is the tailnet ingress.
+
+Do not publish host ports on the NAS. Do not enable Tailscale Funnel. Do not set `MCP_ALLOW_DEV_TOKEN` on the NAS.
 
 The Docker / Tailscale / bearer-token pattern follows [nas-mcp](https://github.com/FerrisWeil/nas-mcp).
 
@@ -69,7 +71,7 @@ pnpm install
 pnpm check
 ```
 
-API and MCP expect `DATABASE_URL` / `MCP_AUTH_TOKEN` when run on the host. Prefer Compose unless you are iterating on one process.
+The API accepts `DATABASE_URL`, or `POSTGRES_USER` and `POSTGRES_PASSWORD` (the password is encoded when the URL is built from parts). MCP expects `MCP_AUTH_TOKEN`. Prefer Compose unless you are iterating on one process.
 
 ## Working agreements
 

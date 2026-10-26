@@ -8,6 +8,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Render the NAS file with dummy values. Do not start that stack.
+POSTGRES_PASSWORD=dummy-password \
+  MCP_AUTH_TOKEN=dummy-mcp-token-not-a-secret \
+  TS_WEB_AUTHKEY=dummy-web-authkey \
+  TS_MCP_AUTHKEY=dummy-mcp-authkey \
+  docker compose -f deploy/nas/docker-compose.yml config \
+  >/tmp/cookbook-nas-config.yml
+grep -q '/mnt/user/appdata/cookbook/postgres' /tmp/cookbook-nas-config.yml
+grep -q '/mnt/user/appdata/cookbook/tailscale-web' /tmp/cookbook-nas-config.yml
+grep -q '/mnt/user/appdata/cookbook/tailscale-mcp' /tmp/cookbook-nas-config.yml
+grep -q 'dummy-web-authkey' /tmp/cookbook-nas-config.yml
+grep -q 'dummy-mcp-authkey' /tmp/cookbook-nas-config.yml
+grep -q 'BIND_HOST: 127.0.0.1' /tmp/cookbook-nas-config.yml
+if grep -q 'MCP_ALLOW_DEV_TOKEN' /tmp/cookbook-nas-config.yml; then
+  echo "NAS compose must not set MCP_ALLOW_DEV_TOKEN" >&2
+  exit 1
+fi
+if grep -q '\.\./\.\./data' /tmp/cookbook-nas-config.yml; then
+  echo "NAS compose still bind-mounts a path inside the checkout" >&2
+  exit 1
+fi
+
 docker compose up --build -d --wait
 
 curl -fsS http://127.0.0.1:3000/health | tee /tmp/cookbook-api-health.json
@@ -16,6 +38,7 @@ grep -q '"status":"ok"' /tmp/cookbook-api-health.json
 curl -fsS http://127.0.0.1:3000/health/ready | tee /tmp/cookbook-api-ready.json
 grep -q '"database":"up"' /tmp/cookbook-api-ready.json
 grep -q '"seed":true' /tmp/cookbook-api-ready.json
+grep -q '"status":"ok"' /tmp/cookbook-api-ready.json
 
 curl -fsS http://127.0.0.1:8787/health | tee /tmp/cookbook-mcp-health.json
 grep -q '"status":"ok"' /tmp/cookbook-mcp-health.json
@@ -23,8 +46,45 @@ grep -q '"status":"ok"' /tmp/cookbook-mcp-health.json
 code=$(curl -sS -o /tmp/cookbook-mcp-unauth.json -w '%{http_code}' http://127.0.0.1:8787/mcp)
 test "$code" = "401"
 
+# Same client the unit tests use. Requires `pnpm install` (CI does this).
+(
+  cd apps/mcp
+  MCP_URL=http://127.0.0.1:8787/mcp \
+    MCP_SMOKE_TOKEN=local-dev-token-not-for-nas \
+    node --input-type=module <<'EOF'
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+
+const token = process.env.MCP_SMOKE_TOKEN;
+const url = process.env.MCP_URL;
+if (!token || !url) {
+  console.error("MCP smoke token and URL are required");
+  process.exit(1);
+}
+const client = new Client({ name: "cookbook-smoke", version: "0.0.0" });
+const transport = new StreamableHTTPClientTransport(new URL(url), {
+  requestInit: {
+    headers: { authorization: `Bearer ${token}` },
+  },
+});
+await client.connect(transport);
+try {
+  const result = await client.callTool({ name: "hello", arguments: {} });
+  const body = JSON.stringify(result);
+  if (result.isError || !body.includes("Cookbook MCP is up.")) {
+    console.error(body);
+    process.exit(1);
+  }
+  process.stdout.write(`${body}\n`);
+} finally {
+  await client.close();
+}
+EOF
+) | tee /tmp/cookbook-mcp-hello.json
+grep -q "Cookbook MCP is up." /tmp/cookbook-mcp-hello.json
+
 curl -fsS http://127.0.0.1:8080 | tee /tmp/cookbook-web.html
 grep -q "Cookbook" /tmp/cookbook-web.html
 
 curl -fsS http://127.0.0.1:8080/api/health/ready | tee /tmp/cookbook-web-api.json
 grep -q '"database":"up"' /tmp/cookbook-web-api.json
+grep -q '"status":"ok"' /tmp/cookbook-web-api.json

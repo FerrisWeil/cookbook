@@ -43,7 +43,7 @@ export function createRequestListener(
       void deps
         .getReady()
         .then((body) => {
-          sendJson(res, body.database === "up" ? 200 : 503, body);
+          sendJson(res, body.status === "ok" ? 200 : 503, body);
         })
         .catch(() => {
           sendJson(res, 503, {

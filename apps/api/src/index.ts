@@ -3,7 +3,12 @@ import pg from "pg";
 import { loadConfig } from "./config.js";
 import { getReadyStatus } from "./health.js";
 import { listen } from "./http.js";
-import { applyMigrations, applySeed, type SqlClient } from "./migrate.js";
+import {
+  applyMigrations,
+  applySeed,
+  type ReleasableClient,
+  type SqlClient,
+} from "./migrate.js";
 
 const { Pool } = pg;
 
@@ -24,7 +29,20 @@ const db: SqlClient = {
   },
 };
 
-await applyMigrations(db, config.migrationsDir);
+async function checkout(): Promise<ReleasableClient> {
+  const connection = await pool.connect();
+  return {
+    async query(sql, params) {
+      const result = await connection.query(sql, params);
+      return { rowCount: result.rowCount, rows: result.rows };
+    },
+    release() {
+      connection.release();
+    },
+  };
+}
+
+await applyMigrations(checkout, config.migrationsDir);
 await applySeed(db, config.seedFile);
 console.log("migrations and seed applied");
 

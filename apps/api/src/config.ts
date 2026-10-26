@@ -9,14 +9,6 @@ export type Config = {
   seedFile: string;
 };
 
-function required(env: NodeJS.Dict<string>, name: string): string {
-  const value = env[name]?.trim();
-  if (!value) {
-    throw new Error(`${name} is required`);
-  }
-  return value;
-}
-
 function parsePort(value: string | undefined): number {
   if (!value) {
     return DEFAULT_PORT;
@@ -28,11 +20,36 @@ function parsePort(value: string | undefined): number {
   return port;
 }
 
+function databaseUrl(env: NodeJS.Dict<string>): string {
+  const configured = env.DATABASE_URL?.trim();
+  if (configured) {
+    return configured;
+  }
+
+  const user = env.POSTGRES_USER?.trim();
+  const password = env.POSTGRES_PASSWORD;
+  const database = env.POSTGRES_DB?.trim() || "cookbook";
+  const host = env.POSTGRES_HOST?.trim() || "db";
+  const port = env.POSTGRES_PORT?.trim() || "5432";
+  if (!user || password === undefined || password.trim() === "") {
+    throw new Error(
+      "DATABASE_URL or both POSTGRES_USER and POSTGRES_PASSWORD are required",
+    );
+  }
+  const portNumber = Number(port);
+  if (!Number.isInteger(portNumber) || portNumber < 1 || portNumber > 65535) {
+    throw new Error(`POSTGRES_PORT must be an integer 1-65535, got ${port}`);
+  }
+
+  const userInfo = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
+  return `postgres://${userInfo}@${host}:${port}/${encodeURIComponent(database)}`;
+}
+
 export function loadConfig(env: NodeJS.Dict<string> = process.env): Config {
   return {
     bindHost: env.BIND_HOST?.trim() || DEFAULT_BIND_HOST,
     port: parsePort(env.PORT),
-    databaseUrl: required(env, "DATABASE_URL"),
+    databaseUrl: databaseUrl(env),
     migrationsDir: env.MIGRATIONS_DIR?.trim() || "db/migrations",
     seedFile: env.SEED_FILE?.trim() || "db/seed.sql",
   };

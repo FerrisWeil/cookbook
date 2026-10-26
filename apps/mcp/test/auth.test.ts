@@ -19,6 +19,37 @@ describe("config", () => {
       /at least 16 characters/,
     );
   });
+
+  it("refuses public placeholder tokens", () => {
+    assert.throws(
+      () => loadConfig({ MCP_AUTH_TOKEN: "replace-with-a-long-random-token" }),
+      /public placeholder/,
+    );
+    assert.throws(
+      () => loadConfig({ MCP_AUTH_TOKEN: "replace-me" }),
+      /public placeholder/,
+    );
+  });
+
+  it("allows the local dev token only when MCP_ALLOW_DEV_TOKEN=1", () => {
+    assert.throws(
+      () => loadConfig({ MCP_AUTH_TOKEN: "local-dev-token-not-for-nas" }),
+      /MCP_ALLOW_DEV_TOKEN=1/,
+    );
+    assert.throws(
+      () =>
+        loadConfig({
+          MCP_AUTH_TOKEN: "local-dev-token-not-for-nas",
+          MCP_ALLOW_DEV_TOKEN: "0",
+        }),
+      /MCP_ALLOW_DEV_TOKEN=1/,
+    );
+    const config = loadConfig({
+      MCP_AUTH_TOKEN: "local-dev-token-not-for-nas",
+      MCP_ALLOW_DEV_TOKEN: "1",
+    });
+    assert.equal(config.authToken, "local-dev-token-not-for-nas");
+  });
 });
 
 describe("http auth", () => {

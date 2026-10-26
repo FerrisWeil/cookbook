@@ -2,6 +2,11 @@ const DEFAULT_PORT = 8787;
 const DEFAULT_BIND_HOST = "127.0.0.1";
 const DEFAULT_HOSTNAME = "cookbook-mcp";
 const MIN_TOKEN_LENGTH = 16;
+const DEV_TOKEN = "local-dev-token-not-for-nas";
+const PLACEHOLDER_TOKENS = new Set([
+  "replace-with-a-long-random-token",
+  "replace-me",
+]);
 
 export type Config = {
   authToken: string;
@@ -44,6 +49,16 @@ function parseList(value: string | undefined): string[] {
 
 export function loadConfig(env: NodeJS.Dict<string> = process.env): Config {
   const authToken = required(env, "MCP_AUTH_TOKEN");
+  if (PLACEHOLDER_TOKENS.has(authToken)) {
+    throw new Error(
+      "MCP_AUTH_TOKEN is a public placeholder. Generate one with: openssl rand -hex 32",
+    );
+  }
+  if (authToken === DEV_TOKEN && env.MCP_ALLOW_DEV_TOKEN?.trim() !== "1") {
+    throw new Error(
+      "MCP_AUTH_TOKEN is the local dev token. Set MCP_ALLOW_DEV_TOKEN=1 only for local compose, never on the NAS",
+    );
+  }
   if (authToken.length < MIN_TOKEN_LENGTH) {
     throw new Error(
       `MCP_AUTH_TOKEN must be at least ${MIN_TOKEN_LENGTH} characters`,

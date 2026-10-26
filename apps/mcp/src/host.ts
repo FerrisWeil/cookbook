@@ -35,9 +35,7 @@ export function isAllowedHostname(
   if (allowedHosts.some((allowed) => allowed.toLowerCase() === host)) {
     return true;
   }
-  if (host.endsWith(".ts.net")) {
-    return true;
-  }
+  // Configured hostnames are exact matches. CGNAT covers tailnet addresses.
   return isTailscaleIPv4(host) || isTailscaleIPv6(host);
 }
 

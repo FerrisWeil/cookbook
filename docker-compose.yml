@@ -31,7 +31,11 @@ services:
     extra_hosts:
       - "db:host-gateway"
     environment:
-      DATABASE_URL: postgres://cookbook:${POSTGRES_PASSWORD:-cookbook}@db:5432/cookbook
+      POSTGRES_USER: cookbook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cookbook}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: cookbook
       BIND_HOST: "0.0.0.0"
       PORT: "3000"
       MIGRATIONS_DIR: /app/db/migrations
@@ -48,6 +52,7 @@ services:
       dockerfile: docker/mcp.Dockerfile
     environment:
       MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-local-dev-token-not-for-nas}
+      MCP_ALLOW_DEV_TOKEN: "1"
       MCP_HOSTNAME: cookbook-mcp
       BIND_HOST: "0.0.0.0"
       PORT: "8787"
