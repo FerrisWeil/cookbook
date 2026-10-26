@@ -20,12 +20,19 @@ Templates:
 | [0005](decisions/0005-v1-scope.md) | v1: web PWA, API, Postgres, cookbook MCP | accepted |
 | [0006](decisions/0006-one-repo-one-mcp.md) | One repo; one MCP container per NAS project | accepted |
 | [0007](decisions/0007-public-repo-secrets.md) | Public portfolio repo; secrets stay out of git | accepted |
-| [0008](decisions/0008-typescript-stack.md) | Language and framework stack | **proposed** |
+| [0008](decisions/0008-typescript-stack.md) | Language and framework stack | accepted |
 | [0009](decisions/0009-repo-layout.md) | Repo layout and pnpm workspaces | accepted |
-| [0010](decisions/0010-migration-tooling.md) | Postgres migration tooling | **proposed** |
-| [0011](decisions/0011-test-tooling.md) | Test tooling | **proposed** |
-| [0012](decisions/0012-parallel-agents.md) | Parallel feature agents | **proposed** |
-| [0013](decisions/0013-security-review.md) | Security review and Postgres access | **proposed** |
+| [0010](decisions/0010-migration-tooling.md) | Postgres migration tooling | accepted |
+| [0011](decisions/0011-test-tooling.md) | Test tooling | accepted |
+| [0012](decisions/0012-parallel-agents.md) | Parallel feature agents | accepted |
+| [0013](decisions/0013-security-review.md) | Security review and Postgres access | accepted |
+| [0014](decisions/0014-supply-chain.md) | Dependency updates and supply-chain hygiene | accepted |
+| [0015](decisions/0015-unraid-compose-manager.md) | Unraid deploy via Compose Manager | accepted |
+| [0016](decisions/0016-ghcr-images.md) | Publish images to GHCR | accepted |
+| [0017](decisions/0017-production-compose.md) | Production Compose file | accepted |
+| [0018](decisions/0018-tailscale-sidecars.md) | Tailscale sidecars; Serve deferred | accepted |
+| [0019](decisions/0019-data-dir-and-backups.md) | Data directory, backups, permissions | accepted |
+| [0020](decisions/0020-update-and-rollback.md) | Update and rollback | accepted |
 | [0014](decisions/0014-kitchen-ui-principles.md) | Kitchen UI principles | accepted |
 | [0015](decisions/0015-navigation-ia.md) | Navigation and information architecture | accepted |
 | [0016](decisions/0016-design-system-approach.md) | Design system approach | accepted |
@@ -33,8 +40,8 @@ Templates:
 | [0018](decisions/0018-ui-demos.md) | How UI work is demoed | accepted |
 | [0019](decisions/0019-floating-glass-chrome.md) | Floating glass chrome | accepted |
 
-[0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing.
+[0012](decisions/0012-parallel-agents.md) is accepted. The convention is in [parallel-agents.md](parallel-agents.md). Its sequence check and the removal of this hand-edited table are still follow-up. [0013](decisions/0013-security-review.md) is accepted. The checklist is in [security-review.md](security-review.md). [0014](decisions/0014-supply-chain.md) is accepted, with the comparison in [supply-chain.md](supply-chain.md). The production stack is accepted in [0015](decisions/0015-unraid-compose-manager.md)–[0020](decisions/0020-update-and-rollback.md), with the detail in [unraid production](unraid-production.md). The feature that puts `docker-compose.unraid.yml` at the repo root is not written yet. The skeleton is still `deploy/nas/docker-compose.yml`.
 
-[0014](decisions/0014-kitchen-ui-principles.md) through [0019](decisions/0019-floating-glass-chrome.md) are accepted. [0019](decisions/0019-floating-glass-chrome.md) supersedes the heavy shell only. Detail and wireframes are in [design/](design/). The ADR template now uses Problem. Merged ADRs 0001–0013 still say Context.
+The kitchen UI decisions [0014](decisions/0014-kitchen-ui-principles.md) through [0019](decisions/0019-floating-glass-chrome.md) are accepted. Those six files share numbers 0014–0019 with the supply-chain and Unraid ADRs above, and both sets stay in this table. [0019](decisions/0019-floating-glass-chrome.md) supersedes the heavy shell only. Detail and wireframes are in [design/](design/). The ADR template now uses Problem. Merged ADRs 0001–0013 still say Context.
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).

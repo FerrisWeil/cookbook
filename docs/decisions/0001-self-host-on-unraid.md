@@ -25,4 +25,5 @@ Local development and cloud agents use the root `docker-compose.yml`, which **do
 * Deploy follows Unraid conventions: appdata for state, `TZ` matching the Unraid UI.
 * The array must be started before the stack can persist data.
 * Cloud agents and laptops run the same images without Tailscale. That local publish-ports path is not how the NAS is reached.
+* Compose Manager is how Taylor starts the stack ([0015](0015-unraid-compose-manager.md)). The Unraid file moves from `deploy/nas/docker-compose.yml` to `docker-compose.unraid.yml` at the repo root ([0017](0017-production-compose.md)). Until that feature lands, the skeleton path in the decision above is still the file on disk.
 * This is a household app, not a multi-tenant service.
