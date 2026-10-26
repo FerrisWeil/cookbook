@@ -8,14 +8,14 @@ Taylor confirmed [0013](decisions/0013-security-review.md) on 2026-10-26 by trea
 
 These stay as 0013 wrote them:
 
-* Every PR fills the checklist in [security review](security-review.md). Taylor confirms the filled checklist. There is no second review bot.
-* `pnpm audit --audit-level=high` fails CI. Moderate advisories are listed on the checklist and do not fail CI.
+* The author uses the checklist in [security review](security-review.md). The PR includes a Security section only when that review finds a problem or an exception. Taylor, 2026-10-25. There is no second review bot.
+* `pnpm audit --audit-level=high` fails CI. A moderate advisory is named in the PR when one exists, and does not fail CI.
 * gitleaks stays inside `pnpm check`.
 * Postgres uses `cookbook_app` for requests and `cookbook_migrator` for migrations. The image superuser is init-only. Passwords come from the env file. Compose has no default password.
 * The database has no `ports:` key. It sits on an internal network with the API only. `docker compose exec db psql` is how a human reaches it. Binding `127.0.0.1:5432` was considered in 0013 and rejected, because a `ports:` key is the edit a later change widens to every interface.
 * Socket and Snyk are out. A password does not encrypt `data/postgres`. Backups and directory modes are the ones 0013 names (`0700` for the data directory, `0600` for `.env`, `pg_dump` while Postgres is running).
 
-The local Compose file still publishes `5432` and still falls back to the password `cookbook`. The NAS file still connects the API as the superuser on one shared network. That is unfinished implementation. The feature PR does the local half. It does not edit `deploy/nas/`.
+The local Compose file uses the three roles, publishes no database port, and has no default password. The NAS file still connects the API as the superuser on one shared network. That file is the other agent's. This work does not edit `deploy/nas/`.
 
 ## 1. Dependabot and Renovate
 
@@ -44,7 +44,7 @@ Accepted `dependabot.yml` shape, written in the feature PR:
 
 * `npm` at `/`, weekly. One group for `minor` and `patch`. Major updates do not match that group, so each major is its own PR. `cooldown.default-days: 1`. Cooldown applies to version updates only.
 * `github-actions` at `/`, weekly, one group for every Action.
-* `docker` at `/`, weekly, one group for `minor` and `patch`. A major image bump is its own PR. This covers the Dockerfiles.
+* `docker` at `/docker`, weekly, one group for `minor` and `patch`. A major image bump is its own PR. The Dockerfiles live in that directory. `/` has none, and Dependabot does not walk into subdirectories for this ecosystem.
 * `docker-compose` at `/`, weekly, the same minor/patch group. `directory: /` includes `docker-compose.yml` and `deploy/nas/docker-compose.yml`. A Dependabot PR may edit the NAS file to bump an image. That is the point of the bot. Hand-editing that file is still reserved for the agent that owns the production stack.
 * `open-pull-requests-limit: 5` for version updates. Security updates have their own limit and do not count toward it.
 * Groups do not set `applies-to: security-updates`. Security PRs stay ungrouped so one CVE is not stuck behind a bundle.
@@ -54,15 +54,7 @@ Accepted `dependabot.yml` shape, written in the feature PR:
 
 ### How an update PR is reviewed
 
-Same bar as any other PR under 0013. The person or agent who wants it merged fills the checklist. They paste:
-
-* `pnpm audit --audit-level=high` output.
-* Whether `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude` changed. A change names the package or the GHSA and why.
-* For an npm PR: the lockfile diff is the update, and no install script was added.
-* For an Actions PR: the diff is a full SHA and its version comment.
-* For an image PR: the diff is a tag and a digest, and no `ports:` key was added.
-
-Taylor confirms the filled checklist is enough. He does not read every changelog. Merging the PR does not require a new ADR.
+CI is the merge bar. The author checks [security review](security-review.md) and writes a Security section only for a hit: audit output when it is not clean, a change to `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude`, a new install script, an Action that is not a full SHA, an image without a digest, or a new `ports:` key. A clean diff has no Security section. Taylor does not read every changelog. Merging the PR does not require a new ADR.
 
 ## 2. Vulnerability scanning in CI
 
@@ -133,19 +125,19 @@ Floating tags in the tree today: `postgres:16-alpine`, `node:22-alpine`, `nginx:
 * Images built from this repo (`api`, `web`, `mcp`) stay `build:` entries. They are not pulled by digest.
 * The feature PR pins Dockerfiles and the root `docker-compose.yml` only.
 
-## 4. Checklist rows to add
+## 4. Extra checks for the author
 
-[security review](security-review.md) already covers dependencies, secrets, auth, network, Compose, and logging. The feature PR appends these rows. It does not rewrite the 0013 list.
+[security review](security-review.md) already covers dependencies, secrets, auth, network, Compose, and logging. These rows sit with that list. They are not copied into the PR template. A PR mentions one only when it fails.
 
 * Lockfile updated in the same PR as any manifest or `packageManager` change, or `n/a` with the files opened.
 * `allowBuilds` and `minimumReleaseAgeExclude` are unchanged, or each new entry is named.
 * `audit.ignore` is unchanged, or each GHSA is named.
-* `pnpm audit --audit-level=high` output is pasted. Moderate advisories are listed and do not fail CI.
+* `pnpm audit --audit-level=high` is clean. A moderate advisory is named in the PR and does not fail CI.
 * Actions this PR touches are full SHAs. `permissions` are unchanged, or the new permission is named and is not on a `pull_request` job.
 * Third-party image refs this PR touches include a digest. No new `ports:` key. Postgres is still unpublished.
 * Logs, fixtures, and screenshots still contain no recipes, notes, or tokens. This row is already in 0013; it stays.
 
-The PR template gains the same list, including the 0013 sections, so a reviewer does not have to assemble it from two docs. Docs-only PRs still fill it. `n/a` still requires the files that were opened.
+The PR template stays short: What, Why, ADRs, Demo, How to run. Taylor, 2026-10-25: a Security section is added only when there is a finding.
 
 ## 5. Requirements for the NAS stack and GHCR
 
@@ -175,15 +167,15 @@ Priority 3, not recommended now:
 * An auth scheme for the HTTP API. There are no recipe routes yet. Tailscale is the boundary ([0002](decisions/0002-tailscale-only.md)). Decide auth with the first feature that returns a recipe.
 * The local MCP dev token. [0007](decisions/0007-public-repo-secrets.md) allows `local-dev-token-not-for-nas` on the local Compose file only. That exception does not extend to database passwords.
 
-## Feature PR
+## Task
 
-One PR after 0014 merges. Files it is expected to touch:
+This pull request is a task. It implements the local half after 0014 is accepted. Files it touches:
 
 * `.github/dependabot.yml`
 * `.github/workflows/ci.yml` (SHA pins, `persist-credentials: false`)
 * `pnpm-workspace.yaml` and the root `package.json` `check` script
 * `docker/api.Dockerfile`, `docker/mcp.Dockerfile`, `docker/web.Dockerfile`, root `docker-compose.yml`
 * `db/init` role SQL, API connection split, `.env.example` placeholders, `scripts/smoke.sh` so local boot uses generated passwords and does not print them
-* `.github/PULL_REQUEST_TEMPLATE.md`, [security review](security-review.md), a `features/` doc
+* `.github/PULL_REQUEST_TEMPLATE.md` and [security review](security-review.md)
 
-It does not edit `deploy/nas/`. `pnpm check` and `pnpm smoke` stay green. Browser tests wait until Taylor has seen the stack run.
+It does not edit `deploy/nas/` and it does not add a page under `features/`. `pnpm check` and `pnpm smoke` stay green. Verification is CI only.

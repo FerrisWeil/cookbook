@@ -1,15 +1,15 @@
 # Security review
 
-Checklist for [0013](decisions/0013-security-review.md). Status is **accepted** (2026-10-26, merged means accepted). Fill this on every PR before it is marked ready. The Compose role split, `pnpm audit` in `pnpm check`, Dependabot, and the PR-template copy of this list are still follow-up. They are not in the tree yet.
+Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). Status is **accepted** (2026-10-26, merged means accepted). The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file. The accepted Unraid file will be `docker-compose.unraid.yml` once [0017](decisions/0017-production-compose.md) is implemented. Until then it is still `deploy/nas/docker-compose.yml`.
 
-Every pull request fills the checklist below in the PR body before the PR is marked ready. Docs-only PRs fill it too. Each item names a path or pastes the command output that shows the result. `n/a` is allowed only together with the files that were opened. Taylor confirms the filled checklist is enough. There is no second review bot.
+Authors use this list before opening a pull request. The PR body stays the short template. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory that CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. Taylor said so on 2026-10-25. gitleaks and `pnpm audit --audit-level=high` are what block a clean PR. There is no second review bot.
 
 ## Dependencies
 
 - New or updated direct dependencies, and why this PR needs them.
 - Who maintains each one, and whether it is abandoned.
 - Install scripts. `pnpm-workspace.yaml` `allowBuilds` is the gate. Today the only entry is `esbuild`.
-- `pnpm audit --audit-level=high` result. High severity fails CI once the follow-up adds it to `pnpm check`. Until then, paste the command output here. Moderate findings are listed here and do not fail CI.
+- `pnpm audit --audit-level=high` result. High severity fails CI. Moderate findings are listed here and do not fail CI.
 
 ## Secrets and env
 
@@ -38,7 +38,7 @@ Every pull request fills the checklist below in the PR body before the PR is mar
 
 ## Postgres
 
-Accepted baseline. Checked against both Compose files once the follow-up lands. Not applied to the Compose files yet.
+Accepted baseline. The local Compose file applies it. The Unraid file is still the single superuser on one shared network until the agent that owns `deploy/nas/` applies the same rules.
 
 ### Password
 
@@ -92,4 +92,14 @@ The follow-up README text is:
 
 Out of scope: Socket, Snyk, and a standing second review model.
 
-Supply-chain rows beyond this checklist (Dependabot grouping, install scripts, Action SHA pins, image digests) are accepted in [0014](decisions/0014-supply-chain.md) and spelled out in [supply chain](supply-chain.md). The feature PR appends them here and on the PR template.
+## Supply chain
+
+Accepted in [0014](decisions/0014-supply-chain.md). Detail is in [supply chain](supply-chain.md). Mention a line in the PR only when it is not true.
+
+- A manifest or `packageManager` change updates the lockfile in the same PR.
+- `allowBuilds` and `minimumReleaseAgeExclude` are unchanged.
+- `audit.ignore` is unchanged.
+- `pnpm audit --audit-level=high` is clean. A moderate advisory is named in the PR and does not fail CI.
+- Actions this PR touches are full SHAs. `permissions` are unchanged, and a `pull_request` job does not gain a new one.
+- Third-party image refs this PR touches include a digest. Postgres stays unpublished on the local file.
+- `deploy/nas/docker-compose.yml` was left to the agent that owns it.
