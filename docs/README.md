@@ -26,7 +26,14 @@ Templates:
 | [0011](decisions/0011-test-tooling.md) | Test tooling | **proposed** |
 | [0012](decisions/0012-parallel-agents.md) | Parallel feature agents | **proposed** |
 | [0013](decisions/0013-security-review.md) | Security review and Postgres access | **proposed** |
+| [0014](decisions/0014-kitchen-ui-principles.md) | Kitchen UI principles | **proposed** |
+| [0015](decisions/0015-navigation-ia.md) | Navigation and information architecture | **proposed** |
+| [0016](decisions/0016-design-system-approach.md) | Design system approach | **proposed** |
+| [0017](decisions/0017-tokens-accessibility-iphone.md) | Tokens, accessibility, and iPhone layout | **proposed** |
+| [0018](decisions/0018-ui-demos.md) | How UI work is demoed | **proposed** |
 
 [0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing.
+
+[0014](decisions/0014-kitchen-ui-principles.md) through [0018](decisions/0018-ui-demos.md) are proposals for the web UI. Detail and wireframes are in [design/](design/). None of that is in force.
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).
