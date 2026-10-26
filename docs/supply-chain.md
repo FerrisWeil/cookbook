@@ -167,15 +167,15 @@ Priority 3, not recommended now:
 * An auth scheme for the HTTP API. There are no recipe routes yet. Tailscale is the boundary ([0002](decisions/0002-tailscale-only.md)). Decide auth with the first feature that returns a recipe.
 * The local MCP dev token. [0007](decisions/0007-public-repo-secrets.md) allows `local-dev-token-not-for-nas` on the local Compose file only. That exception does not extend to database passwords.
 
-## Feature PR
+## Task
 
-One PR after 0014 merges. Files it is expected to touch:
+This pull request is a task. It implements the local half after 0014 is accepted. Files it touches:
 
 * `.github/dependabot.yml`
 * `.github/workflows/ci.yml` (SHA pins, `persist-credentials: false`)
 * `pnpm-workspace.yaml` and the root `package.json` `check` script
 * `docker/api.Dockerfile`, `docker/mcp.Dockerfile`, `docker/web.Dockerfile`, root `docker-compose.yml`
 * `db/init` role SQL, API connection split, `.env.example` placeholders, `scripts/smoke.sh` so local boot uses generated passwords and does not print them
-* `.github/PULL_REQUEST_TEMPLATE.md`, [security review](security-review.md), a `features/` doc
+* `.github/PULL_REQUEST_TEMPLATE.md` and [security review](security-review.md)
 
-It does not edit `deploy/nas/`. `pnpm check` and `pnpm smoke` stay green. Browser tests wait until Taylor has seen the stack run.
+It does not edit `deploy/nas/` and it does not add a page under `features/`. `pnpm check` and `pnpm smoke` stay green. Verification is CI only.
