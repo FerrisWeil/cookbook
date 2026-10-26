@@ -20,7 +20,7 @@ Taylor's constraints: a feature owns a folder and registers by being present; mi
 
 ## Decision (proposed)
 
-Use option 1. Keep one shared migration directory and one shared ADR directory, with a sequence check instead of a lockfile. Give each concurrent local stack its own Compose project, host ports, and Postgres volume. Leave the NAS Compose file as the single-project, no-published-ports deploy ([0002](0002-tailscale-only.md)).
+Use option 1. Keep one shared migration directory and one shared ADR directory, with a sequence check instead of a lockfile. Give each concurrent local stack its own Compose project, its own web, API, and MCP host ports, and its own Postgres volume. Postgres itself is not published on the host. That access rule is [0013](0013-security-review.md), also proposed. Leave the NAS Compose file as the single-project, no-published-ports deploy ([0002](0002-tailscale-only.md)).
 
 ## Consequences (if accepted)
 

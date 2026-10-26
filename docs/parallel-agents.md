@@ -2,7 +2,7 @@
 
 Proposal for [0012](decisions/0012-parallel-agents.md). Status is **proposed**. The commands and checks below are the convention to adopt after Taylor confirms. They are not implemented yet.
 
-One agent on a single checkout keeps today's defaults: Compose project `cookbook`, ports `5432` / `3000` / `8787` / `8080`, volume `cookbook_cookbook_pg`.
+One agent on a single checkout keeps Compose project `cookbook`, published ports `3000` / `8787` / `8080`, and volume `cookbook_cookbook_pg`. Postgres is not a published port. That rule is [0013](decisions/0013-security-review.md), still proposed.
 
 ## 1. A feature owns a folder
 
@@ -54,7 +54,7 @@ Options for the claim itself:
 
 ## 3. Two stacks at once
 
-Local `docker-compose.yml` only. NAS Compose is unchanged: no host ports, one project, Tailscale.
+Local `docker-compose.yml` only. The NAS file stays one project, Tailscale-only, with no host ports. Database passwords and which containers share the database network are [0013](decisions/0013-security-review.md), not this proposal.
 
 A second run sets:
 
@@ -63,7 +63,7 @@ A second run sets:
 | `COMPOSE_PROJECT_NAME` | `cookbook` | `cookbook-10` |
 | `COOKBOOK_PORT_OFFSET` | `0` | `10`, then `20`, `30`, … |
 
-Offset `10` publishes Postgres `5442`, API `3010`, MCP `8797`, and web `8090`. Container ports stay `5432`, `3000`, `8787`, and `80`. The follow-up adds a `pnpm stack` wrapper that does the arithmetic, writes a gitignored env file, and runs Compose. `pnpm stack` with no offset stays the same stack as `docker compose up --build` today. If a default port is already taken, the wrapper exits and tells the agent to set an offset. It does not hunt for a free port.
+Offset `10` publishes API `3010`, MCP `8797`, and web `8090`. Container ports stay `3000`, `8787`, and `80`. Postgres has no host port. Credentials, the database network, and roles are [0013](decisions/0013-security-review.md). The follow-up adds a `pnpm stack` wrapper that does the arithmetic, writes a gitignored env file, and runs Compose. `pnpm stack` with no offset stays the same stack as `docker compose up --build` today. If a default port is already taken, the wrapper exits and tells the agent to set an offset. It does not hunt for a free port.
 
 Options:
 
@@ -73,7 +73,7 @@ Options:
 
 ## 4. Databases stay apart
 
-Each Compose project has its own Postgres container. The volume key `cookbook_pg` has no global `name:`, so Docker names it `{project}_cookbook_pg`. Project `cookbook` and project `cookbook-10` do not share data. Migrations in one checkout apply only to the database that checkout's API starts.
+Each Compose project has its own Postgres container and its own gitignored env file. The volume key `cookbook_pg` has no global `name:`, so Docker names it `{project}_cookbook_pg`. Project `cookbook` and project `cookbook-10` do not share data. Migrations in one checkout apply only to the database that checkout's API starts. Who may connect, and over which network, is [0013](decisions/0013-security-review.md).
 
 `docker compose down -v` removes that project's volume only.
 
@@ -106,4 +106,4 @@ When this is accepted, delete the status table in `docs/README.md`. Each ADR alr
 | `.env.example` | Append a key. Leave existing lines in place. |
 | `.github/workflows/ci.yml` | Still only `pnpm check` and `pnpm smoke`. |
 
-Out of scope until Taylor confirms those decisions separately: the language stack ([0008](decisions/0008-typescript-stack.md)), migration tooling ([0010](decisions/0010-migration-tooling.md)), test tooling ([0011](decisions/0011-test-tooling.md)), and the security-review process proposed in chat.
+Out of scope until Taylor confirms those decisions separately: the language stack ([0008](decisions/0008-typescript-stack.md)), migration tooling ([0010](decisions/0010-migration-tooling.md)), test tooling ([0011](decisions/0011-test-tooling.md)), and the security review ([0013](decisions/0013-security-review.md)).
