@@ -23,7 +23,7 @@ Use option 1.
 * Screens are glanceable. The important thing is easy to see.
 * Type is readable at arm's length.
 * Light and dark both exist.
-* v1 does not cache the recipe library. A screen that cannot load says so in words. Chrome that is already loaded still paints.
+* v1 does not cache the recipe library. ~~A screen that cannot load says so in words. Chrome that is already loaded still paints.~~
 * Samples in git are labeled example data. Real recipes stay in Postgres ([0007](0007-public-repo-secrets.md)).
 
 Sizes, contrast, and iPhone layout are [0017](0017-tokens-accessibility-iphone.md). This ADR does not add another set of measurements. Detail is in [kitchen UI principles](../design/principles.md).
@@ -31,5 +31,11 @@ Sizes, contrast, and iPhone layout are [0017](0017-tokens-accessibility-iphone.m
 ## Consequences
 
 * Feature UI that misses a principle is not done, even if the route works.
-* A service worker or an offline library is a later ADR.
+* ~~A service worker or an offline library is a later ADR.~~
 * Fullscreen reading, a Chef panel, and updates that arrive with no reload are not decided here.
+
+## Amendments
+
+### 2026-10-26
+
+v1 does not cache the recipe library and does not add a service worker. A home-screen open that cannot load the document shows the browser's own error page. That is acceptable. After the page has loaded, a later read that fails is said in words on the screen. The app does not paint chrome for a document that never arrived.

@@ -22,9 +22,11 @@ Both themes exist. The first paint follows the system setting. The selector is o
 
 ## Honest offline
 
-v1 does not ship an offline recipe library. That cache was left open in [0005](../decisions/0005-v1-scope.md) and stays open.
+v1 does not cache the recipe library and does not add a service worker.
 
-If a fetch fails, the screen says so in words. The shell does not sit on a spinner with no text. Controls that shipped with the page still render when the API is down.
+A home-screen open that cannot load the document shows the browser's own error page. That is acceptable. The app does not paint chrome for a document that never arrived.
+
+After the page has loaded, a later read that fails is said in words. The screen does not sit on a spinner with no text. Controls that shipped with the loaded page still render.
 
 ## Example data in git
 

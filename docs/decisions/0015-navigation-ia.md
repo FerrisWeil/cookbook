@@ -43,4 +43,10 @@ Wireframes are in [information architecture](../design/information-architecture.
 
 v1 screens are the recipe list, the recipe viewer, and settings. Settings holds the theme selector and nothing else. The list and the recipe do not. The first paint follows the system setting.
 
-The feature PR builds those three screens with example data. It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel. Phone and desktop are the same screens. Desktop is the wider layout from [0017](0017-tokens-accessibility-iphone.md).
+~~The feature PR builds those three screens with example data.~~ It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel. Phone and desktop are the same screens. Desktop is the wider layout from [0017](0017-tokens-accessibility-iphone.md).
+
+### 2026-10-26
+
+The feature PR adds the example recipes as files in the repo. It does not add them in this docs PR. Titles start with `Example:`. Ids are explicit. The body is placeholder text and does not name schema fields. That same data can show the list, one recipe, an empty list, and a failed load, for demos. The failed load is an in-app state after the page has loaded. A document that never arrives is [0014](0014-kitchen-ui-principles.md). A real recipe schema and API are later. They are not this PR and not the first UI PR.
+
+Settings stays the theme selector only, for now. More UI design comes later. The default remains the system setting. No other settings are added.

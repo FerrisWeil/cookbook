@@ -32,7 +32,7 @@ Allowed:
 * `node:test` for the contrast pairs in [tokens](tokens.md) and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
 * The web package grows a `test` script, and the root `pnpm test` runs it, so `pnpm check` covers it.
 
-Not allowed until the feature has been demoed and confirmed in chat:
+Not allowed in the first UI feature PR, and not allowed until the feature has been demoed and confirmed in chat:
 
 * Playwright
 * any other real-browser test
