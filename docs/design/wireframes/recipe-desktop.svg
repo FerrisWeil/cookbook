@@ -1,28 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img">
-  <title>Wide wireframe, light theme: example recipe with ingredients beside steps</title>
+  <title>Wide wireframe: one example recipe</title>
   <rect width="1200" height="800" fill="#f6f1e9"/>
-  <rect width="240" height="800" fill="#efe6d6"/>
-  <text x="24" y="56" fill="#2b241c" font-family="Georgia, serif" font-size="24">Cookbook</text>
-  <rect x="24" y="88" width="192" height="44" rx="8" fill="none" stroke="#7d7264"/>
-  <text x="120" y="116" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Browse</text>
-  <rect x="24" y="144" width="192" height="44" rx="8" fill="none" stroke="#7d7264"/>
-  <text x="120" y="172" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Search</text>
-  <rect x="24" y="720" width="192" height="44" rx="8" fill="#f6f1e9" stroke="#7d7264"/>
-  <text x="120" y="748" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="14">Theme: Auto</text>
-  <rect x="24" y="208" width="192" height="44" rx="8" fill="#f6f1e9" stroke="#3d5a40"/>
-  <text x="120" y="236" text-anchor="middle" fill="#3d5a40" font-family="system-ui, sans-serif" font-size="16">Back</text>
-  <text x="280" y="72" fill="#2b241c" font-family="Georgia, serif" font-size="36">Example: Tomato lentils</text>
-  <text x="280" y="104" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
-  <rect x="280" y="136" width="240" height="360" rx="12" fill="#efe6d6" stroke="#7d7264"/>
-  <text x="300" y="172" fill="#3d5a40" font-family="system-ui, sans-serif" font-size="14" font-weight="700">Ingredients</text>
-  <text x="300" y="208" fill="#2b241c" font-family="Georgia, serif" font-size="18">Example ingredient</text>
-  <text x="300" y="240" fill="#2b241c" font-family="Georgia, serif" font-size="18">Example ingredient</text>
-  <text x="300" y="272" fill="#2b241c" font-family="Georgia, serif" font-size="18">Example ingredient</text>
-  <text x="560" y="172" fill="#3d5a40" font-family="system-ui, sans-serif" font-size="14" font-weight="700">Steps</text>
-  <text x="560" y="208" fill="#2b241c" font-family="Georgia, serif" font-size="18">1. Example step</text>
-  <text x="560" y="240" fill="#2b241c" font-family="Georgia, serif" font-size="18">2. Example step</text>
-  <text x="560" y="272" fill="#2b241c" font-family="Georgia, serif" font-size="18">3. Example step</text>
-  <text x="280" y="540" fill="#3d5a40" font-family="system-ui, sans-serif" font-size="14" font-weight="700">Notes</text>
-  <text x="280" y="572" fill="#2b241c" font-family="Georgia, serif" font-size="18">Example note. Not a real meal. Full width under both columns.</text>
-  <text x="280" y="620" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Fields are placeholders until the schema is accepted.</text>
+  <rect x="80" y="40" width="88" height="44" rx="8" fill="#efe6d6" stroke="#7d7264"/>
+  <text x="124" y="68" text-anchor="middle" fill="#2b241c" font-family="system-ui, sans-serif" font-size="16">Back</text>
+  <text x="80" y="140" fill="#2b241c" font-family="Georgia, serif" font-size="40">Example: Tomato lentils</text>
+  <text x="80" y="176" fill="#5c5348" font-family="system-ui, sans-serif" font-size="16">Placeholder meta · fields undecided</text>
+  <text x="80" y="240" fill="#2b241c" font-family="Georgia, serif" font-size="20">Example body text. Not a schema. Not a real meal.</text>
+  <text x="80" y="300" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">Example data. Same screen as the phone, wider.</text>
 </svg>

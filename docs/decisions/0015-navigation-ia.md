@@ -1,37 +1,37 @@
 # 0015. Navigation and information architecture
 
-* Status: **proposed**
+* Status: accepted
 * Date: 2026-10-26
-* Confirmed: (none — do not treat as accepted)
-
-> **Proposed.** Taylor marked this as needing changes on 2026-10-26 and did not spell the change out. The revision below is the reading of that, plus what he said about fullscreen reading and live updates. It is not confirmed.
+* Confirmed: Taylor, 2026-10-26, agent chat
 
 ## Context
 
-v1 needs a way to browse favorites, search, and open one recipe. Weekly meal planning comes later ([0005](0005-v1-scope.md)). The recipe schema is not decided, so screens must not depend on a final field list. nginx already falls back unknown paths to the SPA (`docker/nginx.conf`); this ADR does not change that file.
+Taylor said in chat on 2026-10-26 to stop overthinking information architecture and to start with the basics: a recipe list, and opening one recipe to read it. Search, weekly planning, fullscreen reading, live updates, and a Chef panel are later. They are not part of this decision.
 
-Wireframes and the route list are in [information architecture](../design/information-architecture.md).
+The recipe schema is not decided, so the viewer does not depend on a final field list. nginx already falls back unknown paths to the SPA (`docker/nginx.conf`); this ADR does not change that file.
+
+Wireframes are in [information architecture](../design/information-architecture.md). They use example titles and the line `Placeholder meta · fields undecided`.
 
 ## Options considered
 
-1. **Browse and Search in the nav. A recipe opens on top of either. Plan is drawn as a later screen and is not a v1 route.** Recommended. The shell can gain one nav item later without a redesign, and v1 has no dead tab.
-2. **A Plan tab now, labeled later.** The household sees where planning will live. The tab does nothing, which is a poor target to hit with messy hands.
-3. **Search as a field on Browse, not its own screen.** One less destination. Search is easier to miss, and a query has no URL to return to.
+1. **Two screens: a list of recipes, and one recipe opened from that list.** Taylor confirmed this.
+2. **Browse, Search, and a Plan slot.** More navigation than the first version needs.
+3. **Search as its own destination, a fullscreen mode, or a Chef panel.** Later work. Not this decision.
 
-## Decision (proposed)
+## Decision
 
 Use option 1.
 
-* Phone: a top bar and a bottom nav (Browse, Search), padded for the iPhone safe areas. Wide screens (the breakpoint in [0017](0017-tokens-accessibility-iphone.md)): the same two items in a left rail.
-* Routes: `/` favorites, `/search` search, `/recipes/:id` one recipe. The id is an opaque string. The page shows a title and placeholder blocks. Ingredients, steps, and notes in the sketches are layout regions, not a claim that the schema has those columns.
-* The recipe screen keeps Back and the nav. Both are large. Leaving a recipe does not depend on a swipe.
-* Wide screens add Full screen on the recipe. It hides the rail and fills the window. Exit full screen is a visible control of at least 44px. The phone recipe stays one column with the nav; it does not gain a second mode.
-* The open recipe re-renders when its data changes. No control has to be pressed. Chef's chat is not a panel in this app. The feature PR, if this is accepted, demonstrates that with example data only. It does not open a socket.
-* Plan has a wireframe and no route. It is not in the nav until a later feature is accepted.
-* The foundation status card leaves the home screen. If the list cannot load, Browse says that the API is unreachable. Database health is not a cooking task. The foundation feature's home-page status check is then history; this ADR does not edit that feature doc.
+* `/` is the list. Each card shows an example title and `Placeholder meta · fields undecided`. The card opens the recipe.
+* `/recipes/:id` is one recipe to read. The id is an opaque string. The page shows the title, the same placeholder meta line, and the recipe body as placeholder text. It does not name schema fields.
+* Phone and desktop are the same two screens. Desktop is the wider layout from [0017](0017-tokens-accessibility-iphone.md). There is no second nav destination.
+* Back returns to the list.
+* If the list cannot load, the list screen says so. The foundation status card is not the home screen.
 
-## Consequences (if accepted)
+The style-guide URL from [0018](0018-ui-demos.md) is a review page. It is not a screen in this information architecture.
 
-* The feature PR builds this shell with example cards. It does not add Plan, and it does not call a recipe API that does not exist yet.
-* Weekly planning, filters, and any field that is not "title plus placeholder blocks" wait for the schema.
+## Consequences
+
+* The feature PR builds the list and the viewer with example data. It does not add Search, Plan, fullscreen, a live-update channel, or a Chef panel.
+* Those later screens, and any real field list, wait for their own decisions. The schema is not chosen here.
 * Client routes only. No new nginx locations.
