@@ -26,7 +26,8 @@ Templates:
 | [0011](decisions/0011-test-tooling.md) | Test tooling | **proposed** |
 | [0012](decisions/0012-parallel-agents.md) | Parallel feature agents | **proposed** |
 | [0013](decisions/0013-security-review.md) | Security review and Postgres access | **proposed** |
+| [0014](decisions/0014-supply-chain.md) | Dependency updates and supply-chain hygiene | accepted |
 
-[0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing.
+[0012](decisions/0012-parallel-agents.md) is a proposal, with the convention in [parallel-agents.md](parallel-agents.md). [0013](decisions/0013-security-review.md) is a proposal, with the checklist in [security-review.md](security-review.md). Neither is in force. The status table on this page is one of the shared files that 0012 would stop hand-editing. [0014](decisions/0014-supply-chain.md) is accepted, with the comparison in [supply-chain.md](supply-chain.md).
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).
