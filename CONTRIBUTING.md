@@ -35,6 +35,14 @@ Every pull request is checked against the [security checklist](docs/security-rev
 
 **Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)).
 
+Taylor confirmed the same day when to ask, and when a plan is committed.
+
+Ask in chat, and do not edit, only for an architecture decision or a feature decision Taylor has not already confirmed. Architecture means the Decision axis above: hard to reverse, or real alternatives (an ADR). A feature decision is user-facing behavior that was not already named. Put every open question in one chat message. Taylor answers the ones he wants.
+
+Design updates and fixes do not wait for approval. Do them, then prove them. Do not expand scope.
+
+A plan stays in the chat and, when there is a pull request, in the pull request description. Do not commit a plan file. Commit writing only when the change is an ADR, or the documentation itself is the work.
+
 ## Checks
 
 `pnpm` is the only JavaScript package manager ([0009](docs/decisions/0009-repo-layout.md)). CI installs dependencies and then runs these commands. The steps live in the scripts, not in the workflow file.

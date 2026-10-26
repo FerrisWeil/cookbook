@@ -5,7 +5,9 @@ description: Use when asked to review, interrogate, or stress-test a change, or 
 
 # Cookbook review
 
-Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it. Do not apply review edits yourself. Taylor decides what changes.
+Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it.
+
+Design updates and fixes are applied, then proved. Read [cookbook-verify](../cookbook-verify/SKILL.md). When to ask is [Work types](../../../CONTRIBUTING.md#work-types). An architecture or feature finding is a question in one chat message with the other open questions. It is not a silent edit, and it is not a packet waiting for Taylor to approve the details.
 
 ## Setup
 
@@ -17,7 +19,7 @@ Diff against `master`.
 
 One readonly `generalPurpose` subagent. Model `grok-4.7-high`. The parent does the lead judgment.
 
-A second `grok-4.7-high` reviewer runs only after Taylor says yes for that diff. Tell him first: it costs about as much as the first review.
+A second `grok-4.7-high` reviewer runs only if Taylor already said yes for that diff.
 
 `composer-2.5` does not review. Follow [Agents](../../../CONTRIBUTING.md#agents) for every other model rule. A fast variant is never a slug.
 
@@ -45,4 +47,4 @@ Sort each finding into one bucket. Name who raised it.
 - **Noted.** Valid, and not worth a change now.
 - **Dismissed.** Wrong, a nit, a hypothetical that cannot happen, a premature abstraction, or a preference for a different design. Say why.
 
-A finding is not a decision. Check it against the code before editing. Push back with the code or the command output when it is wrong.
+A finding is not itself an architecture or feature decision. Check it against the code. Push back with the code or the command output when it is wrong.

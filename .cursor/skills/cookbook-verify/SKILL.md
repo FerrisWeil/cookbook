@@ -5,7 +5,7 @@ description: Use when about to claim work is done, a check passed, or a pull req
 
 # Cookbook verify
 
-Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it. Claim a result only after the command output from this turn.
+Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it. Claim a result only after the command output from this turn. When to ask, and when a plan is committed, is in [Work types](../../../CONTRIBUTING.md#work-types).
 
 ## Before any success claim
 

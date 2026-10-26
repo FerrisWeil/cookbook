@@ -5,7 +5,7 @@ description: Use when a test, build, smoke check, or runtime behavior fails, bef
 
 # Cookbook debug
 
-Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it. Find the cause before writing a fix.
+Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it. Find the cause before writing a fix. When to ask, and when a plan is committed, is in [Work types](../../../CONTRIBUTING.md#work-types).
 
 ## Steps
 
