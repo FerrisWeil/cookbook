@@ -5,4 +5,11 @@ packages:
 allowBuilds:
   esbuild: true
 
+audit:
+  level: high
+
 engineStrict: true
+
+minimumReleaseAge: 1440
+
+strictDepBuilds: true

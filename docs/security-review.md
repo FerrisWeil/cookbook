@@ -1,6 +1,6 @@
 # Security review
 
-Proposal for [0013](decisions/0013-security-review.md). Status is **proposed**. Do not treat this checklist as in force, and do not change Compose, until Taylor confirms it in chat.
+Checklist for accepted [0013](decisions/0013-security-review.md) and [0014](decisions/0014-supply-chain.md). The local Compose file follows it. `deploy/nas/` is updated by the agent that owns that file.
 
 Every pull request fills the checklist below in the PR body before the PR is marked ready. Docs-only PRs fill it too. Each item names a path or pastes the command output that shows the result. `n/a` is allowed only together with the files that were opened. Taylor confirms the filled checklist is enough. There is no second review bot.
 
@@ -38,7 +38,7 @@ Every pull request fills the checklist below in the PR body before the PR is mar
 
 ## Postgres
 
-Proposed baseline, checked against both Compose files once [0013](decisions/0013-security-review.md) is accepted. Not applied yet.
+Accepted baseline. The local Compose file applies it. The NAS file is still the single superuser on one shared network until the agent that owns `deploy/nas/` applies the same rules.
 
 ### Password
 
@@ -92,4 +92,14 @@ When this is accepted, the README will say:
 
 Out of scope: Socket, Snyk, and a standing second review model.
 
-Supply-chain rows beyond this checklist (Dependabot grouping, install scripts, Action SHA pins, image digests) are accepted in [0014](decisions/0014-supply-chain.md) and spelled out in [supply chain](supply-chain.md). The feature PR appends them here and on the PR template.
+## Supply chain
+
+Accepted in [0014](decisions/0014-supply-chain.md). Detail is in [supply chain](supply-chain.md).
+
+- Lockfile updated in the same PR as any manifest or `packageManager` change, or `n/a` with the files that were opened.
+- `allowBuilds` and `minimumReleaseAgeExclude` are unchanged, or each new entry is named.
+- `audit.ignore` is unchanged, or each GHSA is named.
+- `pnpm audit --audit-level=high` output is pasted. Moderate advisories are listed and do not fail CI.
+- Actions this PR touches are full SHAs. `permissions` are unchanged, or the new permission is named and is not on a `pull_request` job.
+- Third-party image refs this PR touches include a digest. No new `ports:` key. Postgres is still unpublished on the local file.
+- `deploy/nas/docker-compose.yml` was not edited, or the PR that owns that file says why.

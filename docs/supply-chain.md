@@ -15,7 +15,7 @@ These stay as 0013 wrote them:
 * The database has no `ports:` key. It sits on an internal network with the API only. `docker compose exec db psql` is how a human reaches it. Binding `127.0.0.1:5432` was considered in 0013 and rejected, because a `ports:` key is the edit a later change widens to every interface.
 * Socket and Snyk are out. A password does not encrypt `data/postgres`. Backups and directory modes are the ones 0013 names (`0700` for the data directory, `0600` for `.env`, `pg_dump` while Postgres is running).
 
-The local Compose file still publishes `5432` and still falls back to the password `cookbook`. The NAS file still connects the API as the superuser on one shared network. That is unfinished implementation. The feature PR does the local half. It does not edit `deploy/nas/`.
+The local Compose file uses the three roles, publishes no database port, and has no default password. The NAS file still connects the API as the superuser on one shared network. That file is the other agent's. This work does not edit `deploy/nas/`.
 
 ## 1. Dependabot and Renovate
 
@@ -44,7 +44,7 @@ Accepted `dependabot.yml` shape, written in the feature PR:
 
 * `npm` at `/`, weekly. One group for `minor` and `patch`. Major updates do not match that group, so each major is its own PR. `cooldown.default-days: 1`. Cooldown applies to version updates only.
 * `github-actions` at `/`, weekly, one group for every Action.
-* `docker` at `/`, weekly, one group for `minor` and `patch`. A major image bump is its own PR. This covers the Dockerfiles.
+* `docker` at `/docker`, weekly, one group for `minor` and `patch`. A major image bump is its own PR. The Dockerfiles live in that directory. `/` has none, and Dependabot does not walk into subdirectories for this ecosystem.
 * `docker-compose` at `/`, weekly, the same minor/patch group. `directory: /` includes `docker-compose.yml` and `deploy/nas/docker-compose.yml`. A Dependabot PR may edit the NAS file to bump an image. That is the point of the bot. Hand-editing that file is still reserved for the agent that owns the production stack.
 * `open-pull-requests-limit: 5` for version updates. Security updates have their own limit and do not count toward it.
 * Groups do not set `applies-to: security-updates`. Security PRs stay ungrouped so one CVE is not stuck behind a bundle.

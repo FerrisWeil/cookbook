@@ -21,30 +21,52 @@ try {
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: config.databaseUrl });
-const db: SqlClient = {
-  async query(sql, params) {
-    const result = await pool.query(sql, params);
-    return { rowCount: result.rowCount, rows: result.rows };
+function clientFrom(
+  queryable: {
+    query: (
+      sql: string,
+      params?: unknown[],
+    ) => Promise<{ rowCount: number | null; rows: Array<Record<string, unknown>> }>;
   },
-};
-
-async function checkout(): Promise<ReleasableClient> {
-  const connection = await pool.connect();
+): SqlClient {
   return {
     async query(sql, params) {
-      const result = await connection.query(sql, params);
+      const result = await queryable.query(sql, params);
       return { rowCount: result.rowCount, rows: result.rows };
     },
+  };
+}
+
+const migratorPool = new Pool({
+  connectionString: config.migratorDatabaseUrl,
+  max: 1,
+});
+
+async function checkout(): Promise<ReleasableClient> {
+  const connection = await migratorPool.connect();
+  return {
+    ...clientFrom(connection),
     release() {
       connection.release();
     },
   };
 }
 
-await applyMigrations(checkout, config.migrationsDir);
-await applySeed(db, config.seedFile);
+try {
+  await applyMigrations(checkout, config.migrationsDir);
+  const connection = await migratorPool.connect();
+  try {
+    await applySeed(clientFrom(connection), config.seedFile);
+  } finally {
+    connection.release();
+  }
+} finally {
+  await migratorPool.end();
+}
 console.log("migrations and seed applied");
+
+const pool = new Pool({ connectionString: config.databaseUrl });
+const db: SqlClient = clientFrom(pool);
 
 const { server, url } = await listen(config.bindHost, config.port, {
   getReady: () => getReadyStatus(db),
