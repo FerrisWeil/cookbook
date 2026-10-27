@@ -15,6 +15,15 @@ updates:
         update-types:
           - minor
           - patch
+    # Taylor, 2026-10-27. Stay on @types/node 22 so the types match the Node 22
+    # line (engines, CI node-version, and node:22.23.4-alpine). Revisit only
+    # when that line moves: prefer Node 24 LTS, and move CI, engines, images,
+    # and @types/node together. Major version updates only. Security updates
+    # still open.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: github-actions
     directory: /
@@ -40,6 +49,14 @@ updates:
         update-types:
           - minor
           - patch
+    # Taylor, 2026-10-27. Stay on the Node 22 image. Node 26 Alpine has no
+    # corepack, which these Dockerfiles run. Revisit only when the line moves:
+    # prefer Node 24 LTS, and move CI, engines, images, and @types/node
+    # together. Major version updates only. Security updates still open.
+    ignore:
+      - dependency-name: "node"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: docker-compose
     directory: /
@@ -54,3 +71,11 @@ updates:
         update-types:
           - minor
           - patch
+    # Taylor, 2026-10-27. Stay on Postgres 16 until a dump, a restore drill,
+    # and a volume-path plan exist. The 18 image does not start with the
+    # volume at /var/lib/postgresql/data. Revisit with that plan. Major
+    # version updates only. Security updates still open.
+    ignore:
+      - dependency-name: "postgres"
+        update-types:
+          - "version-update:semver-major"
