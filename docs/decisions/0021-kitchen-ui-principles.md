@@ -1,4 +1,4 @@
-# 0014. Kitchen UI principles
+# 0021. Kitchen UI principles
 
 * Status: accepted
 * Date: 2026-10-26
@@ -26,7 +26,7 @@ Use option 1.
 * v1 does not cache the recipe library. ~~A screen that cannot load says so in words. Chrome that is already loaded still paints.~~
 * Samples in git are labeled example data. Real recipes stay in Postgres ([0007](0007-public-repo-secrets.md)).
 
-Sizes, contrast, and iPhone layout are [0017](0017-tokens-accessibility-iphone.md). This ADR does not add another set of measurements. Detail is in [kitchen UI principles](../design/principles.md).
+Sizes, contrast, and iPhone layout are [0024](0024-tokens-accessibility-iphone.md). This ADR does not add another set of measurements. Detail is in [kitchen UI principles](../design/principles.md).
 
 ## Consequences
 

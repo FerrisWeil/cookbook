@@ -1,10 +1,10 @@
 # Tokens, accessibility, breakpoints, iPhone
 
-Detail for [0017](../decisions/0017-tokens-accessibility-iphone.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
+Detail for [0024](../decisions/0024-tokens-accessibility-iphone.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
 
 Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot. The feature PR locks the same pairs in a unit test so a later edit cannot quietly drop under the bar.
 
-The file format (CSS variables versus another format inside the UI package) follows [0016](../decisions/0016-design-system-approach.md). The hex values can move with that format.
+The file format (CSS variables versus another format inside the UI package) follows [0023](../decisions/0023-design-system-approach.md). The hex values can move with that format.
 
 ## Color
 
@@ -108,7 +108,7 @@ The default CSS is the phone. There is one min-width query.
 
 | Name | Query | Layout |
 | --- | --- | --- |
-| phone | default | One column. Floating actions ([0019](../decisions/0019-floating-glass-chrome.md)), not a bottom bar. |
+| phone | default | One column. Floating actions ([0026](../decisions/0026-floating-glass-chrome.md)), not a bottom bar. |
 | wide | `min-width: 48rem` | Same chrome, wider content. Content column caps near `65ch` on the list. |
 
 No tablet layout and no compact density. A desktop browser window narrower than 48rem gets the phone layout, which is the right fallback.
@@ -118,7 +118,7 @@ No tablet layout and no compact density. A desktop browser window narrower than 
 The manifest, apple touch icon, and `apple-mobile-web-app-capable` already exist. This decision adds the page rules a home-screen install needs. It does not add a service worker.
 
 * Viewport meta: `width=device-width, initial-scale=1, viewport-fit=cover`. Do not add `maximum-scale=1` or `user-scalable=no`.
-* Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. Floating controls sit inside that padding, above the home indicator. There is no bottom bar ([0019](../decisions/0019-floating-glass-chrome.md)).
+* Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. Floating controls sit inside that padding, above the home indicator. There is no bottom bar ([0026](../decisions/0026-floating-glass-chrome.md)).
 * The shell uses `min-height: 100dvh`, not `100vh`, so Safari's toolbars do not cover the page.
 * `apple-mobile-web-app-status-bar-style` is `default`. The OS keeps status-bar contrast. Safe-area padding is still applied so a later style change does not slide the title under the clock.
 * `theme-color` is updated to `--bg` of the active theme (light `#f6f1e9`, dark `#1c1915`). The manifest `background_color` and `theme_color` stay the light pair for the install splash. iOS does not reliably read a dark `theme_color` from the manifest.

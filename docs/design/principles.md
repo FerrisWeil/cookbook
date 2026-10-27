@@ -1,6 +1,6 @@
 # Kitchen UI principles
 
-Detail for [0014](../decisions/0014-kitchen-ui-principles.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
+Detail for [0021](../decisions/0021-kitchen-ui-principles.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
 
 The app is used while cooking and while planning, on a desktop browser and on iPhone Safari ([0005](../decisions/0005-v1-scope.md)). These are the overall rules. Measurements live in [tokens](tokens.md).
 

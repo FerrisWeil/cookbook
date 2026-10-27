@@ -1,6 +1,6 @@
 # Design system
 
-Detail for [0016](../decisions/0016-design-system-approach.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
+Detail for [0023](../decisions/0023-design-system-approach.md). Status is **accepted** (Taylor, 2026-10-26, agent chat).
 
 Components live in one workspace package, `@cookbook/ui`. Screens import that package. A well-tested UI library may be used inside the package. Which library is an implementation detail of the feature PR, chosen for the quality of the UI. Replacing it later does not need a new product ADR.
 
@@ -8,9 +8,9 @@ This page does not pick Tailwind, shadcn, Radix, or hand-written CSS. Any of tho
 
 ## What the package is for
 
-[0015](../decisions/0015-navigation-ia.md) is a list and a recipe viewer. The package owns the pieces those screens share: the page shell, a recipe card, the article, buttons, and the load and error message. The style guide at `/guide` ([0018](../decisions/0018-ui-demos.md)) renders the same pieces with example data.
+[0022](../decisions/0022-navigation-ia.md) is a list and a recipe viewer. The package owns the pieces those screens share: the page shell, a recipe card, the article, buttons, and the load and error message. The style guide at `/guide` ([0025](../decisions/0025-ui-demos.md)) renders the same pieces with example data.
 
-Token values are [0017](../decisions/0017-tokens-accessibility-iphone.md). The package applies them. It does not invent a second palette.
+Token values are [0024](../decisions/0024-tokens-accessibility-iphone.md). The package applies them. It does not invent a second palette.
 
 API and MCP do not depend on `@cookbook/ui`.
 

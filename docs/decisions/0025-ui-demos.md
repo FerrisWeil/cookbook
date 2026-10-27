@@ -1,4 +1,4 @@
-# 0018. How UI work is demoed
+# 0025. How UI work is demoed
 
 * Status: accepted
 * Date: 2026-10-26
