@@ -39,9 +39,12 @@ Templates:
 | [0024](decisions/0024-tokens-accessibility-iphone.md) | Tokens, accessibility, and iPhone layout | accepted |
 | [0025](decisions/0025-ui-demos.md) | How UI work is demoed | accepted |
 | [0026](decisions/0026-floating-glass-chrome.md) | Floating glass chrome | accepted |
+| [0027](decisions/0027-v1-recipe-data-model.md) | v1 recipe data model | proposed |
 
 [0012](decisions/0012-parallel-agents.md) is accepted. The convention is in [parallel-agents.md](parallel-agents.md). Its sequence check and the removal of this hand-edited table are still follow-up. [0013](decisions/0013-security-review.md) is accepted. The checklist is in [security-review.md](security-review.md). [0014](decisions/0014-supply-chain.md) is accepted, with the comparison in [supply-chain.md](supply-chain.md). The production stack is accepted in [0015](decisions/0015-unraid-compose-manager.md)–[0020](decisions/0020-update-and-rollback.md), with the detail in [unraid production](unraid-production.md). The feature that puts `docker-compose.unraid.yml` at the repo root is not written yet. The skeleton is still `deploy/nas/docker-compose.yml`.
 
 The kitchen UI decisions [0021](decisions/0021-kitchen-ui-principles.md) through [0026](decisions/0026-floating-glass-chrome.md) are accepted. [0026](decisions/0026-floating-glass-chrome.md) supersedes the heavy shell only. Detail and wireframes are in [design/](design/). The ADR template now uses Problem. Merged ADRs 0001–0013 still say Context.
+
+[0027](decisions/0027-v1-recipe-data-model.md) is proposed. It is the recipe model [0004](decisions/0004-postgres-migrations.md) deferred. It adds no migration and no API.
 
 Reference that already proved Docker, Tailscale, bearer tokens, and `docs/decisions/` on this NAS: [FerrisWeil/nas-mcp](https://github.com/FerrisWeil/nas-mcp).
