@@ -3,7 +3,7 @@
 * Status: proposed
 * Date: 2026-10-27
 
-> **Proposed ADRs are not decisions.** Do not mark `accepted` until Taylor confirms in this agent chat. Keep the pull request draft until then.
+> **Proposed ADRs are not decisions.** Status stays `proposed` until this pull request merges to `master`. Merged means accepted. Do not set Status to `accepted` in this file before that merge.
 
 > **Merged means accepted** (Taylor, 2026-10-26). A pull request merged to `master` accepts the ADRs it contains. If this file merges while Status is still `proposed`, treat it as accepted as of the merge date and update this line. Do not merge it in that state unless Taylor has confirmed the decision. Do not rewrite a merged decision in place; supersede it with a new ADR.
 
@@ -19,7 +19,20 @@ Chef needs to save a recipe and its notes, and Taylor needs to browse favorites 
 
 ## Decision
 
-Use option 3. Acceptance adopts **Proposed** and leaves **Open** unset. The first recipe change is a numbered SQL file applied by the API, the same runner as [0010](0010-migration-tooling.md). This ADR does not switch that runner to Drizzle or Prisma. Postgres 16 already provides `gen_random_uuid()`, so the migration adds no extension.
+Use option 3. Acceptance adopts **Proposed** and leaves **Open** unset.
+
+**Proposed** takes these positions:
+
+* The ingredient line is the source of truth. Amount, unit, and name are optional parsed fields.
+* Favorite is one shared flag. Rating is one optional score from 1 to 5.
+* The git seed is only the actors `taylor` and `chef`.
+* The first migration has no photo storage and no meal-plan tables.
+* Nutrition is one optional per-serving row. Its source is `chef`, `manual`, or `label`.
+* Delete is soft.
+* The recipe migration is numbered SQL applied by the API ([0010](0010-migration-tooling.md)). Drizzle and Prisma wait for a later ADR.
+* The phone's actor is chosen in the UI feature. Actor columns have no default.
+
+Postgres 16 already provides `gen_random_uuid()`, so the migration adds no extension.
 
 JSON keys are camelCase. SQL names are snake_case. The feature PR maps them. This PR adds no migration, no API, and no UI.
 
@@ -39,7 +52,7 @@ One row in `recipes` is one recipe. The cook-facing fields are:
 | Times | `prep_minutes`, `cook_minutes`, `total_minutes` | Optional integers, zero or greater. Total is stored on its own because rest time is not prep plus cook. |
 | Steps | `recipe_steps` | Ordered rows. Array order on save becomes `position` starting at 1. Each step is plain text. |
 | Notes | `notes text` | Optional standing tips that belong to the recipe. `save_recipe` replaces this text. Cooked-it notes go to the journal. |
-| Photos | none | Deferred. See Open. |
+| Photos | none | No photo column and no file bytes in the first migration. |
 
 Plain text only. The UI renders these strings as text.
 
@@ -81,7 +94,7 @@ One tag list. There is no category tree and no cuisine table.
 
 `recipes.favorite` is a household boolean, default false. `recipes.rating` is an optional household score from 1 to 5, or null when unrated. A favorite does not require a score, and a score does not put the recipe on the favorites list. [0005](0005-v1-scope.md) browses favorites. That list is `favorite = true`.
 
-There are no accounts ([0005](0005-v1-scope.md)). A per-person star would need an actor on every phone tap. One shared list matches how the household cooks. A later ADR can add `recipe_flags(recipe_id, actor)` without rewriting recipe rows. Acceptance of this ADR locks the shared list.
+There are no accounts ([0005](0005-v1-scope.md)). A per-person star would need an actor on every phone tap. One shared list matches how the household cooks. A later ADR can add `recipe_flags(recipe_id, actor)` without rewriting recipe rows.
 
 Standing tips stay in `recipes.notes`. Dated personal notes and cooks go to `recipe_journal`, append-only:
 
@@ -118,7 +131,7 @@ Sodium and any further nutrient are a nullable column when someone wants them. P
 
 #### Meal plans
 
-The first migration has no meal-plan table. Weekly planning is still a later screen ([0022](0022-navigation-ia.md)). Favorites and tags are what browse needs until then. An empty plan table would freeze a shape (week grid, slots, leftovers) before anyone uses it. A later ADR can add rows that point at `recipes.id`. That shape is Open.
+The first migration has no meal-plan table. Weekly planning is still a later screen ([0022](0022-navigation-ia.md)). Favorites and tags are what browse needs until then. An empty plan table would freeze a shape (week grid, slots, leftovers) before anyone uses it. A later ADR can add rows that point at `recipes.id`. Those columns are Open.
 
 #### Identity, time, deletion, and actors
 
@@ -128,9 +141,9 @@ Primary keys on `recipes` and `recipe_journal` are `uuid`, default `gen_random_u
 
 `created_at` and `updated_at` are `timestamptz`, stored in UTC, serialized as ISO-8601. A `set_updated_at` trigger bumps `updated_at` on `recipes`, `recipe_nutrition`, and `tags`. Journal rows keep `created_at` only.
 
-Soft delete is `recipes.deleted_at` plus `recipes.deleted_by`. List and get hide a row once `deleted_at` is set. Child rows stay. Soft delete is recovery, not erasure: the row remains in `pg_dump` ([0019](0019-data-dir-and-backups.md)). Clearing `deleted_at` is how a later undo would work. v1 has no restore tool and no hard-delete tool. A hard delete, when one exists, removes the recipe and cascades to lines, steps, tags links, nutrition, and journal. That is the erasure path, and it should be deliberate.
+Delete is soft: `recipes.deleted_at` plus `recipes.deleted_by`. List and get hide a row once `deleted_at` is set. Child rows stay. The row remains in `pg_dump` ([0019](0019-data-dir-and-backups.md)). Clearing `deleted_at` is how a later undo would work. v1 has no restore tool and no hard-delete tool. A hard delete, when one exists, removes the recipe and cascades to lines, steps, tag links, nutrition, and journal. That is the erasure path. The tool shapes are Open.
 
-`actors` is a short list of slugs, not logins and not Postgres roles. The migration seeds two rows, which already appear in these public docs:
+`actors` is a short list of slugs, not logins and not Postgres roles. The migration seeds only the two rows that already appear in these public docs. Another household cook is inserted on the NAS, outside git. `created_by`, `updated_by`, `deleted_by`, and `recipe_journal.actor` have no default. The UI feature decides which actor the phone sends.
 
 | slug | display name |
 | --- | --- |
@@ -417,17 +430,14 @@ The file does not wrap itself in `BEGIN`. The runner already does. Postgres gran
 
 ### Open
 
-Acceptance does not decide these.
+Acceptance does not decide these later shapes.
 
-* The slug and display name of the other household cook, and whether either string is committed. The seed above is only `taylor` and `chef`.
-* Which actor the phone sends. The column is required and has no default. A settings control can remember the choice. That control is a later feature.
-* Meal-plan columns. Proposed already keeps them out of the first migration. The later shape is unset.
-* Where photo files live. Proposed already stores none. A later decision can add `recipe_photos` and a directory under `COOKBOOK_DATA_DIR`. [0019](0019-data-dir-and-backups.md) does not list that directory today.
+* Meal-plan columns. The first migration has none.
+* Where photo files live. The first migration stores none. A later decision can add `recipe_photos` and a directory under `COOKBOOK_DATA_DIR`. [0019](0019-data-dir-and-backups.md) does not list that directory today.
 * Per-ingredient nutrition, a foods catalog, and unit conversion.
 * Sodium and any nutrient beyond energy and the four gram columns.
-* Drizzle or Prisma. [0010](0010-migration-tooling.md) stays in force. Accepting this ADR keeps numbered SQL for the recipe migration.
-* Restore and hard-delete tools. Proposed already omits both. The columns allow an undo. Erasure is a cascade delete.
-* A `tsvector` column. Proposed search is substring match.
+* The restore tool and the hard-delete tool. v1 delete is soft. The columns allow an undo. Erasure is a cascade delete.
+* A `tsvector` column. v1 search is substring match.
 
 ## Consequences
 
@@ -437,3 +447,5 @@ Acceptance does not decide these.
 * The illustration in this file is the shape Chef should be able to round-trip. Tool registration, HTTP paths, and the TypeScript types belong to the feature PR. Types that web, API, and MCP share follow [0009](0009-repo-layout.md) and [0012](0012-parallel-agents.md).
 * Soft-deleted recipes and journal notes are inside the plaintext dump. Deleting a recipe in the app hides it. It does not remove it from the last backup.
 * `cookbook_app` gains DML on the new tables through the grants [0013](0013-security-review.md) already set. It still has no `CREATE`.
+* The recipe migration stays numbered SQL. It does not introduce Drizzle or Prisma.
+* The committed actor seed is `taylor` and `chef` only. The UI feature chooses the phone's actor. The columns stay without a default.
