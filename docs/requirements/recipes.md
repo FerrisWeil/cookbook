@@ -4,7 +4,6 @@ Category F2. Status: Proposed.
 
 Drawn from the accepted decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
-
 ## F2.1 Ingredient line
 
 Status: Proposed.
