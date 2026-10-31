@@ -1,0 +1,102 @@
+topic: 1
+name: MCP
+requirements:
+  - id: F1.1
+    text: A caller with the shared secret can read a recipe.
+    details:
+      - id: F1.1.1
+        text: A deleted recipe is not read.
+        status: Proposed
+      - id: F1.1.2
+        text: The read includes nutrition when the recipe has it.
+        status: Proposed
+      - id: F1.1.3
+        text: The read includes the title.
+        status: Proposed
+      - id: F1.1.4
+        text: The read includes the steps in saved order.
+        status: Proposed
+      - id: F1.1.5
+        text: The read includes the servings.
+        status: Proposed
+
+  - id: F1.2
+    text: A caller with the shared secret can list recipes.
+    details:
+      - id: F1.2.1
+        text: A deleted recipe is not listed.
+        status: Proposed
+      - id: F1.2.2
+        text: The list is not a search.
+        status: Proposed
+
+  - id: F1.3
+    text: A caller with the shared secret can save a recipe.
+    details:
+      - id: F1.3.1
+        text: A save may include the one nutrition row.
+        status: Proposed
+      - id: F1.3.2
+        text: A save names an actor.
+        status: Proposed
+      - id: F1.3.3
+        text: There is no default actor.
+        status: Proposed
+      - id: F1.3.4
+        text: A save includes a non-empty title.
+        status: Proposed
+      - id: F1.3.5
+        text: A save includes the steps in order.
+        status: Proposed
+      - id: F1.3.6
+        text: A save includes the servings.
+        status: Proposed
+      - id: F1.3.7
+        text: A save may include the favorite and the rating.
+        status: Proposed
+
+  - id: F1.4
+    text: MCP calls require the shared secret.
+    details:
+      - id: F1.4.1
+        text: A call without the shared secret is rejected.
+        status: Proposed
+      - id: F1.4.2
+        text: Liveness does not require the secret.
+        status: Proposed
+      - id: F1.4.3
+        text: The liveness response is status only.
+        status: Proposed
+
+  - id: F1.5
+    text: v1 limits the MCP recipe operations.
+    details:
+      - id: F1.5.1
+        text: The recipe operations are read, list, and save.
+        status: Proposed
+      - id: F1.5.2
+        text: v1 has no journal tool.
+        status: Proposed
+      - id: F1.5.3
+        text: v1 has no tag tool.
+        status: Proposed
+      - id: F1.5.4
+        text: v1 has no search tool.
+        status: Proposed
+
+  - id: N1.1
+    text: A local stack may boot with a documented token.
+    details:
+      - id: N1.1.1
+        text: That token is not a secret.
+        status: Proposed
+      - id: N1.1.2
+        text: The NAS rejects that token.
+        status: Proposed
+
+  - id: S1.1
+    text: The MCP server is its own tailnet identity.
+    details:
+      - id: S1.1.1
+        text: The bot can open the MCP server only.
+        status: Proposed
