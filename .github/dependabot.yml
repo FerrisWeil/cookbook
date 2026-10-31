@@ -5,14 +5,27 @@ updates:
     schedule:
       interval: weekly
       day: monday
+      time: "06:00"
     cooldown:
       default-days: 1
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
+    # One group cannot set applies-to to both version updates and security
+    # updates. Two catch-all groups are the smallest split Dependabot allows.
     groups:
-      npm-minor-patch:
+      npm:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - major
+          - minor
+          - patch
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
           - minor
           - patch
     # Taylor, 2026-10-27. Stay on @types/node 22 so the types match the Node 22
@@ -30,23 +43,50 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+    open-pull-requests-limit: 1
     groups:
       actions:
+        applies-to: version-updates
         patterns:
           - "*"
+        update-types:
+          - major
+          - minor
+          - patch
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
+          - minor
+          - patch
 
   - package-ecosystem: docker
     directory: /docker
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+    open-pull-requests-limit: 1
+    # Dockerfiles live in /docker. docker-compose is a different ecosystem, so
+    # this entry cannot list the compose files.
     groups:
-      docker-minor-patch:
+      docker:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - major
+          - minor
+          - patch
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
           - minor
           - patch
     # Taylor, 2026-10-27. Stay on the Node 22 image. Node 26 Alpine has no
@@ -63,12 +103,25 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+    open-pull-requests-limit: 1
+    # directory / already covers docker-compose.yml and deploy/nas/docker-compose.yml.
+    # A second directories entry for the same tree would overlap.
     groups:
-      compose-minor-patch:
+      compose:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - major
+          - minor
+          - patch
+      compose-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
           - minor
           - patch
     # Taylor, 2026-10-27. Stay on Postgres 16 until a dump, a restore drill,
