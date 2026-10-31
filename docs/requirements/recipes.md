@@ -4,7 +4,6 @@ Category F2. Status: Proposed.
 
 Drawn from the accepted decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
-Retired, not reused: F2.4.2.
 
 ## F2.1 Ingredient line
 
@@ -66,13 +65,13 @@ Status: Proposed.
 
 The source is `chef`, `manual`, or `label`.
 
-### F2.4.3 Divisor
+### F2.4.2 Divisor
 
 Status: Proposed.
 
 Nutrition numbers are per serving. The divisor is the recipe's stored servings, and that servings is greater than zero.
 
-### F2.4.4 Nutrients
+### F2.4.3 Nutrients
 
 Status: Proposed.
 
