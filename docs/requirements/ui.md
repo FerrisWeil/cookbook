@@ -2,7 +2,7 @@
 
 Category F3. Status: Proposed.
 
-Drawn from the accepted kitchen UI decision. Each statement stays Proposed until Taylor accepts it.
+Drawn from the accepted kitchen UI decision. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
 ## F3.1 Household
 
@@ -28,6 +28,12 @@ Status: Proposed.
 
 A document that never loads shows the browser error. After a load, a failed read is said in words.
 
+### F3.2.3 Tailnet address
+
+Status: Proposed.
+
+Install is not required from the production tailnet address.
+
 ## F3.3 Screens
 
 Status: Proposed.
@@ -45,6 +51,36 @@ Settings changes the theme and nothing else.
 Status: Proposed.
 
 v1 has no search, meal plan, fullscreen reading, Chef panel, or live updates.
+
+### F3.3.3 List
+
+Status: Proposed.
+
+The list shows each recipe's title and favorite.
+
+### F3.3.4 Recipe
+
+Status: Proposed.
+
+The recipe screen shows the title, the ingredient lines, the steps in order, and nutrition when a row exists.
+
+### F3.3.5 Rating
+
+Status: Proposed.
+
+A rating shows on the recipe when it is set.
+
+### F3.3.6 Parsed fields
+
+Status: Proposed.
+
+Amount, unit, and name are not shown.
+
+### F3.3.7 Not favorites-only
+
+Status: Proposed.
+
+The list includes recipes that are not favorites.
 
 ## F3.4 Controls
 
@@ -93,3 +129,15 @@ Light and dark both exist. The first paint follows the system. The choice is on 
 Status: Proposed.
 
 A write from the phone asks which actor is writing. It does not pick one.
+
+### F3.7.1 What the phone writes
+
+Status: Proposed.
+
+From the phone, a write may set the favorite and the rating. It does not change the title, the ingredient lines, the steps, the servings, or the nutrition.
+
+### F3.7.2 Choices
+
+Status: Proposed.
+
+The phone offers only actors that already exist.
