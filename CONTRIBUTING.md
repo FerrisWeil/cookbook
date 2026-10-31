@@ -52,11 +52,12 @@ Taylor confirmed this on 2026-10-31.
 3. Docs are brief and readable: less verbose, understandable over detail.
 4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
-   - IDs are a category (`F3`), a requirement (`F3.2`), or a detail or edge case (`F3.2.1`).
-   - One file per category. Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
-   - Statuses: Proposed, Accepted (merged), Implemented, Verified (a referencing test passes). A requirement can merge before it is implemented.
+   - One topic per file: a short heading (`F1`). A requirement (`F1.2`) is one sentence with a status tag. A detail (`F1.2.1`) is one sentence under it. The shape is in [docs/requirements/](docs/requirements/).
+   - Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
+   - Status tags are Proposed, Accepted, Implemented, or Verified, on the requirement line only. A requirement can merge before it is implemented.
    - Each requirement change is its own pull request.
-   - Name every requirement in a test, for example `test('F3.2.1 …')`. A smoke or script check, or an explicit manual label, covers a requirement that is hard to unit test. `pnpm check` enforces this for Implemented and Verified.
+   - Implemented and Verified need a describe block named with the requirement ID and a test named with each detail ID. With no details, a test named with the requirement ID sits inside that describe. Proposed and Accepted need no test.
+   - A `[Manual]` tag on the requirement line covers that requirement and its details; a smoke or script mention covers the named ID.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 
