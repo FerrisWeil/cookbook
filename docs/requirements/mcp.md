@@ -74,7 +74,7 @@ Liveness does not require the secret. The response is status only.
 
 Status: Proposed.
 
-v1 MCP is read, list, and save.
+The recipe operations are read, list, and save.
 
 ### F1.5.1 No other tools
 
