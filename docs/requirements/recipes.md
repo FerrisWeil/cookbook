@@ -4,6 +4,8 @@ Category F2. Status: Proposed.
 
 Drawn from the accepted decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
+Retired, not reused: F2.4.2.
+
 ## F2.1 Ingredient line
 
 Status: Proposed.
@@ -68,13 +70,13 @@ The source is `chef`, `manual`, or `label`.
 
 Status: Proposed.
 
-Nutrition numbers are per serving. The divisor is the recipe's stored servings.
+Nutrition numbers are per serving. The divisor is the recipe's stored servings, and that servings is greater than zero.
 
 ### F2.4.4 Nutrients
 
 Status: Proposed.
 
-v1 names no required nutrient and has no per-ingredient nutrition.
+v1 does not fix which nutrients a row contains. It has no per-ingredient nutrition.
 
 ## F2.5 Delete
 
@@ -140,10 +142,10 @@ Steps are stored in the order they were saved.
 
 Status: Proposed.
 
-A recipe has servings greater than zero.
+A recipe stores its servings.
 
 ## F2.11 Left out
 
 Status: Proposed.
 
-v1 stores no notes, tags, journal, source, or times, and it has no search.
+v1 stores no notes, tags, journal, recipe source, or times, and it has no search.
