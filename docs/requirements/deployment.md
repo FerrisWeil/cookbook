@@ -74,7 +74,7 @@ A dump includes a deleted recipe.
 
 Status: Proposed.
 
-An app update waits until a dump exists. Nothing pulls new images on its own.
+An update does not start until a dump of the current database has been taken. Nothing pulls new images on its own.
 
 ## S1.5 Shape
 
