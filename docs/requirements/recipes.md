@@ -8,7 +8,7 @@ Drawn from the accepted decisions, including the confirmed recipe positions. Eac
 
 Status: Proposed.
 
-The ingredient line is the text the cook reads.
+The ingredient line is the source of truth.
 
 ### F2.1.1 Parsed fields
 
@@ -20,7 +20,7 @@ Amount, unit, and name may be empty.
 
 Status: Proposed.
 
-A save leaves a parsed field empty when the line does not support it.
+A parsed amount, unit, or name stays empty when the line does not state it.
 
 ## F2.2 Favorite
 
@@ -57,12 +57,6 @@ A recipe has at most one nutrition row. The numbers are per serving.
 Status: Proposed.
 
 The source is `chef`, `manual`, or `label`.
-
-### F2.4.2 Optional row
-
-Status: Proposed.
-
-The row exists only when at least one number is set. The source is then required.
 
 ## F2.5 Delete
 
