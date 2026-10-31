@@ -4,7 +4,6 @@ Category N1. Status: Proposed.
 
 Drawn from the accepted security decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
-Retired, not reused: N1.1.3.
 
 ## N1.1 Public repo
 
