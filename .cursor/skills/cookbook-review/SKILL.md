@@ -37,6 +37,7 @@ Use the ones that fit the diff.
 - Verification. Tests, or a demo, as Work types requires.
 - Complexity that the change does not need.
 - Security. Read [docs/security-review.md](../../../docs/security-review.md). Work types says when to fill it. Do not paste the checklist here.
+- Docs. An ADR holds the decision. Versions, ports, paths, env names, commands, and schemas belong in the current-state doc. The rule is [Docs](../../../CONTRIBUTING.md#docs).
 
 ## Lead judgment
 

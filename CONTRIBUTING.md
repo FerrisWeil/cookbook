@@ -33,7 +33,7 @@ Every pull request is checked against the [security checklist](docs/security-rev
 | Chore | A chore or dependency update, including Dependabot | A lighter review. |
 | Security fix | A bug with priority | Handle it before other bugs. |
 
-**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)).
+**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)). What an ADR may contain is [Docs](#docs).
 
 Taylor confirmed the same day when to ask, and when a plan is committed.
 
@@ -42,6 +42,19 @@ Ask in chat, and do not edit, only for an architecture decision or a feature dec
 Design updates and fixes do not wait for approval. Do them, then prove them. Do not expand scope.
 
 A plan stays in the chat and, when there is a pull request, in the pull request description. Do not commit a plan file. Commit writing only when the change is an ADR, or the documentation itself is the work.
+
+## Docs
+
+Taylor confirmed this on 2026-10-31.
+
+1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
+2. Current state lives in docs and READMEs, and changes with the code.
+3. Docs are short and scannable.
+4. Requirements will use a structured, enumerated format. Taylor will define it. Do not invent the format. Do not put requirements in an ADR. The placeholder is [docs/requirements/](docs/requirements/).
+
+The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
+
+ADR numbers are contiguous. A merged ADR keeps its number. Taylor allowed one rewrite on 2026-10-31 that renumbered the set to `0001`–`0018`. Do not renumber again. The next ADR is `0019`.
 
 ## Checks
 
@@ -62,7 +75,7 @@ One command starts the whole local stack, including seed data:
 docker compose up --build
 ```
 
-That is the path cloud agents use. NAS deploy does not publish host ports. The accepted Unraid file is `docker-compose.unraid.yml` at the repo root ([0015](docs/decisions/0015-unraid-compose-manager.md)–[0020](docs/decisions/0020-update-and-rollback.md)). It is not in the tree yet, so the command below is still the skeleton: it builds on the NAS and reads a repo-root `.env`.
+That is the path cloud agents use. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md)). The command below is the skeleton. It builds on the NAS and reads a repo-root `.env`.
 
 ```bash
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d

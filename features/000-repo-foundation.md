@@ -6,7 +6,7 @@
 
 ## What it does
 
-Gives the public cookbook repo a layout, working agreements, accepted ADRs, proposed stack ADRs, CI, and a one-command full stack (web, API, Postgres, MCP hello) so later features can be demoed. It does not save or browse recipes.
+Gives the public cookbook repo a layout, working agreements, accepted ADRs, CI, and a one-command full stack (web, API, Postgres, MCP hello) so later features can be demoed. It does not save or browse recipes.
 
 ## Acceptance checks
 
