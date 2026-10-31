@@ -22,12 +22,12 @@ const OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(
 const FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.md$`);
 const HEADING_RE = new RegExp(`^(#{1,3}) +(${ID_SOURCE}) +(.+)$`);
 const LOOSE_HEADING_RE = /^(#{1,6}) +([FNS][0-9][0-9A-Za-z.]*) *(.*)$/;
-const STATUS_RE = /^Status:\s+(Proposed|Accepted|Implemented|Verified|Retired)(?:\s*\([^)]*\))?$/;
+const STATUS_RE = /^Status:\s+(Proposed|Accepted|Implemented|Verified)(?:\s*\([^)]*\))?$/;
 const MANUAL_RE = /^Check:\s+manual(?:\s+.+)?$/;
 const TEST_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
 
-const STATUS_HINT = "Status: Proposed, Accepted, Implemented, Verified, or Retired";
+const STATUS_HINT = "Status: Proposed, Accepted, Implemented, or Verified";
 
 function isIdentChar(char) {
   return typeof char === "string" && /[A-Za-z0-9_$]/.test(char);
@@ -251,6 +251,30 @@ function parentOf(id) {
   return dot === -1 ? null : id.slice(0, dot);
 }
 
+function checkContiguous(name, reqs, errors) {
+  const children = new Map();
+  for (const req of reqs) {
+    const parent = parentOf(req.id);
+    if (!parent) continue;
+    const segment = Number(req.id.slice(parent.length + 1));
+    let segments = children.get(parent);
+    if (!segments) {
+      segments = new Set();
+      children.set(parent, segments);
+    }
+    segments.add(segment);
+  }
+  for (const [parent, segments] of children) {
+    const nums = [...segments].sort((a, b) => a - b);
+    for (let i = 0; i < nums.length; i += 1) {
+      if (nums[i] !== i + 1) {
+        errors.push(`${name}: ${parent} skips ${parent}.${i + 1}`);
+        break;
+      }
+    }
+  }
+}
+
 function scanIds(text) {
   return {
     ids: [...text.matchAll(TOKEN_RE)].map((match) => match[0]),
@@ -372,6 +396,7 @@ function parseCategory(name, text) {
   if (!seen.has(categoryId)) {
     errors.push(`${name}: missing category heading for ${categoryId}`);
   }
+  checkContiguous(name, reqs, errors);
   return { errors, reqs };
 }
 
@@ -473,7 +498,8 @@ function runCanary() {
 
   const meals = (body) => [{ name: "F3-meals.md", text: body }];
   const proposed = "# F3 Meals\n\nStatus: Proposed\n";
-  const implemented = "# F3 Meals\n\nStatus: Proposed\n\n## F3.2 Save\n\nStatus: Implemented\n";
+  const implemented =
+    "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 Keep\n\nStatus: Proposed\n\n## F3.2 Save\n\nStatus: Implemented\n";
 
   pass("empty", { requirementFiles: [], testFiles: [], scriptFiles: [] }, []);
   pass(
@@ -497,15 +523,15 @@ function runCanary() {
   );
   pass("proposed needs no test", { requirementFiles: meals(proposed), testFiles: [], scriptFiles: [] }, ["F3"]);
   pass(
-    "accepted and retired need no test",
+    "accepted needs no test",
     {
       requirementFiles: meals(
-        "# F3 Meals\n\nStatus: Accepted\n\n## F3.2 Save\n\nStatus: Retired\n",
+        "# F3 Meals\n\nStatus: Accepted\n\n## F3.1 Save\n\nStatus: Accepted\n",
       ),
       testFiles: [],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
     "it title counts",
@@ -514,7 +540,7 @@ function runCanary() {
       testFiles: [{ name: "save.test.ts", text: 'it("F3.2 saves", () => {});\n' }],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "test title counts",
@@ -523,7 +549,7 @@ function runCanary() {
       testFiles: [{ name: "save.test.ts", text: "test('F3.2 saves', () => {});\n" }],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "multiline title counts",
@@ -532,7 +558,7 @@ function runCanary() {
       testFiles: [{ name: "save.test.ts", text: 'it(\n  "F3.2 saves",\n  () => {},\n);\n' }],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "accepted may say merged",
@@ -555,7 +581,7 @@ function runCanary() {
       ],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "it.only counts",
@@ -564,7 +590,7 @@ function runCanary() {
       testFiles: [{ name: "save.test.ts", text: 'it.only("F3.2 runs", () => {});\n' }],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "script mention counts",
@@ -573,7 +599,7 @@ function runCanary() {
       testFiles: [],
       scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.2\n" }],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "manual label counts for that id only",
@@ -584,7 +610,7 @@ function runCanary() {
       testFiles: [{ name: "save.test.ts", text: 'it("F3.2 saves", () => {});\n' }],
       scriptFiles: [],
     },
-    ["F3", "F3.2", "F3.2.1"],
+    ["F3", "F3.1", "F3.2", "F3.2.1"],
   );
 
   fail("bad file name", { requirementFiles: [{ name: "notes.md", text: "hello\n" }], testFiles: [], scriptFiles: [] }, "category file name must look like F3-slug.md");
@@ -694,6 +720,46 @@ function runCanary() {
     "bad status",
     { requirementFiles: meals("# F3 Meals\n\nStatus: Done\n"), testFiles: [], scriptFiles: [] },
     "status line must be",
+  );
+  fail(
+    "retired is rejected",
+    {
+      requirementFiles: meals("# F3 Meals\n\nStatus: Accepted\n\n## F3.1 Save\n\nStatus: Retired\n"),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "status line must be",
+  );
+  fail(
+    "sibling ids have a gap",
+    {
+      requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\n\n## F3.2 Save\n\nStatus: Proposed\n"),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "F3 skips F3.1",
+  );
+  fail(
+    "detail ids have a gap",
+    {
+      requirementFiles: meals(
+        "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 Save\n\nStatus: Proposed\n\n### F3.1.2 Empty\n\nStatus: Proposed\n",
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "F3.1 skips F3.1.1",
+  );
+  pass(
+    "sibling ids are contiguous",
+    {
+      requirementFiles: meals(
+        "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 First\n\nStatus: Proposed\n\n## F3.2 Second\n\nStatus: Accepted\n",
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["F3", "F3.1", "F3.2"],
   );
   fail(
     "two statuses",
@@ -858,7 +924,7 @@ function runCanary() {
       testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { timeout: 1000 }, () => {});\n' }],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "describe keeps a test",
@@ -872,7 +938,7 @@ function runCanary() {
       ],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
   pass(
     "a real test still counts beside skipped ones",
@@ -899,7 +965,7 @@ function runCanary() {
       ],
       scriptFiles: [],
     },
-    ["F3", "F3.2"],
+    ["F3", "F3.1", "F3.2"],
   );
 
   return failures;
