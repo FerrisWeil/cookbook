@@ -49,7 +49,7 @@ Taylor confirmed this on 2026-10-31.
 
 1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
-3. Docs are short and scannable.
+3. Docs are brief and readable: less verbose, understandable over detail.
 4. Requirements will use a structured, enumerated format. Taylor will define it. Do not invent the format. Do not put requirements in an ADR. The placeholder is [docs/requirements/](docs/requirements/).
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.

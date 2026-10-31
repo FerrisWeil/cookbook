@@ -7,6 +7,8 @@ description: Use when starting a feature, task, bug, docs change, spike, chore, 
 
 Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it.
 
+Docs stay brief and readable: understandable over detail. The rules live in [Docs](../../../CONTRIBUTING.md#docs). Do not copy them.
+
 ## Start
 
 1. Name the work type and whether an ADR is required (`yes` or `no`). The rules are [Work types](../../../CONTRIBUTING.md#work-types). An ADR follows [Docs](../../../CONTRIBUTING.md#docs). Do not copy those rules.
