@@ -8,39 +8,39 @@ Drawn from the accepted decisions. Each statement stays Proposed until Taylor ac
 
 Status: Proposed.
 
-An authorized caller can read a stored recipe and its nutrition.
+A caller with the shared secret can read a recipe that is not deleted, including its nutrition when it has one.
 
-### F1.1.1 List
-
-Status: Proposed.
-
-An authorized caller can list stored recipes.
-
-## F1.2 Save
+## F1.2 List
 
 Status: Proposed.
 
-An authorized caller can save a recipe and its nutrition.
+A caller with the shared secret can list recipes that are not deleted.
 
-### F1.2.1 Nutrition row
-
-Status: Proposed.
-
-A save can set, replace, or clear the single nutrition row.
-
-### F1.2.2 Actor
+## F1.3 Save
 
 Status: Proposed.
 
-A save names an actor. There is no default.
+A caller with the shared secret can save a recipe.
 
-## F1.3 Secret
+### F1.3.1 Nutrition row
+
+Status: Proposed.
+
+A save may include the one nutrition row.
+
+### F1.3.2 Actor
+
+Status: Proposed.
+
+A save names an actor. There is no default actor.
+
+## F1.4 Secret
 
 Status: Proposed.
 
 A call without the shared secret is rejected.
 
-### F1.3.1 Liveness
+### F1.4.1 Liveness
 
 Status: Proposed.
 
