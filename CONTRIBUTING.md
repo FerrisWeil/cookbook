@@ -52,12 +52,10 @@ Taylor confirmed this on 2026-10-31.
 3. Docs are brief and readable: less verbose, understandable over detail.
 4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
-   - One topic per file: a short heading (`F1`). A requirement (`F1.2`) is one sentence with a status tag. A detail (`F1.2.1`) is one sentence under it. The shape is in [docs/requirements/](docs/requirements/).
+   - One topic per file: a short heading (`F1`). A requirement (`F1.2`) is one sentence. A detail (`F1.2.1`) is one sentence under it. `[Proposed]` marks a detail that is not implemented yet. The shape is in [docs/requirements/](docs/requirements/).
    - Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
-   - Status tags are Proposed, Accepted, Implemented, or Verified, on the requirement line only. A requirement can merge before it is implemented.
    - Each requirement change is its own pull request.
-   - Implemented and Verified need a describe block named with the requirement ID and a test named with each detail ID. With no details, a test named with the requirement ID sits inside that describe. Proposed and Accepted need no test.
-   - A `[Manual]` tag on the requirement line covers that requirement and its details; a smoke or script mention covers the named ID.
+   - An unmarked detail needs a test named with its ID. A describe block named with the requirement ID is required when any detail is unmarked. A requirement with no details needs that describe and a test named with its ID.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 

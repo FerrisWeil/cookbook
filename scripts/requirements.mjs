@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 // Requirement ID check. Policy is CONTRIBUTING.md. File shape is docs/requirements/README.md.
-// A topic is a heading. A requirement is one sentence plus a status tag. A detail is a dash item.
+// A topic is a heading. A requirement is one sentence. A detail is a dash item.
+// [Proposed] is allowed only on a detail, and that detail needs no test.
 // Fixture IDs stay in this file. The reference scan does not read it.
 // Markdown under docs/decisions is scanned for requirement IDs. Other docs are not.
 
@@ -14,8 +15,6 @@ const SELF = path.join(ROOT, "scripts", "requirements.mjs");
 const REQUIREMENTS_DIR = path.join(ROOT, "docs", "requirements");
 const DECISIONS_DIR = path.join(ROOT, "docs", "decisions");
 
-const NEEDS_EVIDENCE = new Set(["Implemented", "Verified"]);
-const STATUSES = new Set(["Proposed", "Accepted", "Implemented", "Verified"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage"]);
 
 const PART = "[1-9][0-9]*";
@@ -31,8 +30,6 @@ const TEST_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
 const DESCRIBE_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?describe(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
-
-const STATUS_TAG = "status tag must be [Proposed], [Accepted], [Implemented], or [Verified]";
 
 function isIdentChar(char) {
   return typeof char === "string" && /[A-Za-z0-9_$]/.test(char);
@@ -439,7 +436,7 @@ function parseTopic(name, text) {
   const seen = new Set();
   let fence = false;
 
-  function record(id, lineNo, kind, status, manual) {
+  function record(id, lineNo, kind, proposed) {
     if (seen.has(id)) {
       errors.push(`${name}:${lineNo}: duplicate id ${id}`);
       return;
@@ -449,21 +446,28 @@ function parseTopic(name, text) {
       errors.push(`${name}:${lineNo}: ${id} is missing parent ${parent}`);
     }
     seen.add(id);
-    reqs.push({ id, line: lineNo, file: name, kind, status, manual });
+    reqs.push({ id, line: lineNo, file: name, kind, proposed: Boolean(proposed) });
   }
 
   function inTopic(id) {
     return id === topicId || id.startsWith(`${topicId}.`);
   }
 
-  function readStatus(lineNo, id, tags) {
-    const statuses = tags.filter((tag) => STATUSES.has(tag));
-    const unknown = tags.filter((tag) => tag !== "Manual" && !STATUSES.has(tag));
-    if (unknown.length > 0) errors.push(`${name}:${lineNo}: ${id} ${STATUS_TAG}`);
-    if (statuses.length === 0) errors.push(`${name}:${lineNo}: ${id} is missing status`);
-    else if (statuses.length > 1) errors.push(`${name}:${lineNo}: ${id} has more than one status`);
-    const ok = unknown.length === 0 && statuses.length === 1;
-    return { status: ok ? statuses[0] : null, manual: ok && tags.includes("Manual") };
+  function markerError(lineNo, id, tags, allowProposed) {
+    if (allowProposed && tags.length === 1 && tags[0] === "Proposed") return true;
+    for (const tag of tags) {
+      errors.push(
+        tag === "Retired"
+          ? `${name}:${lineNo}: Retired is not a status`
+          : `${name}:${lineNo}: ${id} [${tag}] is not allowed`,
+      );
+    }
+    return false;
+  }
+
+  function markersOf(sentence, tags) {
+    const inline = [...sentence.matchAll(/\[([A-Za-z]+)\]/g)].map((item) => item[1]);
+    return [...inline, ...tags];
   }
 
   function parseHeading(lineNo, rest) {
@@ -493,10 +497,10 @@ function parseTopic(name, text) {
       return;
     }
     if (/\[[A-Za-z]+\]/.test(title) || /Status:/i.test(title)) {
-      errors.push(`${name}:${lineNo}: ${token} topic has no status`);
+      errors.push(`${name}:${lineNo}: ${token} topic is a heading only`);
       return;
     }
-    record(token, lineNo, "topic", null, false);
+    record(token, lineNo, "topic", false);
   }
 
   function parseDetail(lineNo, rest) {
@@ -523,9 +527,9 @@ function parseTopic(name, text) {
       return;
     }
     const parsed = parseTagBlock(body);
-    if (parsed.tags.length > 0) errors.push(`${name}:${lineNo}: ${token} detail has no status`);
     if (!oneSentence(parsed.sentence)) errors.push(`${name}:${lineNo}: ${token} must be one sentence`);
-    record(token, lineNo, "detail", null, false);
+    const proposed = markerError(lineNo, token, markersOf(parsed.sentence, parsed.tags), true);
+    record(token, lineNo, "detail", proposed);
   }
 
   function parseIdLine(lineNo, line) {
@@ -552,8 +556,8 @@ function parseTopic(name, text) {
     }
     const parsed = parseTagBlock(body);
     if (!oneSentence(parsed.sentence)) errors.push(`${name}:${lineNo}: ${token} must be one sentence`);
-    const status = readStatus(lineNo, token, parsed.tags);
-    record(token, lineNo, "requirement", status.status, status.manual);
+    markerError(lineNo, token, markersOf(parsed.sentence, parsed.tags), false);
+    record(token, lineNo, "requirement", false);
   }
 
   for (let index = 0; index < lines.length; index += 1) {
@@ -570,11 +574,11 @@ function parseTopic(name, text) {
     }
     if (fence || line === "") continue;
     if (/^Status:/i.test(line)) {
-      errors.push(`${name}:${lineNo}: status is a tag on the requirement line`);
+      errors.push(`${name}:${lineNo}: status is not used`);
       continue;
     }
     if (/^Check:/i.test(line)) {
-      errors.push(`${name}:${lineNo}: use [Manual] on the requirement line`);
+      errors.push(`${name}:${lineNo}: Check is not used`);
       continue;
     }
 
@@ -633,14 +637,10 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     structures.push(analyzeTests(text));
   }
 
-  const scriptEvidence = new Set();
   const scripts = [...scriptFiles].sort((a, b) => a.name.localeCompare(b.name));
   for (const file of scripts) {
     const scanned = scanIds(file.text);
-    for (const id of scanned.ids) {
-      note(id, file.name);
-      scriptEvidence.add(id);
-    }
+    for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
   }
 
@@ -666,30 +666,29 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     return false;
   }
 
-  function hasTest(id, insideId) {
+  function hasTest(id) {
     for (const structure of structures) {
       for (const test of structure.tests) {
-        if (test.skipped || !test.ids.includes(id)) continue;
-        if (!insideId) return true;
-        if (test.inside.some((block) => !block.skipped && block.ids.includes(insideId))) return true;
+        if (!test.skipped && test.ids.includes(id)) return true;
       }
     }
     return false;
   }
 
   for (const req of byId.values()) {
-    if (req.kind !== "requirement" || !req.status || !NEEDS_EVIDENCE.has(req.status)) continue;
+    if (req.kind !== "requirement") continue;
     const details = detailsOf.get(req.id) ?? [];
-    const covered = req.manual || scriptEvidence.has(req.id);
-    if (!covered && !hasDescribe(req.id)) {
-      errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) has no describe`);
+    const unmarked = details.filter((detail) => !detail.proposed);
+    if (details.length > 0 && unmarked.length === 0) continue;
+    if (!hasDescribe(req.id)) {
+      errors.push(`${req.file}:${req.line}: ${req.id} has no describe`);
     }
-    if (!details.length && !covered && !hasTest(req.id, req.id)) {
-      errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) has no test inside its describe`);
+    if (details.length === 0) {
+      if (!hasTest(req.id)) errors.push(`${req.file}:${req.line}: ${req.id} has no test`);
+      continue;
     }
-    if (req.manual) continue;
-    for (const detail of details) {
-      if (scriptEvidence.has(detail.id) || hasTest(detail.id)) continue;
+    for (const detail of unmarked) {
+      if (hasTest(detail.id)) continue;
       errors.push(`${detail.file}:${detail.line}: ${detail.id} has no test`);
     }
   }
@@ -736,12 +735,14 @@ function runCanary() {
 
   const meals = (body) => [{ name: "F3-meals.md", text: body }];
   const tests = (text) => [{ name: "save.test.ts", text }];
-  const proposed = "## F3 Meals\nF3.1 The meal is kept. [Proposed]\n";
-  const implemented =
-    "## F3 Meals\nF3.1 The meal is kept. [Proposed]\nF3.2 The meal is saved. [Implemented]\n";
-  const withDetail =
-    "## F3 Meals\nF3.1 The meal is kept. [Proposed]\nF3.2 The meal is saved. [Implemented]\n- F3.2.1 An empty name is rejected.\n";
-  const covered = 'describe("F3.2 save", () => {\n  it("F3.2 saves", () => {});\n});\n';
+  const bare = "## F3 Meals\nF3.1 The meal is saved.\n";
+  const withDetail = "## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 An empty name is rejected.\n";
+  const mixed =
+    "## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 Results are sorted by title.\n- F3.1.2 An empty name is rejected. [Proposed]\n";
+  const allProposed =
+    "## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 An empty name is rejected. [Proposed]\n- F3.1.2 A long name is rejected. [Proposed]\n";
+  const covered = 'describe("F3.1 save", () => {\n  it("F3.1 saves", () => {});\n});\n';
+  const detailCovered = 'describe("F3.1 save", () => {\n  it("F3.1.1 rejects an empty name", () => {});\n});\n';
 
   pass("empty", { requirementFiles: [], testFiles: [], scriptFiles: [] }, []);
   pass(
@@ -753,9 +754,9 @@ function runCanary() {
           text: [
             "# Requirements",
             "## F1 MCP",
-            "F1.2 The MCP lists recipes. [Implemented]",
+            "F1.2 The MCP lists recipes.",
             "- F1.2.1 Results are sorted by title.",
-            "- F1.2.2 An empty cookbook returns an empty list.",
+            "- F1.2.2 An empty cookbook returns an empty list. [Proposed]",
           ].join("\n"),
         },
       ],
@@ -764,221 +765,219 @@ function runCanary() {
     },
     [],
   );
-  pass("prose is not an id", { requirementFiles: meals(`${proposed}See F3.2.1 in prose.\n`), testFiles: [], scriptFiles: [] }, ["F3", "F3.1"]);
+  pass("prose is not an id", { requirementFiles: meals("## F3 Meals\nSee F3.2.1 in prose.\n"), testFiles: [], scriptFiles: [] }, ["F3"]);
   pass(
     "fenced line is not an id",
     {
-      requirementFiles: meals(`${proposed}\`\`\`md\nF9.9 The plant is saved. [Implemented]\n\`\`\`\n`),
+      requirementFiles: meals("## F3 Meals\n```md\nF9.9 The plant is saved.\n```\n"),
       testFiles: [],
       scriptFiles: [],
     },
-    ["F3", "F3.1"],
+    ["F3"],
   );
   pass("topic only needs no test", { requirementFiles: meals("## F3 Meals\n"), testFiles: [], scriptFiles: [] }, ["F3"]);
   pass(
     "level-1 topic heading counts",
-    { requirementFiles: meals("# F3 Meals\nF3.1 The meal is kept. [Proposed]\n"), testFiles: [], scriptFiles: [] },
-    ["F3", "F3.1"],
-  );
-  pass("proposed needs no test", { requirementFiles: meals(proposed), testFiles: [], scriptFiles: [] }, ["F3", "F3.1"]);
-  pass(
-    "accepted needs no test",
-    { requirementFiles: meals("## F3 Meals\nF3.1 The meal is kept. [Accepted]\n"), testFiles: [], scriptFiles: [] },
-    ["F3", "F3.1"],
+    {
+      requirementFiles: meals("# F3 Meals\nF3.1 The meal is kept.\n- F3.1.1 A blank name is rejected. [Proposed]\n"),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["F3", "F3.1", "F3.1.1"],
   );
   pass(
-    "it title inside describe counts",
-    { requirementFiles: meals(implemented), testFiles: tests(covered), scriptFiles: [] },
-    ["F3", "F3.1", "F3.2"],
+    "proposed details need no test",
+    { requirementFiles: meals(allProposed), testFiles: [], scriptFiles: [] },
+    ["F3", "F3.1", "F3.1.1", "F3.1.2"],
+  );
+  pass(
+    "it title counts",
+    { requirementFiles: meals(bare), testFiles: tests(covered), scriptFiles: [] },
+    ["F3", "F3.1"],
   );
   pass(
     "test title counts",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  test(\'F3.2 saves\', () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  test(\'F3.1 saves\', () => {});\n});\n'),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
+  );
+  pass(
+    "a test can sit outside the describe",
+    {
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {});\nit("F3.1 saves", () => {});\n'),
+      scriptFiles: [],
+    },
+    ["F3", "F3.1"],
   );
   pass(
     "multiline title counts",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe(\n  "F3.2 save",\n  () => {\n    it(\n      "F3.2 saves",\n      () => {},\n    );\n  },\n);\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe(\n  "F3.1 save",\n  () => {\n    it(\n      "F3.1 saves",\n      () => {},\n    );\n  },\n);\n'),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
     "subtest title counts",
     {
-      requirementFiles: meals(implemented),
+      requirementFiles: meals(bare),
       testFiles: tests(
-        'describe("F3.2 save", () => {\n  test("meals", async (t) => {\n    await t.test("F3.2 saves", async () => {});\n  });\n});\n',
+        'describe("F3.1 save", () => {\n  test("meals", async (t) => {\n    await t.test("F3.1 saves", async () => {});\n  });\n});\n',
       ),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
     "it.only counts",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  it.only("F3.2 runs", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  it.only("F3.1 runs", () => {});\n});\n'),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
     "describe.only counts",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe.only("F3.2 save", () => {\n  it("F3.2 saves", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe.only("F3.1 save", () => {\n  it("F3.1 saves", () => {});\n});\n'),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
-    "script mention counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [],
-      scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.2\n" }],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "script mention of a detail counts for that detail",
-    {
-      requirementFiles: meals(withDetail),
-      testFiles: [],
-      scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.2 and F3.2.1\n" }],
-    },
-    ["F3", "F3.1", "F3.2", "F3.2.1"],
-  );
-  pass(
-    "manual tag covers the requirement and its details",
-    {
-      requirementFiles: meals(
-        "## F3 Meals\nF3.1 The meal is kept. [Manual] [Implemented]\nF3.2 The meal is saved. [Verified] [Manual]\n- F3.2.1 An empty name is rejected.\n",
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2", "F3.2.1"],
-  );
-  pass(
-    "details need their own tests",
-    {
-      requirementFiles: meals(withDetail),
-      testFiles: tests('describe("F3.2 save", () => {\n  it("F3.2.1 rejects an empty name", () => {});\n});\n'),
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2", "F3.2.1"],
+    "an unmarked detail needs a test and a describe",
+    { requirementFiles: meals(mixed), testFiles: tests(detailCovered), scriptFiles: [] },
+    ["F3", "F3.1", "F3.1.1", "F3.1.2"],
   );
   pass(
     "a detail test can sit outside the describe",
     {
       requirementFiles: meals(withDetail),
-      testFiles: tests('describe("F3.2 save", () => {});\nit("F3.2.1 rejects an empty name", () => {});\n'),
+      testFiles: tests('describe("F3.1 save", () => {});\nit("F3.1.1 rejects an empty name", () => {});\n'),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2", "F3.2.1"],
+    ["F3", "F3.1", "F3.1.1"],
   );
   pass(
     "n and s ids",
     {
       requirementFiles: [
-        { name: "N1-speed.md", text: "## N1 Speed\nN1.1 The list returns quickly. [Proposed]\n" },
+        {
+          name: "N1-speed.md",
+          text: "## N1 Speed\nN1.1 The list returns quickly.\n- N1.1.1 The list is small. [Proposed]\n",
+        },
         { name: "S2-backup.md", text: "## S2 Backup\n" },
       ],
       testFiles: [],
       scriptFiles: [],
     },
-    ["N1", "N1.1", "S2"],
+    ["N1", "N1.1", "N1.1.1", "S2"],
   );
 
   fail("bad file name", { requirementFiles: [{ name: "notes.md", text: "hello\n" }], testFiles: [], scriptFiles: [] }, "topic file name must look like F3-slug.md");
-  fail("bad slug", { requirementFiles: [{ name: "F3-Meals.md", text: proposed }], testFiles: [], scriptFiles: [] }, "topic file name must look like F3-slug.md");
-  fail("implemented without evidence", { requirementFiles: meals(implemented), testFiles: [], scriptFiles: [] }, "F3.2 (Implemented) has no describe");
+  fail("bad slug", { requirementFiles: [{ name: "F3-Meals.md", text: bare }], testFiles: [], scriptFiles: [] }, "topic file name must look like F3-slug.md");
+  fail("a requirement with no details needs a describe", { requirementFiles: meals(bare), testFiles: [], scriptFiles: [] }, "F3.1 has no describe");
   fail(
-    "verified without evidence",
-    { requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved. [Verified]\n"), testFiles: [], scriptFiles: [] },
-    "F3.1 (Verified) has no describe",
+    "a requirement with no details needs a test",
+    {
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  it("saves", () => {});\n});\n'),
+      scriptFiles: [],
+    },
+    "F3.1 has no test",
+  );
+  fail(
+    "a test does not replace the describe",
+    { requirementFiles: meals(bare), testFiles: tests('it("F3.1 saves", () => {});\n'), scriptFiles: [] },
+    "F3.1 has no describe",
   );
   fail(
     "skip does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  it.skip("F3.2 skipped", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  it.skip("F3.1 skipped", () => {});\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "todo does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  it.todo("F3.2 later");\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  it.todo("F3.1 later");\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "body mention does not satisfy",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  const id = "F3.2";\n  it("saves", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  const id = "F3.1";\n  it("saves", () => {});\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "a longer id does not cover the shorter one",
     {
       requirementFiles: meals(withDetail),
-      testFiles: tests('describe("F3.2.1 empty", () => {\n  it("F3.2.1 rejects an empty name", () => {});\n});\n'),
+      testFiles: tests('describe("F3.1.1 empty", () => {\n  it("F3.1.1 rejects an empty name", () => {});\n});\n'),
       scriptFiles: [],
     },
-    "F3.2 (Implemented) has no describe",
+    "F3.1 has no describe",
   );
   fail(
     "a detail test does not replace the describe",
     {
       requirementFiles: meals(withDetail),
-      testFiles: tests('it("F3.2.1 rejects an empty name", () => {});\n'),
+      testFiles: tests('it("F3.1.1 rejects an empty name", () => {});\n'),
       scriptFiles: [],
     },
-    "F3.2 (Implemented) has no describe",
+    "F3.1 has no describe",
   );
   fail(
     "a missing detail test fails",
     {
-      requirementFiles: meals(
-        `${withDetail}- F3.2.2 A long name is rejected.\n`,
-      ),
-      testFiles: tests('describe("F3.2 save", () => {\n  it("F3.2.1 rejects an empty name", () => {});\n});\n'),
+      requirementFiles: meals(`${withDetail}- F3.1.2 A long name is rejected.\n`),
+      testFiles: tests(detailCovered),
       scriptFiles: [],
     },
-    "F3.2.2 has no test",
+    "F3.1.2 has no test",
   );
   fail(
-    "test outside the describe does not count",
+    "a proposed detail still needs the describe when another detail is unmarked",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {});\nit("F3.2 saves", () => {});\n'),
+      requirementFiles: meals(mixed),
+      testFiles: tests('it("F3.1.1 sorts by title", () => {});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no describe",
+  );
+  fail(
+    "script mention does not count",
+    {
+      requirementFiles: meals(bare),
+      testFiles: [],
+      scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.1\n" }],
+    },
+    "F3.1 has no describe",
   );
   fail(
     "script mention does not cover a detail",
     {
       requirementFiles: meals(withDetail),
-      testFiles: [],
-      scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.2\n" }],
+      testFiles: tests('describe("F3.1 save", () => {});\n'),
+      scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.1.1\n" }],
     },
-    "F3.2.1 has no test",
+    "F3.1.1 has no test",
   );
   fail(
     "unknown test id",
@@ -992,8 +991,8 @@ function runCanary() {
   );
   fail(
     "overlong id",
-    { requirementFiles: [], testFiles: tests("test('F3.2.1.1 too deep', () => {});\n"), scriptFiles: [] },
-    "invalid id F3.2.1.1 in save.test.ts",
+    { requirementFiles: [], testFiles: tests("test('F3.1.1.1 too deep', () => {});\n"), scriptFiles: [] },
+    "invalid id F3.1.1.1 in save.test.ts",
   );
   fail(
     "requirement is not a heading",
@@ -1002,7 +1001,7 @@ function runCanary() {
   );
   fail(
     "detail is not a heading",
-    { requirementFiles: meals(`${proposed}### F3.1.1 Early\n`), testFiles: [], scriptFiles: [] },
+    { requirementFiles: meals("## F3 Meals\n### F3.1.1 Early\n"), testFiles: [], scriptFiles: [] },
     "F3.1.1 is a list item, not a heading",
   );
   fail(
@@ -1012,19 +1011,16 @@ function runCanary() {
   );
   fail(
     "missing topic heading",
-    { requirementFiles: meals("F3.1 The meal is kept. [Proposed]\n"), testFiles: [], scriptFiles: [] },
+    { requirementFiles: meals("F3.1 The meal is kept.\n"), testFiles: [], scriptFiles: [] },
     "missing topic heading",
   );
-  fail(
-    "missing status",
-    { requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved.\n"), testFiles: [], scriptFiles: [] },
-    "F3.1 is missing status",
-  );
-  fail(
-    "bad status",
-    { requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved. [Done]\n"), testFiles: [], scriptFiles: [] },
-    "status tag must be",
-  );
+  for (const tag of ["Proposed", "Accepted", "Implemented", "Verified", "Manual"]) {
+    fail(
+      `${tag} on a requirement is rejected`,
+      { requirementFiles: meals(`## F3 Meals\nF3.1 The meal is saved. [${tag}]\n`), testFiles: [], scriptFiles: [] },
+      `[${tag}] is not allowed`,
+    );
+  }
   fail(
     "retired tag is rejected",
     { requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved. [Retired]\n"), testFiles: [], scriptFiles: [] },
@@ -1036,19 +1032,28 @@ function runCanary() {
     "Retired is not a status",
   );
   fail(
+    "retired on a detail is rejected",
+    {
+      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 An empty name is rejected. [Retired]\n"),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "Retired is not a status",
+  );
+  fail(
     "old status line is rejected",
     { requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\n\n## F3.1 Save\n\nStatus: Implemented\n"), testFiles: [], scriptFiles: [] },
-    "status is a tag on the requirement line",
+    "status is not used",
   );
   fail(
     "sibling ids have a gap",
-    { requirementFiles: meals("## F3 Meals\nF3.2 The meal is saved. [Proposed]\n"), testFiles: [], scriptFiles: [] },
+    { requirementFiles: meals("## F3 Meals\nF3.2 The meal is saved.\n"), testFiles: [], scriptFiles: [] },
     "F3 skips F3.1",
   );
   fail(
     "detail ids have a gap",
     {
-      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved. [Proposed]\n- F3.1.2 An empty name is rejected.\n"),
+      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved.\n- F3.1.2 An empty name is rejected.\n"),
       testFiles: [],
       scriptFiles: [],
     },
@@ -1058,17 +1063,17 @@ function runCanary() {
     "sibling ids are contiguous",
     {
       requirementFiles: meals(
-        "## F3 Meals\nF3.1 The first meal is kept. [Proposed]\nF3.2 The second meal is kept. [Accepted]\n- F3.2.1 A blank name is rejected.\n",
+        "## F3 Meals\nF3.1 The first meal is kept.\n- F3.1.1 A blank name is rejected. [Proposed]\nF3.2 The second meal is kept.\n- F3.2.1 A long name is rejected. [Proposed]\n",
       ),
       testFiles: [],
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2", "F3.2.1"],
+    ["F3", "F3.1", "F3.1.1", "F3.2", "F3.2.1"],
   );
   fail(
-    "two statuses",
+    "two markers on a requirement",
     { requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved. [Proposed] [Accepted]\n"), testFiles: [], scriptFiles: [] },
-    "F3.1 has more than one status",
+    "[Proposed] is not allowed",
   );
   fail(
     "topic mismatch",
@@ -1094,145 +1099,155 @@ function runCanary() {
   );
   fail(
     "overlong heading",
-    { requirementFiles: meals("## F3 Meals\n#### F3.2.1.1 Too deep\n"), testFiles: [], scriptFiles: [] },
-    "F3.2.1.1 is not a valid id",
+    { requirementFiles: meals("## F3 Meals\n#### F3.1.1.1 Too deep\n"), testFiles: [], scriptFiles: [] },
+    "F3.1.1.1 is not a valid id",
   );
   fail(
-    "manual does not cover another requirement",
+    "manual on a detail is rejected",
     {
-      requirementFiles: meals(
-        "## F3 Meals\nF3.1 The meal is kept. [Implemented]\nF3.2 The meal is saved. [Proposed] [Manual]\n",
-      ),
+      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 An empty name is rejected. [Manual]\n"),
       testFiles: [],
       scriptFiles: [],
     },
-    "F3.1 (Implemented) has no describe",
+    "[Manual] is not allowed",
   );
   fail(
-    "check manual is not a tag",
+    "verified on a detail is rejected",
     {
-      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved. [Implemented]\nCheck: manual\n"),
+      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 An empty name is rejected. [Verified]\n"),
       testFiles: [],
       scriptFiles: [],
     },
-    "use [Manual] on the requirement line",
+    "[Verified] is not allowed",
+  );
+  fail(
+    "check line is rejected",
+    { requirementFiles: meals(`${bare}Check: manual\n`), testFiles: [], scriptFiles: [] },
+    "Check is not used",
   );
   fail(
     "requirement is one sentence",
-    { requirementFiles: meals("## F3 Meals\nF3.1 Save it. Then list it. [Proposed]\n"), testFiles: [], scriptFiles: [] },
+    { requirementFiles: meals("## F3 Meals\nF3.1 Save it. Then list it.\n"), testFiles: [], scriptFiles: [] },
     "must be one sentence",
   );
   fail(
-    "topic has no status",
-    { requirementFiles: meals("## F3 Meals [Proposed]\n"), testFiles: [], scriptFiles: [] },
-    "topic has no status",
-  );
-  fail(
-    "detail has no status",
+    "detail is one sentence",
     {
-      requirementFiles: meals(
-        "## F3 Meals\nF3.1 The meal is saved. [Proposed]\n- F3.1.1 An empty name is rejected. [Verified]\n",
-      ),
+      requirementFiles: meals("## F3 Meals\nF3.1 The meal is saved.\n- F3.1.1 Save it. Then list it.\n"),
       testFiles: [],
       scriptFiles: [],
     },
-    "detail has no status",
+    "must be one sentence",
+  );
+  fail(
+    "topic is a heading only",
+    { requirementFiles: meals("## F3 Meals [Proposed]\n"), testFiles: [], scriptFiles: [] },
+    "topic is a heading only",
   );
   fail(
     "outside topic",
-    { requirementFiles: meals("## F3 Meals\nF4.1 The other topic is saved. [Proposed]\n"), testFiles: [], scriptFiles: [] },
+    { requirementFiles: meals("## F3 Meals\nF4.1 The other topic is saved.\n"), testFiles: [], scriptFiles: [] },
     "F4.1 is outside topic F3",
   );
   fail(
     "unclosed fence",
-    { requirementFiles: meals("## F3 Meals\n```\nF3.1 The meal is saved. [Proposed]\n"), testFiles: [], scriptFiles: [] },
+    { requirementFiles: meals("## F3 Meals\n```\nF3.1 The meal is saved.\n"), testFiles: [], scriptFiles: [] },
     "unclosed code fence",
   );
   fail(
     "test options skip does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  test("F3.2 saves", { skip: true }, () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  test("F3.1 saves", { skip: true }, () => {});\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "test options todo does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  test("F3.2 saves", { todo: true }, () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  test("F3.1 saves", { todo: true }, () => {});\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "it options skip does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  it(\n    "F3.2 saves",\n    { skip: true },\n    () => {},\n  );\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  it(\n    "F3.1 saves",\n    { skip: true },\n    () => {},\n  );\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "it options todo does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  it("F3.2 saves", { todo: true }, () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  it("F3.1 saves", { todo: true }, () => {});\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "describe.skip does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe.skip("F3.2 save", () => { it("F3.2 saves", () => {}); });\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe.skip("F3.1 save", () => { it("F3.1 saves", () => {}); });\n'),
       scriptFiles: [],
     },
-    "F3.2 (Implemented) has no describe",
+    "F3.1 has no describe",
   );
   fail(
     "describe.todo does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe.todo("F3.2 save", () => {\n  it("F3.2 saves", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe.todo("F3.1 save", () => {\n  it("F3.1 saves", () => {});\n});\n'),
       scriptFiles: [],
     },
-    "F3.2 (Implemented) has no describe",
+    "F3.1 has no describe",
   );
   fail(
     "describe options skip does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", { skip: true }, () => {\n  it("F3.2 saves", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", { skip: true }, () => {\n  it("F3.1 saves", () => {});\n});\n'),
       scriptFiles: [],
     },
-    "F3.2 (Implemented) has no describe",
+    "F3.1 has no describe",
+  );
+  fail(
+    "a skipped detail test does not count",
+    {
+      requirementFiles: meals(withDetail),
+      testFiles: tests('describe("F3.1 save", () => {\n  it.skip("F3.1.1 rejects an empty name", () => {});\n});\n'),
+      scriptFiles: [],
+    },
+    "F3.1.1 has no test",
   );
   fail(
     "block comment does not count",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n/*\nit("F3.2 saves", () => {});\n*/\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n/*\nit("F3.1 saves", () => {});\n*/\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "line comment is not a test",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("F3.2 save", () => {\n  // it("F3.2 saves", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("F3.1 save", () => {\n  // it("F3.1 saves", () => {});\n});\n'),
       scriptFiles: [],
     },
-    "has no test inside its describe",
+    "F3.1 has no test",
   );
   fail(
     "line comment unknown id still fails",
-    { requirementFiles: [], testFiles: tests("// see F3.2 later\n"), scriptFiles: [] },
-    "unknown id F3.2 in save.test.ts",
+    { requirementFiles: [], testFiles: tests("// see F3.1 later\n"), scriptFiles: [] },
+    "unknown id F3.1 in save.test.ts",
   );
   fail(
     "block comment unknown id still fails",
@@ -1242,22 +1257,22 @@ function runCanary() {
   pass(
     "running options still count",
     {
-      requirementFiles: meals(implemented),
+      requirementFiles: meals(bare),
       testFiles: tests(
-        'describe("F3.2 save", { timeout: 1000 }, () => {\n  test("F3.2 saves", { timeout: 1000 }, () => {});\n});\n',
+        'describe("F3.1 save", { timeout: 1000 }, () => {\n  test("F3.1 saves", { timeout: 1000 }, () => {});\n});\n',
       ),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
     "describe keeps a test",
     {
-      requirementFiles: meals(implemented),
-      testFiles: tests('describe("meals F3.2", () => {\n  it("F3.2 saves", () => {});\n});\n'),
+      requirementFiles: meals(bare),
+      testFiles: tests('describe("meals F3.1", () => {\n  it("F3.1 saves", () => {});\n});\n'),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
   pass(
     "adr without an id",
@@ -1283,37 +1298,37 @@ function runCanary() {
       decisionFiles: [
         {
           name: "docs/decisions/0001-choice.md",
-          text: "# Choice\n\n* Status: accepted\n\nSave a meal (F3.2).\n",
+          text: "# Choice\n\n* Status: accepted\n\nSave a meal (F3.1).\n",
         },
       ],
     },
-    "docs/decisions/0001-choice.md: cites requirement id F3.2",
+    "docs/decisions/0001-choice.md: cites requirement id F3.1",
   );
   pass(
     "a real test still counts beside skipped ones",
     {
-      requirementFiles: meals(implemented),
+      requirementFiles: meals(bare),
       testFiles: tests(
         [
-          'test("F3.2 saves", { skip: true }, () => {});',
-          'test("F3.2 saves", { todo: true }, () => {});',
-          'it("F3.2 saves", { skip: true }, () => {});',
-          'it("F3.2 saves", { todo: true }, () => {});',
-          'describe.skip("F3.2 save", () => { it("F3.2 saves", () => {}); });',
-          'describe.todo("F3.2 save", () => { it("F3.2 saves", () => {}); });',
+          'test("F3.1 saves", { skip: true }, () => {});',
+          'test("F3.1 saves", { todo: true }, () => {});',
+          'it("F3.1 saves", { skip: true }, () => {});',
+          'it("F3.1 saves", { todo: true }, () => {});',
+          'describe.skip("F3.1 save", () => { it("F3.1 saves", () => {}); });',
+          'describe.todo("F3.1 save", () => { it("F3.1 saves", () => {}); });',
           "/*",
-          'it("F3.2 saves", () => {});',
+          'it("F3.1 saves", () => {});',
           "*/",
-          'test.skip("F3.2 saves", () => {});',
-          'it.todo("F3.2 later");',
-          'describe("F3.2 save", () => {',
-          '  it("F3.2 saves", () => {});',
+          'test.skip("F3.1 saves", () => {});',
+          'it.todo("F3.1 later");',
+          'describe("F3.1 save", () => {',
+          '  it("F3.1 saves", () => {});',
           "});",
         ].join("\n"),
       ),
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    ["F3", "F3.1"],
   );
 
   return failures;
