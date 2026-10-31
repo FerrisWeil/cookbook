@@ -29,6 +29,223 @@ const TEST_CALL_RE =
 
 const STATUS_HINT = "Status: Proposed, Accepted, Implemented, Verified, or Retired";
 
+function isIdentChar(char) {
+  return typeof char === "string" && /[A-Za-z0-9_$]/.test(char);
+}
+
+function skipTrivia(text, index) {
+  let i = index;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
+      i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      i += 2;
+      while (i < n && text[i] !== "\n") i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i = Math.min(n, i + 2);
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+function describeSkipOpen(text, i) {
+  if (isIdentChar(text[i - 1])) return -1;
+  if (!text.startsWith("describe", i) || isIdentChar(text[i + "describe".length])) return -1;
+  let j = skipTrivia(text, i + "describe".length);
+  if (text[j] !== ".") return -1;
+  j = skipTrivia(text, j + 1);
+  const which = text.startsWith("skip", j) ? "skip" : text.startsWith("todo", j) ? "todo" : "";
+  if (!which || isIdentChar(text[j + which.length])) return -1;
+  j = skipTrivia(text, j + which.length);
+  return text[j] === "(" ? j : -1;
+}
+
+// Blank block comments and the arguments of describe.skip / describe.todo.
+// Line comments stay in the source the reference scan reads.
+function maskInactiveRegions(text) {
+  const out = text.split("");
+  const n = text.length;
+  const stack = [];
+  let i = 0;
+
+  function mask(from, to) {
+    for (let k = from; k < to; k += 1) {
+      if (out[k] !== "\n") out[k] = " ";
+    }
+  }
+
+  function activeSkip() {
+    for (let s = stack.length - 1; s >= 0; s -= 1) {
+      if (stack[s].type === "skip") return stack[s];
+    }
+    return null;
+  }
+
+  while (i < n) {
+    const frame = stack[stack.length - 1];
+    const c = text[i];
+
+    if (frame && frame.type === "str") {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (frame.q === "`" && c === "$" && text[i + 1] === "{") {
+        stack.push({ type: "expr", depth: 1 });
+        i += 2;
+        continue;
+      }
+      if (c === frame.q) stack.pop();
+      i += 1;
+      continue;
+    }
+
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < n && text[i] !== "\n") i += 1;
+      continue;
+    }
+
+    if (c === "/" && text[i + 1] === "*") {
+      const start = i;
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i = Math.min(n, i + 2);
+      mask(start, i);
+      continue;
+    }
+
+    if (c === "'" || c === '"' || c === "`") {
+      stack.push({ type: "str", q: c });
+      i += 1;
+      continue;
+    }
+
+    const skipOpen = describeSkipOpen(text, i);
+    if (skipOpen >= 0) {
+      stack.push({ type: "skip", depth: 1, start: skipOpen + 1 });
+      i = skipOpen + 1;
+      continue;
+    }
+
+    if (c === "(") {
+      const skip = activeSkip();
+      if (skip) skip.depth += 1;
+      i += 1;
+      continue;
+    }
+
+    if (c === ")") {
+      const skip = activeSkip();
+      if (skip) {
+        skip.depth -= 1;
+        if (skip.depth === 0) {
+          mask(skip.start, i);
+          stack.splice(stack.lastIndexOf(skip), 1);
+        }
+      }
+      i += 1;
+      continue;
+    }
+
+    if (frame && frame.type === "expr" && c === "{") {
+      frame.depth += 1;
+      i += 1;
+      continue;
+    }
+
+    if (frame && frame.type === "expr" && c === "}") {
+      frame.depth -= 1;
+      if (frame.depth === 0) stack.pop();
+      i += 1;
+      continue;
+    }
+
+    i += 1;
+  }
+
+  return out.join("");
+}
+
+function objectDeclaresSkipOrTodo(text, open) {
+  let i = open + 1;
+  let depth = 1;
+  let quote = null;
+  let top = "";
+  const n = text.length;
+  while (i < n && depth > 0) {
+    const c = text[i];
+    if (quote) {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (c === quote) quote = null;
+      i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < n && text[i] !== "\n") i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i = Math.min(n, i + 2);
+      continue;
+    }
+    if (c === "'" || c === '"' || c === "`") {
+      quote = c;
+      i += 1;
+      continue;
+    }
+    if (c === "{") {
+      depth += 1;
+      i += 1;
+      continue;
+    }
+    if (c === "}") {
+      depth -= 1;
+      if (depth === 0) break;
+      i += 1;
+      continue;
+    }
+    if (depth === 1) top += c;
+    i += 1;
+  }
+  if (depth !== 0) return false;
+  return /(?:^|[^A-Za-z0-9_$])(?:skip|todo)\s*:\s*true\b/.test(top);
+}
+
+function followingOptionsSkip(text, index) {
+  let i = skipTrivia(text, index);
+  if (text[i] !== ",") return false;
+  i = skipTrivia(text, i + 1);
+  if (text[i] !== "{") return false;
+  return objectDeclaresSkipOrTodo(text, i);
+}
+
+function evidenceIdsInTest(text) {
+  const masked = maskInactiveRegions(text);
+  const ids = [];
+  TEST_CALL_RE.lastIndex = 0;
+  for (const call of masked.matchAll(TEST_CALL_RE)) {
+    if (call[1] === "skip" || call[1] === "todo") continue;
+    if (followingOptionsSkip(masked, call.index + call[0].length)) continue;
+    ids.push(...scanIds(call[3]).ids);
+  }
+  return ids;
+}
+
 function parentOf(id) {
   const dot = id.lastIndexOf(".");
   return dot === -1 ? null : id.slice(0, dot);
@@ -190,10 +407,7 @@ function check({ requirementFiles, testFiles, scriptFiles }) {
     const scanned = scanIds(text);
     for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-    for (const call of text.matchAll(TEST_CALL_RE)) {
-      if (call[1] === "skip" || call[1] === "todo") continue;
-      for (const id of scanIds(call[3]).ids) evidence.add(id);
-    }
+    for (const id of evidenceIdsInTest(text)) evidence.add(id);
   }
 
   const scripts = [...scriptFiles].sort((a, b) => a.name.localeCompare(b.name));
@@ -531,6 +745,161 @@ function runCanary() {
     "unclosed fence",
     { requirementFiles: meals(`${proposed}\n\`\`\`\n## F3.2 Hidden\n`), testFiles: [], scriptFiles: [] },
     "unclosed code fence",
+  );
+  fail(
+    "test options skip does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { skip: true }, () => {});\n' }],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "test options todo does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { todo: true }, () => {});\n' }],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "it options skip does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [
+        {
+          name: "save.test.ts",
+          text: 'it(\n  "F3.2 saves",\n  { skip: true },\n  () => {},\n);\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "it options todo does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [{ name: "save.test.ts", text: 'it("F3.2 saves", { todo: true }, () => {});\n' }],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "describe.skip does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [
+        {
+          name: "save.test.ts",
+          text: 'describe.skip("suite", () => { it("F3.2 saves", () => {}); });\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "describe.todo does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [
+        {
+          name: "save.test.ts",
+          text: 'describe.todo("suite", () => {\n  it("F3.2 saves", () => {});\n});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "block comment does not count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [{ name: "save.test.ts", text: '/*\nit("F3.2 saves", () => {});\n*/\n' }],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "line comment is not a test",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [{ name: "save.test.ts", text: '// it("F3.2 saves", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "F3.2 (Implemented) has no test",
+  );
+  fail(
+    "line comment unknown id still fails",
+    {
+      requirementFiles: [],
+      testFiles: [{ name: "save.test.ts", text: "// see F3.2 later\n" }],
+      scriptFiles: [],
+    },
+    "unknown id F3.2 in save.test.ts",
+  );
+  fail(
+    "block comment unknown id still fails",
+    {
+      requirementFiles: [],
+      testFiles: [{ name: "save.test.ts", text: "/* see N4.4 later */\n" }],
+      scriptFiles: [],
+    },
+    "unknown id N4.4 in save.test.ts",
+  );
+  pass(
+    "running options still count",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { timeout: 1000 }, () => {});\n' }],
+      scriptFiles: [],
+    },
+    ["F3", "F3.2"],
+  );
+  pass(
+    "describe keeps a test",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [
+        {
+          name: "save.test.ts",
+          text: 'describe("meals", () => {\n  it("F3.2 saves", () => {});\n});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    ["F3", "F3.2"],
+  );
+  pass(
+    "a real test still counts beside skipped ones",
+    {
+      requirementFiles: meals(implemented),
+      testFiles: [
+        {
+          name: "save.test.ts",
+          text: [
+            'test("F3.2 saves", { skip: true }, () => {});',
+            'test("F3.2 saves", { todo: true }, () => {});',
+            'it("F3.2 saves", { skip: true }, () => {});',
+            'it("F3.2 saves", { todo: true }, () => {});',
+            'describe.skip("suite", () => { it("F3.2 saves", () => {}); });',
+            'describe.todo("suite", () => { it("F3.2 saves", () => {}); });',
+            "/*",
+            'it("F3.2 saves", () => {});',
+            "*/",
+            'test.skip("F3.2 saves", () => {});',
+            'it.todo("F3.2 later");',
+            'it("F3.2 saves", () => {});',
+          ].join("\n"),
+        },
+      ],
+      scriptFiles: [],
+    },
+    ["F3", "F3.2"],
   );
 
   return failures;

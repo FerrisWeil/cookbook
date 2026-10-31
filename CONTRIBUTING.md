@@ -56,7 +56,7 @@ Taylor confirmed this on 2026-10-31.
    - One file per category. Never reuse an ID. An edit keeps the ID. A dropped requirement is Retired.
    - Statuses: Proposed, Accepted (merged), Implemented, Verified (a referencing test passes), Retired. A requirement can merge before it is implemented.
    - Each requirement change is its own pull request.
-   - Name every requirement in a test, for example `test('F3.2.1 …')`. A smoke or script check, or an explicit manual label, covers a requirement that is hard to unit test. `pnpm check` enforces this.
+   - Name every requirement in a test, for example `test('F3.2.1 …')`. A smoke or script check, or an explicit manual label, covers a requirement that is hard to unit test. `pnpm check` enforces this for Implemented and Verified.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 
