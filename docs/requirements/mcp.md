@@ -1,83 +1,32 @@
-# MCP
+## F1 MCP
 
-Category F1. Status: Proposed.
+F1.1 A caller with the shared secret can read a recipe.
+- F1.1.1 A deleted recipe is not read. [Proposed]
+- F1.1.2 The read includes nutrition when the recipe has it. [Proposed]
+- F1.1.3 The read includes the title. [Proposed]
+- F1.1.4 The read includes the steps in saved order. [Proposed]
+- F1.1.5 The read includes the servings. [Proposed]
 
-Drawn from the accepted decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
+F1.2 A caller with the shared secret can list recipes.
+- F1.2.1 A deleted recipe is not listed. [Proposed]
+- F1.2.2 The list is not a search. [Proposed]
 
-## F1.1 Read
+F1.3 A caller with the shared secret can save a recipe.
+- F1.3.1 A save may include the one nutrition row. [Proposed]
+- F1.3.2 A save names an actor. [Proposed]
+- F1.3.3 There is no default actor. [Proposed]
+- F1.3.4 A save includes a non-empty title. [Proposed]
+- F1.3.5 A save includes the steps in order. [Proposed]
+- F1.3.6 A save includes the servings. [Proposed]
+- F1.3.7 A save may include the favorite and the rating. [Proposed]
 
-Status: Proposed.
+F1.4 MCP calls require the shared secret.
+- F1.4.1 A call without the shared secret is rejected. [Proposed]
+- F1.4.2 Liveness does not require the secret. [Proposed]
+- F1.4.3 The liveness response is status only. [Proposed]
 
-A caller with the shared secret can read a recipe that is not deleted, including its nutrition when it has one.
-
-### F1.1.1 Title, steps, servings
-
-Status: Proposed.
-
-A read includes the title, the steps in saved order, and the servings.
-
-## F1.2 List
-
-Status: Proposed.
-
-A caller with the shared secret can list recipes that are not deleted.
-
-### F1.2.1 Not search
-
-Status: Proposed.
-
-The list is not a search.
-
-## F1.3 Save
-
-Status: Proposed.
-
-A caller with the shared secret can save a recipe.
-
-### F1.3.1 Nutrition row
-
-Status: Proposed.
-
-A save may include the one nutrition row.
-
-### F1.3.2 Actor
-
-Status: Proposed.
-
-A save names an actor. There is no default actor.
-
-### F1.3.3 Title, steps, servings
-
-Status: Proposed.
-
-A save includes a non-empty title, the steps in order, and the servings.
-
-### F1.3.4 Favorite and rating
-
-Status: Proposed.
-
-A save may include the favorite and the rating.
-
-## F1.4 Secret
-
-Status: Proposed.
-
-A call without the shared secret is rejected.
-
-### F1.4.1 Liveness
-
-Status: Proposed.
-
-Liveness does not require the secret. The response is status only.
-
-## F1.5 Scope
-
-Status: Proposed.
-
-The recipe operations are read, list, and save.
-
-### F1.5.1 No other tools
-
-Status: Proposed.
-
-v1 has no journal tool, tag tool, or search tool.
+F1.5 v1 limits the MCP recipe operations.
+- F1.5.1 The recipe operations are read, list, and save. [Proposed]
+- F1.5.2 v1 has no journal tool. [Proposed]
+- F1.5.3 v1 has no tag tool. [Proposed]
+- F1.5.4 v1 has no search tool. [Proposed]
