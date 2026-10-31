@@ -2,7 +2,7 @@
 
 Category N1. Status: Proposed.
 
-Drawn from the accepted security decisions. Each statement stays Proposed until Taylor accepts it.
+Drawn from the accepted security decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
 ## N1.1 Public repo
 
@@ -51,3 +51,15 @@ The pull request records a security finding only when there is one.
 Status: Proposed.
 
 A documented token that is not a secret may boot a local stack. The NAS rejects that token.
+
+## N1.6 API access
+
+Status: Proposed.
+
+v1 has no household login.
+
+### N1.6.1 API secret
+
+Status: Proposed.
+
+The API does not require a shared secret.
