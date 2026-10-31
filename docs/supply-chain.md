@@ -4,14 +4,18 @@ Current detail for [0014](decisions/0014-supply-chain.md). The checklist rows ar
 
 ## Dependabot
 
-`.github/dependabot.yml` is the schedule. It is weekly, on Monday, with no automerge.
+`.github/dependabot.yml` is the schedule. Weekly, Monday 06:00 UTC. No automerge.
 
-- `npm` at `/`. One group for `minor` and `patch`. Majors are outside that group. `cooldown.default-days: 1`. Cooldown applies to version updates only.
-- `github-actions` at `/`. One group for every Action.
-- `docker` at `/docker`. One group for `minor` and `patch`. The Dockerfiles live in that directory.
-- `docker-compose` at `/`, `directory: /`. One group for `minor` and `patch`.
+Each ecosystem has two catch-all groups, `patterns: ["*"]`, for `major`, `minor`, and `patch`. One group is `applies-to: version-updates`. The other is `applies-to: security-updates`. One group cannot cover both.
 
-`open-pull-requests-limit` is 5 for version updates. Security updates are not in those groups, so one advisory is not stuck behind a bundle. Security updates stay enabled.
+`open-pull-requests-limit` is 1 for version updates. It does not cap security updates.
+
+- `npm` at `/`. `cooldown.default-days: 1` on version updates only. `@types/node` major version updates are ignored.
+- `github-actions` at `/`.
+- `docker` at `/docker`. The `node` image major version updates are ignored.
+- `docker-compose` uses `directories: ["/", "/deploy/nas"]`. `directory: /` does not open subdirectories. `postgres` major version updates are ignored. A Dependabot pull request may edit the NAS file to bump an image.
+
+`@types/node` and the `node` image stay on the Node 22 line. Those majors are ignored until CI, engines, images, and types move together. `postgres` majors are ignored until a dump and restore plan exists. Security updates still open for all three.
 
 `cooldown` does not delay security updates. `minimumReleaseAge` does: pnpm refuses a release younger than one day on any install, including a security bump. Dependabot rebases. That wait is accepted.
 
