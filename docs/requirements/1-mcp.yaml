@@ -3,22 +3,28 @@ title: MCP
 requirements:
   - id: 1.1
     type: functional
-    text: Agents can read a recipe.
+    text: Agents can retrieve the details of one recipe.
     details:
       - id: 1.1.1
-        text: Given a deleted recipe, the agent does not receive it.
+        text: Given a recipe ID, the agent receives that recipe.
         implemented: false
       - id: 1.1.2
-        text: Given a recipe that has nutrition, the agent receives that nutrition.
+        text: Without a recipe ID, the agent is told an ID is required.
         implemented: false
       - id: 1.1.3
-        text: Given a recipe, the agent receives its title.
+        text: Given an ID that matches no recipe, the agent is told the recipe was not found.
         implemented: false
       - id: 1.1.4
-        text: Given a recipe, the agent receives its steps in saved order.
+        text: Given the ID of a deleted recipe, the agent is told the recipe was not found.
         implemented: false
       - id: 1.1.5
-        text: Given a recipe, the agent receives its servings.
+        text: Given any combination of fields, the agent receives only those fields.
+        implemented: false
+      - id: 1.1.6
+        text: Given a field that doesn't exist, the agent is told which field is invalid.
+        implemented: false
+      - id: 1.1.7
+        text: Without fields, the agent receives the title, steps in saved order, servings, and nutrition when present.
         implemented: false
 
   - id: 1.2
@@ -27,9 +33,6 @@ requirements:
     details:
       - id: 1.2.1
         text: Given a deleted recipe, the list does not include it.
-        implemented: false
-      - id: 1.2.2
-        text: Given a list request, the agent receives the recipes without searching them.
         implemented: false
 
   - id: 1.3
@@ -99,26 +102,4 @@ requirements:
         implemented: false
       - id: 1.5.3
         text: Given a search request, the agent is told that operation is not available.
-        implemented: false
-
-  - id: 1.6
-    type: non-functional
-    text: A local stack may boot with a documented token.
-    details:
-      - id: 1.6.1
-        text: Given the documented local token, it is not a secret.
-        implemented: false
-      - id: 1.6.2
-        text: Given that documented token, the NAS rejects it.
-        implemented: false
-
-  - id: 1.7
-    type: system
-    text: The MCP server is its own tailnet identity.
-    details:
-      - id: 1.7.1
-        text: Given the tailnet, the MCP server is a separate identity from the app.
-        implemented: false
-      - id: 1.7.2
-        text: Given a bot on the tailnet, it can open the MCP server only.
         implemented: false
