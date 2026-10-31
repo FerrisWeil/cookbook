@@ -2,7 +2,7 @@
 
 Detail for [0015](decisions/0015-production.md). Database roles are in [security-review.md](security-review.md).
 
-The accepted production file is not in the tree. The file that is in the tree is `deploy/nas/docker-compose.yml`. It builds on the NAS, publishes no host ports, uses one superuser password, advertises `tag:cookbook-web`, and mounts a Tailscale Serve config. MCP in that file binds `127.0.0.1`. The target below replaces that skeleton.
+The accepted production file is not in the tree. The file that is in the tree is `deploy/nas/docker-compose.yml`. It builds on the NAS, publishes no host ports, uses one superuser password, advertises `tag:cookbook-web`, and mounts a Tailscale Serve config. In that skeleton, nginx listens on `127.0.0.1:80` and MCP binds `127.0.0.1`. The target below replaces that skeleton. When the production file is added, delete the skeleton so only one NAS Compose file remains.
 
 ## Deploy
 
@@ -58,7 +58,7 @@ The NAS is a PC running Unraid. Publish `linux/amd64` only. The images contain n
 
 Postgres passwords and roles are the three values in the security doc. No dev password in this file. The `db` healthcheck is `pg_isready -U postgres -d cookbook`.
 
-Nginx and Tailscale config mounts are `./deploy/nas/nginx.conf` and `./deploy/nas/tailscale`. `deploy/nas/nginx.conf` listens on `0.0.0.0:80`. MCP `BIND_HOST` is `0.0.0.0`. Init runs only on an empty data directory. If `postgres/` already exists from the skeleton, stop the stack and rename that directory before the first boot.
+Nginx and Tailscale config mounts are `./deploy/nas/nginx.conf` and `./deploy/nas/tailscale`. On this target, nginx listens on `0.0.0.0:80` and MCP `BIND_HOST` is `0.0.0.0`. The skeleton's loopback bind was only for Serve. Init runs only on an empty data directory. If `postgres/` already exists from the skeleton, stop the stack and rename that directory before the first boot.
 
 ## Tailscale
 
@@ -95,7 +95,7 @@ Serve is off. Funnel is off. No port 443 grant. API and Postgres are not tailnet
 
 Web and MCP listen on `0.0.0.0` inside the sidecar network namespace. That bind is the tailnet address, not a host port. The Unraid host can still open the Docker bridge address. The app network has no fixed global `name:`.
 
-Two auth keys, reusable and not ephemeral, one tag each. They live only in the NAS env file.
+Two auth keys, reusable, not ephemeral, and pre-authorized if the tailnet requires approval. One tag each. They live only in the NAS env file.
 
 Health on the tailnet: `http://cookbook/` and `http://cookbook-mcp:8787/health`. MCP calls still need the bearer token.
 
@@ -124,7 +124,7 @@ mv "$tmp" "$dump"
 chmod 600 "$dump"
 ```
 
-That uses the socket inside the `db` container. It does not publish `5432`. Restore with `pg_restore` into an empty `postgres/` directory after init has created the roles. Passwords come from `.env` again. Copy `postgres/` only when the database is stopped. An appdata backup of the whole directory is a consistent copy only when the stack is stopped.
+That uses the socket inside the `db` container. It does not publish `5432`. Restore: rename `postgres/` aside, start only `db` so init creates the roles, then `pg_restore` into that empty database. Passwords come from `.env` again. Starting the API before the dump loads lets it migrate an empty database and then collide with the dump. Copy `postgres/` only when the database is stopped. An appdata backup of the whole directory is a consistent copy only when the stack is stopped.
 
 Copying `tailscale-web/` and `tailscale-mcp/` while the stack is up is fine. Those directories are not in the SQL dump.
 

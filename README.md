@@ -47,7 +47,7 @@ cp .env.example .env   # set MCP_AUTH_TOKEN, POSTGRES_PASSWORD, the three local 
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
 ```
 
-State is stored under `COOKBOOK_DATA_DIR` (default `/mnt/user/appdata/cookbook`), with `postgres`, `tailscale-web`, and `tailscale-mcp` subdirectories. The web sidecar and the MCP sidecar each need their own Tailscale auth key. In this skeleton, MCP listens on `127.0.0.1` inside the Tailscale network namespace, and Serve on 443 is the tailnet ingress.
+State is stored under `COOKBOOK_DATA_DIR` (default `/mnt/user/appdata/cookbook`), with `postgres`, `tailscale-web`, and `tailscale-mcp` subdirectories. The web sidecar and the MCP sidecar each need their own Tailscale auth key. In this skeleton, nginx and MCP listen on `127.0.0.1` inside the Tailscale network namespace, and Serve on 443 is the tailnet ingress.
 
 Do not publish host ports on the NAS. Do not enable Tailscale Funnel. Do not set `MCP_ALLOW_DEV_TOKEN` on the NAS.
 
@@ -66,7 +66,7 @@ features/           Per-feature docs
 deploy/nas/         Unraid skeleton (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Web is Vite + React. The API is a Node HTTP server. MCP uses the TypeScript MCP SDK. Local Postgres roles and supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Web is Vite + React. The API is a Node HTTP server. MCP uses the TypeScript MCP SDK. Local Postgres roles are in [security review](docs/security-review.md). Supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). See [docs](docs/README.md).
 
 ## Development without Docker
 

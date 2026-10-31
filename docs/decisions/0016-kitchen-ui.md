@@ -16,7 +16,7 @@ A kitchen screen that is dense, chrome-heavy, or online-only is hard to use at a
 
 ## Decision
 
-Large targets. Glanceable. Readable at arm's length. Light and dark. The theme follows the system. v1 does not cache the library. A document that never loads shows the browser error. A later failure is said in words. Example data only in git.
+Large targets. Hover is never the only way to reach an action. Glanceable. Readable at arm's length. Light and dark. The theme follows the system. v1 does not cache the library. A document that never loads shows the browser error. A later failure is said in words. Example data only in git.
 
 Three screens: a list, one recipe, and settings. Settings is the theme and nothing else. No search, no plan, no fullscreen, no Chef panel, and no live updates.
 

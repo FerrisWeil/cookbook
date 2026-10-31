@@ -48,7 +48,7 @@ Local Compose publishes `3000` (API), `8787` (MCP), and `8080` (web). It does no
 
 ## Postgres
 
-The local Compose file applies this. The NAS file still connects the API as the superuser `cookbook` on one shared network, with `POSTGRES_PASSWORD`. That changes when [0015](decisions/0015-production.md) lands.
+The local Compose file applies this. The NAS skeleton still connects the API as the superuser `cookbook` on one shared network, with `POSTGRES_PASSWORD`. That file changes when `docker-compose.unraid.yml` is added ([0015](decisions/0015-production.md)).
 
 ### Passwords
 
@@ -74,4 +74,4 @@ Web and MCP are on the `app` network. They do not resolve `db`.
 
 The password stops a container that can open a TCP connection. It does not stop a shell on the NAS, or someone who can read the data directory. Postgres does not encrypt that directory. Unraid disk encryption is the control for a disk that leaves the house.
 
-`$COOKBOOK_DATA_DIR/postgres` (NAS default `/mnt/user/appdata/cookbook/postgres`) is not an SMB or NFS share. After first start the Postgres image owns that directory. Do not chown it back while the database is running. `.env` is mode `0600` and is not a share. Backup steps are in the Unraid doc.
+Directory mode, shares, and backup steps are in the Unraid doc. After first start the Postgres image owns the data directory. Do not chown it back while the database is running.

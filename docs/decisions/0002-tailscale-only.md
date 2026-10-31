@@ -2,7 +2,7 @@
 
 * Status: accepted
 * Date: 2026-10-25
-* Confirmed: Taylor, 2026-10-26
+* Confirmed: Taylor, 2026-10-25
 
 ## Problem
 
