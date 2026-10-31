@@ -2,7 +2,7 @@
 
 Category S1. Status: Proposed.
 
-Drawn from the accepted hosting decisions. Each statement stays Proposed until Taylor accepts it.
+Drawn from the accepted hosting decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
 ## S1.1 NAS
 
@@ -58,6 +58,12 @@ Status: Proposed.
 
 Tailnet HTTPS is off.
 
+### S1.2.6 Install
+
+Status: Proposed.
+
+The production tailnet address does not have to offer install.
+
 ## S1.3 Backups
 
 Status: Proposed.
@@ -81,3 +87,9 @@ An update does not start until a dump of the current database has been taken. No
 Status: Proposed.
 
 v1 is the web app, the API, Postgres, and one cookbook MCP. Chef is outside this repo.
+
+## S1.6 API reach
+
+Status: Proposed.
+
+Only the web app and the MCP server can call the API. The API is not a tailnet identity.
