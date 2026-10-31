@@ -2,7 +2,7 @@
 
 Category F2. Status: Proposed.
 
-Drawn from the accepted decisions, including the confirmed recipe positions. Each statement stays Proposed until Taylor accepts it.
+Drawn from the accepted decisions. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
 ## F2.1 Ingredient line
 
@@ -21,6 +21,12 @@ Amount, unit, and name may be empty.
 Status: Proposed.
 
 A parsed amount, unit, or name stays empty when the line does not state it.
+
+### F2.1.3 Only those fields
+
+Status: Proposed.
+
+The only parsed fields are amount, unit, and name.
 
 ## F2.2 Favorite
 
@@ -58,6 +64,18 @@ Status: Proposed.
 
 The source is `chef`, `manual`, or `label`.
 
+### F2.4.3 Divisor
+
+Status: Proposed.
+
+Nutrition numbers are per serving. The divisor is the recipe's stored servings.
+
+### F2.4.4 Nutrients
+
+Status: Proposed.
+
+v1 names no required nutrient and has no per-ingredient nutrition.
+
 ## F2.5 Delete
 
 Status: Proposed.
@@ -93,3 +111,39 @@ The actors shipped in git are `taylor` and `chef`.
 Status: Proposed.
 
 An actor field has no default.
+
+### F2.7.2 Other cooks
+
+Status: Proposed.
+
+Git ships no other actor. Another cook is added on the NAS, outside git.
+
+## F2.8 Title
+
+Status: Proposed.
+
+A recipe has a non-empty title.
+
+### F2.8.1 Duplicates
+
+Status: Proposed.
+
+Two recipes may share a title.
+
+## F2.9 Steps
+
+Status: Proposed.
+
+Steps are stored in the order they were saved.
+
+## F2.10 Servings
+
+Status: Proposed.
+
+A recipe has servings greater than zero.
+
+## F2.11 Left out
+
+Status: Proposed.
+
+v1 stores no notes, tags, journal, source, or times, and it has no search.
