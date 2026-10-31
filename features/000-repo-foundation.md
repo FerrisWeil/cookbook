@@ -16,7 +16,7 @@ Gives the public cookbook repo a layout, working agreements, accepted ADRs, CI, 
 - [ ] MCP `/mcp` without a bearer token returns 401
 - [ ] MCP `hello` tool returns a structured greeting when authorized
 - [ ] Postgres has migrations applied and a seed row in `app_meta`
-- [ ] `pnpm check` runs lint, unit tests, build, and secret scanning
+- [ ] `pnpm check` runs lint, unit tests, build, secret scanning, and requirement IDs
 - [ ] `pnpm smoke` runs the Compose stack and health checks
 - [ ] CI calls `pnpm check` and `pnpm smoke` and does not repeat those steps
 - [ ] `.env` cannot be committed; `.env.example` has placeholders only

@@ -50,7 +50,13 @@ Taylor confirmed this on 2026-10-31.
 1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
 3. Docs are brief and readable: less verbose, understandable over detail.
-4. Requirements will use a structured, enumerated format. Taylor will define it. Do not invent the format. Do not put requirements in an ADR. The placeholder is [docs/requirements/](docs/requirements/).
+4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
+
+   - IDs are a category (`F3`), a requirement (`F3.2`), or a detail or edge case (`F3.2.1`).
+   - One file per category. Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
+   - Statuses: Proposed, Accepted (merged), Implemented, Verified (a referencing test passes). A requirement can merge before it is implemented.
+   - Each requirement change is its own pull request.
+   - Name every requirement in a test, for example `test('F3.2.1 …')`. A smoke or script check, or an explicit manual label, covers a requirement that is hard to unit test. `pnpm check` enforces this for Implemented and Verified.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 
@@ -61,11 +67,11 @@ ADR numbers are contiguous. A merged ADR keeps its number. Taylor allowed one re
 `pnpm` is the only JavaScript package manager ([0009](docs/decisions/0009-repo-layout.md)). CI installs dependencies and then runs these commands. The steps live in the scripts, not in the workflow file.
 
 ```bash
-pnpm check   # lint, unit tests, build, secret scan
+pnpm check   # lint, unit tests, build, secret scan, requirement IDs
 pnpm smoke   # docker compose up --build and health checks
 ```
 
-Unit tests for functions and classes live next to the app they test (`apps/*/test`). What else a pull request must show is in [Work types](#work-types).
+Unit tests for functions and classes live next to the app they test (`apps/*/test`). Requirement IDs are checked by `scripts/requirements.mjs`. What else a pull request must show is in [Work types](#work-types).
 
 ## Full stack
 
