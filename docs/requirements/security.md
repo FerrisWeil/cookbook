@@ -22,12 +22,6 @@ Status: Proposed.
 
 A demo, fixture, or doc uses no real recipe, note, token, or tailnet name. A stand-in title starts with `Example:`.
 
-### N1.1.3 Local token
-
-Status: Proposed.
-
-A documented local token may boot a local stack. The NAS rejects that token.
-
 ## N1.2 Database
 
 Status: Proposed.
@@ -51,3 +45,9 @@ Every pull request is checked against the security checklist before it is marked
 Status: Proposed.
 
 The pull request records a security finding only when there is one.
+
+## N1.5 Local token
+
+Status: Proposed.
+
+A documented token that is not a secret may boot a local stack. The NAS rejects that token.
