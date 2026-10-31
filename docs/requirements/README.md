@@ -2,7 +2,7 @@
 
 Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). This file is the index. An ADR does not cite a requirement ID.
 
-A Markdown category file is `docs/requirements/<ID>-slug.md` (example shape `F3-slug.md`). The MCP pilot is `docs/requirements/F1-mcp.yaml`. This README is not a category file. The check skips it, so the examples below are not requirements.
+A Markdown category file is `docs/requirements/<ID>-slug.md` (example shape `F3-slug.md`). The MCP pilot is `docs/requirements/1-mcp.yaml`. This README is not a category file. The check skips it, so the examples below are not requirements.
 
 ## File
 
@@ -15,12 +15,13 @@ A Markdown category file is `docs/requirements/<ID>-slug.md` (example shape `F3-
 
 ## YAML
 
-A pilot category file may be `F1-mcp.yaml`. Write block lists, not flow style (`[]` or `{}`). `pnpm check` runs Prettier on these files and rejects flow style.
+The pilot file is `1-mcp.yaml`. IDs have no type letter. Write block lists, not flow style (`[]` or `{}`). `pnpm check` runs Prettier on these files and rejects flow style.
 
-- Top-level keys are `id`, `title`, and `requirements`. `id` matches the file name (`F1`).
-- Each requirement has `id`, `text` (one sentence), and `details`.
-- Each detail has `id`, `text` (one sentence), and `proposed: true` when it is not implemented. Omit `proposed` once the detail is implemented; it then needs a test.
-- IDs stay contiguous, in the same file as their parent.
+- `id` is the topic number (`1`) and matches the file name. `title` is a short heading.
+- Each requirement has `id` (`1.2`), `type` (`functional`, `non-functional`, or `system`), `text` (one sentence), and `details`.
+- Each detail has `id` (`1.2.1`) and `text` (one behavior: the condition and the outcome). `proposed: true` means it is not implemented yet.
+- Omit `proposed` once a detail is implemented. A test name must include that detail ID. One test may name several details. A skipped or to-do test does not count.
+- IDs stay contiguous, in the same file as their parent. `pnpm check` runs the whole suite, then this check.
 
 ## Check
 
@@ -30,5 +31,6 @@ A pilot category file may be `F1-mcp.yaml`. Write block lists, not flow style (`
 - Implemented and Verified need the ID in a `test('F3.2.1 …')` or `it('F3.2.1 …')` name, a mention in another file under `scripts/`, or a `Check: manual` line on that ID.
 - `skip` and `todo` do not count. A mention only in the test body does not count.
 - An ID in a test or script must be an ID in a category file. The shape is `F`, `N`, or `S` plus a number (`F3`, `F3.2`, `F3.2.1`).
+- A YAML detail ID is a number (`1.2.1`). An implemented detail is named in a test title. One test may name several. A decision must not cite one.
 - Sibling numbers in one category file have no gaps.
 - No category files and no ID references is a pass.

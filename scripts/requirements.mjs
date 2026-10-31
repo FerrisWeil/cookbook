@@ -23,7 +23,9 @@ const ID_RE = new RegExp(`^${ID_SOURCE}$`);
 const TOKEN_RE = new RegExp(`(?<![A-Za-z0-9.])${ID_SOURCE}(?![A-Za-z0-9.])`, "g");
 const OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(?![A-Za-z0-9.])`, "g");
 const FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.md$`);
-const YAML_FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
+const YAML_FILE_RE = new RegExp(`^(${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
+const YAML_TYPES = new Set(["functional", "non-functional", "system"]);
+const NUMERIC_ID_RE = new RegExp(`(?<![A-Za-z0-9.])${PART}(?:\\.${PART}){1,2}(?![A-Za-z0-9.])`, "g");
 const HEADING_RE = new RegExp(`^(#{1,3}) +(${ID_SOURCE}) +(.+)$`);
 const LOOSE_HEADING_RE = /^(#{1,6}) +([FNS][0-9][0-9A-Za-z.]*) *(.*)$/;
 const STATUS_RE = /^Status:\s+(Proposed|Accepted|Implemented|Verified)(?:\s*\([^)]*\))?$/;
@@ -246,8 +248,14 @@ function evidenceIdsInTest(text) {
     if (call[1] === "skip" || call[1] === "todo") continue;
     if (followingOptionsSkip(masked, call.index + call[0].length)) continue;
     ids.push(...scanIds(call[3]).ids);
+    NUMERIC_ID_RE.lastIndex = 0;
+    for (const match of call[3].matchAll(NUMERIC_ID_RE)) ids.push(match[0]);
   }
   return ids;
+}
+
+function yamlChildId(parent) {
+  return new RegExp(`^${parent.replaceAll(".", "\\.")}\\.${PART}$`);
 }
 
 function parentOf(id) {
@@ -296,6 +304,21 @@ function decisionIdErrors(name, text) {
   DECISION_PERIOD_RE.lastIndex = 0;
   const scanned = scanIds(text.replace(DECISION_PERIOD_RE, "$1 "));
   return [...scanned.ids, ...scanned.invalid].map((id) => `${name}: cites requirement id ${id}`);
+}
+
+const NUMERIC_DECISION_PERIOD_RE = new RegExp(
+  `(?<![A-Za-z0-9.])(${PART}(?:\\.${PART}){1,2})\\.(?![0-9])`,
+  "g",
+);
+
+function decisionNumericIdErrors(name, text, knownIds) {
+  const normalized = text.replace(NUMERIC_DECISION_PERIOD_RE, "$1 ");
+  const errors = [];
+  NUMERIC_ID_RE.lastIndex = 0;
+  for (const match of normalized.matchAll(NUMERIC_ID_RE)) {
+    if (knownIds.has(match[0])) errors.push(`${name}: cites requirement id ${match[0]}`);
+  }
+  return errors;
 }
 
 function parseCategory(name, text) {
@@ -434,7 +457,7 @@ function parseYamlCategory(name, text) {
   const fileMatch = YAML_FILE_RE.exec(name);
   if (!fileMatch) {
     return {
-      errors: [`${name}: category file name must look like F1-mcp.yaml`],
+      errors: [`${name}: category file name must look like 1-mcp.yaml`],
       reqs: [],
     };
   }
@@ -526,8 +549,23 @@ function parseYamlCategory(name, text) {
     return { text: scalar, line: at(value) };
   }
 
+  function takeId(map, key) {
+    const pair = yamlPair(map, key);
+    if (!pair) {
+      errors.push(`${name}:${at(map)}: missing ${key}`);
+      return null;
+    }
+    const node = pair.value;
+    const source = isScalar(node) && typeof node.source === "string" ? node.source : "";
+    if (!source || source !== source.trim() || source.includes("\n")) {
+      errors.push(`${name}:${at(node ?? pair.key)}: ${key} must be an id`);
+      return null;
+    }
+    return { text: source, line: at(node) };
+  }
+
   rejectUnknown(root, new Set(["id", "title", "requirements"]));
-  const idField = takeString(root, "id");
+  const idField = takeId(root, "id");
   takeString(root, "title");
   if (idField && idField.text !== categoryId) {
     errors.push(`${name}:${idField.line}: ${idField.text} does not match file category ${categoryId}`);
@@ -546,13 +584,21 @@ function parseYamlCategory(name, text) {
         errors.push(`${name}:${at(item)}: requirement must be a mapping`);
         continue;
       }
-      rejectUnknown(item, new Set(["id", "text", "details"]));
-      const reqId = takeString(item, "id");
+      rejectUnknown(item, new Set(["id", "type", "text", "details"]));
+      const reqId = takeId(item, "id");
+      const typePair = yamlPair(item, "type");
+      if (!typePair) {
+        errors.push(`${name}:${at(item)}: missing type`);
+      } else if (!isScalar(typePair.value) || !YAML_TYPES.has(typePair.value.value)) {
+        errors.push(
+          `${name}:${at(typePair.value ?? typePair.key)}: type must be functional, non-functional, or system`,
+        );
+      }
       const reqText = takeString(item, "text");
       if (reqText && !isOneSentence(reqText.text)) {
         errors.push(`${name}:${reqText.line}: requirement text must be one sentence`);
       }
-      const reqOk = reqId && ID_RE.test(reqId.text) && parentOf(reqId.text) === categoryId;
+      const reqOk = reqId && yamlChildId(categoryId).test(reqId.text);
       if (reqId && !reqOk) {
         errors.push(`${name}:${reqId.line}: ${reqId.text} is outside category ${categoryId}`);
       } else if (reqId) {
@@ -574,7 +620,7 @@ function parseYamlCategory(name, text) {
           continue;
         }
         rejectUnknown(detail, new Set(["id", "text", "proposed"]));
-        const detailId = takeString(detail, "id");
+        const detailId = takeId(detail, "id");
         const detailText = takeString(detail, "text");
         if (detailText && !isOneSentence(detailText.text)) {
           errors.push(`${name}:${detailText.line}: detail text must be one sentence`);
@@ -591,8 +637,7 @@ function parseYamlCategory(name, text) {
           }
         }
         const parentId = reqOk ? reqId.text : null;
-        const detailOk =
-          detailId && ID_RE.test(detailId.text) && parentId && parentOf(detailId.text) === parentId;
+        const detailOk = detailId && parentId && yamlChildId(parentId).test(detailId.text);
         if (detailId && !detailOk) {
           const why = parentId
             ? `${detailId.text} is not under ${parentId}`
@@ -644,7 +689,10 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     const scanned = scanIds(text);
     for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-    for (const id of evidenceIdsInTest(text)) evidence.add(id);
+    for (const id of evidenceIdsInTest(text)) {
+      evidence.add(id);
+      if (/^[0-9]/.test(id)) note(id, file.name);
+    }
   }
 
   const scripts = [...scriptFiles].sort((a, b) => a.name.localeCompare(b.name));
@@ -668,7 +716,7 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
   for (const req of byId.values()) {
     if (req.status && NEEDS_EVIDENCE.has(req.status) && !evidence.has(req.id)) {
       const cover = req.file.endsWith(".yaml")
-        ? "has no test or script mention"
+        ? "has no test that names this detail"
         : "has no test, script mention, or Check: manual";
       errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) ${cover}`);
     }
@@ -677,6 +725,7 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
   const decisions = [...decisionFiles].sort((a, b) => a.name.localeCompare(b.name));
   for (const file of decisions) {
     errors.push(...decisionIdErrors(file.name, file.text));
+    errors.push(...decisionNumericIdErrors(file.name, file.text, byId));
   }
 
   return { errors, ids: [...byId.keys()].sort() };
@@ -1217,46 +1266,80 @@ function runCanary() {
   );
 
   const yamlProposed = [
-    "id: F1",
+    "id: 1",
     "title: MCP",
     "requirements:",
-    "  - id: F1.1",
-    "    text: A caller can read a recipe.",
+    "  - id: 1.1",
+    "    type: functional",
+    "    text: Agents can read a recipe.",
     "    details:",
-    "      - id: F1.1.1",
-    "        text: A deleted recipe is not read.",
+    "      - id: 1.1.1",
+    "        text: Given a deleted recipe, the agent does not receive it.",
+    "        proposed: true",
+    "      - id: 1.1.2",
+    "        text: Given a recipe, the agent receives its title.",
     "        proposed: true",
     "",
   ].join("\n");
-  const yamlFile = (text) => [{ name: "F1-mcp.yaml", text }];
+  const yamlImplemented = yamlProposed.replaceAll("        proposed: true\n", "");
+  const yamlFile = (text) => [{ name: "1-mcp.yaml", text }];
 
   pass("yaml proposed needs no test", { requirementFiles: yamlFile(yamlProposed), testFiles: [], scriptFiles: [] }, [
-    "F1",
-    "F1.1",
-    "F1.1.1",
+    "1",
+    "1.1",
+    "1.1.1",
+    "1.1.2",
   ]);
   pass(
-    "yaml implemented detail counts a test",
+    "yaml one test can name several details",
     {
-      requirementFiles: yamlFile(yamlProposed.replace("        proposed: true\n", "")),
-      testFiles: [{ name: "read.test.ts", text: 'it("F1.1.1 reads", () => {});\n' }],
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [{ name: "read.test.ts", text: 'it("1.1.1 and 1.1.2 read", () => {});\n' }],
       scriptFiles: [],
     },
-    ["F1", "F1.1", "F1.1.1"],
+    ["1", "1.1", "1.1.1", "1.1.2"],
   );
   fail(
     "yaml file name",
-    { requirementFiles: [{ name: "notes.yaml", text: "id: F1\n" }], testFiles: [], scriptFiles: [] },
-    "category file name must look like F1-mcp.yaml",
+    { requirementFiles: [{ name: "notes.yaml", text: "id: 1\n" }], testFiles: [], scriptFiles: [] },
+    "category file name must look like 1-mcp.yaml",
+  );
+  fail(
+    "yaml letter id file name",
+    { requirementFiles: [{ name: "F1-mcp.yaml", text: "id: 1\n" }], testFiles: [], scriptFiles: [] },
+    "category file name must look like 1-mcp.yaml",
   );
   fail(
     "yaml implemented detail needs a test",
+    { requirementFiles: yamlFile(yamlImplemented), testFiles: [], scriptFiles: [] },
+    "1.1.1 (Implemented) has no test that names this detail",
+  );
+  fail(
+    "yaml requirement id does not cover a detail",
     {
-      requirementFiles: yamlFile(yamlProposed.replace("        proposed: true\n", "")),
-      testFiles: [],
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [{ name: "read.test.ts", text: 'it("1.1 reads", () => {});\n' }],
       scriptFiles: [],
     },
-    "F1.1.1 (Implemented) has no test",
+    "1.1.1 (Implemented) has no test that names this detail",
+  );
+  fail(
+    "yaml id in the test body does not count",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  const id = "1.1.1";\n});\n' }],
+      scriptFiles: [],
+    },
+    "1.1.1 (Implemented) has no test that names this detail",
+  );
+  fail(
+    "yaml script mention does not cover a detail",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [],
+      scriptFiles: [{ name: "scripts/smoke.sh", text: "# 1.1.1\n" }],
+    },
+    "1.1.1 (Implemented) has no test that names this detail",
   );
   fail(
     "yaml proposed false",
@@ -1268,13 +1351,22 @@ function runCanary() {
     "proposed must be true",
   );
   fail(
+    "yaml missing type",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("    type: functional\n", "")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "missing type",
+  );
+  fail(
     "yaml flow style",
     {
       requirementFiles: yamlFile(
         [
-          "id: F1",
+          "id: 1",
           "title: MCP",
-          'requirements: [{id: F1.1, text: "A caller can read a recipe.", details: [{id: F1.1.1, text: "A deleted recipe is not read.", proposed: true}]}]',
+          "requirements: [{id: 1.1, type: functional, text: Agents can read a recipe., details: [{id: 1.1.1, text: Given a deleted recipe, the agent does not receive it., proposed: true}]}]",
           "",
         ].join("\n"),
       ),
@@ -1286,11 +1378,31 @@ function runCanary() {
   fail(
     "yaml category mismatch",
     {
-      requirementFiles: yamlFile(yamlProposed.replace("id: F1\n", "id: F2\n")),
+      requirementFiles: yamlFile(yamlProposed.replace("id: 1\n", "id: 2\n")),
       testFiles: [],
       scriptFiles: [],
     },
-    "F2 does not match file category F1",
+    "2 does not match file category 1",
+  );
+  fail(
+    "yaml id in a decision",
+    {
+      requirementFiles: yamlFile(yamlProposed),
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See 1.1.1.\n" }],
+    },
+    "cites requirement id 1.1.1",
+  );
+  pass(
+    "wcag version is not a requirement id",
+    {
+      requirementFiles: yamlFile(yamlProposed),
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
   );
 
   return failures;

@@ -1,0 +1,124 @@
+id: 1
+title: MCP
+requirements:
+  - id: 1.1
+    type: functional
+    text: Agents can read a recipe.
+    details:
+      - id: 1.1.1
+        text: Given a deleted recipe, the agent does not receive it.
+        proposed: true
+      - id: 1.1.2
+        text: Given a recipe that has nutrition, the agent receives that nutrition.
+        proposed: true
+      - id: 1.1.3
+        text: Given a recipe, the agent receives its title.
+        proposed: true
+      - id: 1.1.4
+        text: Given a recipe, the agent receives its steps in saved order.
+        proposed: true
+      - id: 1.1.5
+        text: Given a recipe, the agent receives its servings.
+        proposed: true
+
+  - id: 1.2
+    type: functional
+    text: Agents can list recipes.
+    details:
+      - id: 1.2.1
+        text: Given a deleted recipe, the list does not include it.
+        proposed: true
+      - id: 1.2.2
+        text: Given a list request, the agent receives the recipes without searching them.
+        proposed: true
+
+  - id: 1.3
+    type: functional
+    text: Agents can save a recipe.
+    details:
+      - id: 1.3.1
+        text: Given a nutrition row, the saved recipe records that one row.
+        proposed: true
+      - id: 1.3.2
+        text: Given an actor, the saved recipe records that actor.
+        proposed: true
+      - id: 1.3.3
+        text: Without an actor, the agent is told an actor is required.
+        proposed: true
+      - id: 1.3.4
+        text: Given a non-empty title, the saved recipe records that title.
+        proposed: true
+      - id: 1.3.5
+        text: Without a non-empty title, the agent is told a title is required.
+        proposed: true
+      - id: 1.3.6
+        text: Given steps, the saved recipe records them in that order.
+        proposed: true
+      - id: 1.3.7
+        text: Without steps, the agent is told steps are required.
+        proposed: true
+      - id: 1.3.8
+        text: Given servings, the saved recipe records those servings.
+        proposed: true
+      - id: 1.3.9
+        text: Without servings, the agent is told servings are required.
+        proposed: true
+      - id: 1.3.10
+        text: Given a favorite, the saved recipe records that favorite.
+        proposed: true
+      - id: 1.3.11
+        text: Given a rating, the saved recipe records that rating.
+        proposed: true
+
+  - id: 1.4
+    type: non-functional
+    text: Recipe calls require the shared secret.
+    details:
+      - id: 1.4.1
+        text: Without the shared secret, the agent is told the call is not allowed.
+        proposed: true
+      - id: 1.4.2
+        text: Given a liveness check, the agent is not asked for the shared secret.
+        proposed: true
+      - id: 1.4.3
+        text: Given a liveness check, the agent is told whether the server is up.
+        proposed: true
+      - id: 1.4.4
+        text: Given a liveness check, the agent is not given recipe data.
+        proposed: true
+
+  - id: 1.5
+    type: functional
+    text: v1 limits recipe operations to read, list, and save.
+    details:
+      - id: 1.5.1
+        text: Given a journal request, the agent is told that operation is not available.
+        proposed: true
+      - id: 1.5.2
+        text: Given a tag request, the agent is told that operation is not available.
+        proposed: true
+      - id: 1.5.3
+        text: Given a search request, the agent is told that operation is not available.
+        proposed: true
+
+  - id: 1.6
+    type: non-functional
+    text: A local stack may boot with a documented token.
+    details:
+      - id: 1.6.1
+        text: Given the documented local token, it is not a secret.
+        proposed: true
+      - id: 1.6.2
+        text: Given that documented token, the NAS rejects it.
+        proposed: true
+
+  - id: 1.7
+    type: system
+    text: The MCP server is its own tailnet identity.
+    details:
+      - id: 1.7.1
+        text: Given the tailnet, the MCP server is a separate identity from the app.
+        proposed: true
+      - id: 1.7.2
+        text: Given a bot on the tailnet, it can open the MCP server only.
+        proposed: true
