@@ -4,6 +4,8 @@ Category F3. Status: Proposed.
 
 Drawn from the accepted kitchen UI decision. Taylor answered the open questions in chat. Each statement stays Proposed until he accepts it.
 
+Retired, not reused: F3.8.
+
 ## F3.1 Household
 
 Status: Proposed.
