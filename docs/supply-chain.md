@@ -47,7 +47,7 @@ Accepted `dependabot.yml` shape, as amended on 2026-10-31:
 * `npm` at `/`. `cooldown.default-days: 1`. Cooldown applies to version updates only. `@types/node` major version updates stay ignored.
 * `github-actions` at `/`.
 * `docker` at `/docker`. The Dockerfiles live in that directory. The `node` image major version updates stay ignored. This ecosystem cannot list Compose files.
-* `docker-compose` at `/`. That directory includes `docker-compose.yml` and `deploy/nas/docker-compose.yml`. A second directory entry for `deploy/nas` would overlap. `postgres` major version updates stay ignored. A Dependabot PR may edit the NAS file to bump an image. That is the point of the bot. Hand-editing that file is still reserved for the agent that owns the production stack.
+* `docker-compose` uses `directories: ["/", "/deploy/nas"]` on one entry. `directory: /` does not open subdirectories, so the NAS file is listed beside the root file. The groups on that entry cover both paths. `postgres` major version updates stay ignored. A Dependabot PR may edit the NAS file to bump an image. That is the point of the bot. Hand-editing that file is still reserved for the agent that owns the production stack.
 * No automerge. No reviewers block that auto-approves.
 
 `cooldown` does not delay security updates. `minimumReleaseAge` does, because pnpm will refuse a release younger than one day on any install, including a security bump. A security PR opened the hour a patch is published can fail CI until the next day. Dependabot rebases. For an app that is not on the public internet, that wait is accepted.

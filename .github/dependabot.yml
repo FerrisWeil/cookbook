@@ -99,14 +99,17 @@ updates:
           - "version-update:semver-major"
 
   - package-ecosystem: docker-compose
-    directory: /
+    directories:
+      - "/"
+      - "/deploy/nas"
     schedule:
       interval: weekly
       day: monday
       time: "06:00"
     open-pull-requests-limit: 1
-    # directory / already covers docker-compose.yml and deploy/nas/docker-compose.yml.
-    # A second directories entry for the same tree would overlap.
+    # directory / lists only that directory. The NAS compose file is
+    # deploy/nas/docker-compose.yml, so it is a second path on this same
+    # entry. Dockerfiles stay on the docker ecosystem.
     groups:
       compose:
         applies-to: version-updates
