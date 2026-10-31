@@ -7,6 +7,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isMap, isScalar, isSeq, LineCounter, parseDocument } from "yaml";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SELF = path.join(ROOT, "scripts", "requirements.mjs");
@@ -22,6 +23,7 @@ const ID_RE = new RegExp(`^${ID_SOURCE}$`);
 const TOKEN_RE = new RegExp(`(?<![A-Za-z0-9.])${ID_SOURCE}(?![A-Za-z0-9.])`, "g");
 const OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(?![A-Za-z0-9.])`, "g");
 const FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.md$`);
+const YAML_FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
 const HEADING_RE = new RegExp(`^(#{1,3}) +(${ID_SOURCE}) +(.+)$`);
 const LOOSE_HEADING_RE = /^(#{1,6}) +([FNS][0-9][0-9A-Za-z.]*) *(.*)$/;
 const STATUS_RE = /^Status:\s+(Proposed|Accepted|Implemented|Verified)(?:\s*\([^)]*\))?$/;
@@ -414,14 +416,210 @@ function parseCategory(name, text) {
   return { errors, reqs };
 }
 
+function yamlLine(lineCounter, node) {
+  if (!node?.range) return 1;
+  return lineCounter.linePos(node.range[0]).line;
+}
+
+function yamlPair(map, key) {
+  if (!isMap(map)) return undefined;
+  return map.items.find((pair) => isScalar(pair.key) && pair.key.value === key);
+}
+
+function isOneSentence(text) {
+  return text.length > 1 && text.endsWith(".") && !text.slice(0, -1).includes(".");
+}
+
+function parseYamlCategory(name, text) {
+  const fileMatch = YAML_FILE_RE.exec(name);
+  if (!fileMatch) {
+    return {
+      errors: [`${name}: category file name must look like F1-mcp.yaml`],
+      reqs: [],
+    };
+  }
+
+  const categoryId = fileMatch[1];
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(text, { lineCounter, uniqueKeys: true });
+  const problems = [...doc.errors, ...doc.warnings];
+  if (problems.length > 0) {
+    return {
+      errors: problems.map((problem) => {
+        const line = problem.linePos?.[0]?.line ?? 1;
+        return `${name}:${line}: ${problem.message}`;
+      }),
+      reqs: [],
+    };
+  }
+
+  const root = doc.contents;
+  if (!isMap(root)) {
+    return { errors: [`${name}:1: category file must be a mapping`], reqs: [] };
+  }
+
+  const errors = [];
+
+  function rejectFlow(node) {
+    if (!node || typeof node !== "object") return;
+    if (node.flow === true) {
+      errors.push(`${name}:${yamlLine(lineCounter, node)}: use block style, not flow style`);
+    }
+    if (!node.items) return;
+    for (const item of node.items) {
+      rejectFlow(item);
+      if (item?.key) rejectFlow(item.key);
+      if (item?.value) rejectFlow(item.value);
+    }
+  }
+
+  rejectFlow(root);
+  const reqs = [];
+  const seen = new Set();
+
+  function at(node) {
+    return yamlLine(lineCounter, node);
+  }
+
+  function addReq(id, line, status) {
+    const parent = parentOf(id);
+    if (parent && !seen.has(parent)) {
+      errors.push(`${name}:${line}: ${id} is missing parent ${parent}`);
+    }
+    if (seen.has(id)) {
+      errors.push(`${name}:${line}: duplicate id ${id}`);
+      return;
+    }
+    seen.add(id);
+    reqs.push({ id, line, file: name, status, manual: false });
+  }
+
+  function rejectUnknown(map, allowed) {
+    for (const pair of map.items) {
+      const keyNode = pair.key;
+      if (!isScalar(keyNode) || typeof keyNode.value !== "string") {
+        errors.push(`${name}:${at(keyNode)}: key must be a string`);
+        continue;
+      }
+      if (!allowed.has(keyNode.value)) {
+        errors.push(`${name}:${at(keyNode)}: unknown key ${keyNode.value}`);
+      }
+    }
+  }
+
+  function takeString(map, key) {
+    const pair = yamlPair(map, key);
+    if (!pair) {
+      errors.push(`${name}:${at(map)}: missing ${key}`);
+      return null;
+    }
+    const value = pair.value;
+    const scalar = isScalar(value) && typeof value.value === "string" ? value.value : null;
+    if (!scalar) {
+      errors.push(`${name}:${at(value ?? pair.key)}: ${key} must be a string`);
+      return null;
+    }
+    if (scalar.includes("\n") || scalar !== scalar.trim()) {
+      errors.push(`${name}:${at(value)}: ${key} must be one line`);
+      return null;
+    }
+    return { text: scalar, line: at(value) };
+  }
+
+  rejectUnknown(root, new Set(["id", "title", "requirements"]));
+  const idField = takeString(root, "id");
+  takeString(root, "title");
+  if (idField && idField.text !== categoryId) {
+    errors.push(`${name}:${idField.line}: ${idField.text} does not match file category ${categoryId}`);
+  } else if (idField) {
+    addReq(idField.text, idField.line, null);
+  }
+
+  const requirementsPair = yamlPair(root, "requirements");
+  if (!requirementsPair) {
+    errors.push(`${name}:${at(root)}: missing requirements`);
+  } else if (!isSeq(requirementsPair.value)) {
+    errors.push(`${name}:${at(requirementsPair.value)}: requirements must be a list`);
+  } else {
+    for (const item of requirementsPair.value.items) {
+      if (!isMap(item)) {
+        errors.push(`${name}:${at(item)}: requirement must be a mapping`);
+        continue;
+      }
+      rejectUnknown(item, new Set(["id", "text", "details"]));
+      const reqId = takeString(item, "id");
+      const reqText = takeString(item, "text");
+      if (reqText && !isOneSentence(reqText.text)) {
+        errors.push(`${name}:${reqText.line}: requirement text must be one sentence`);
+      }
+      const reqOk = reqId && ID_RE.test(reqId.text) && parentOf(reqId.text) === categoryId;
+      if (reqId && !reqOk) {
+        errors.push(`${name}:${reqId.line}: ${reqId.text} is outside category ${categoryId}`);
+      } else if (reqId) {
+        addReq(reqId.text, reqId.line, null);
+      }
+
+      const detailsPair = yamlPair(item, "details");
+      if (!detailsPair) {
+        errors.push(`${name}:${at(item)}: missing details`);
+        continue;
+      }
+      if (!isSeq(detailsPair.value)) {
+        errors.push(`${name}:${at(detailsPair.value)}: details must be a list`);
+        continue;
+      }
+      for (const detail of detailsPair.value.items) {
+        if (!isMap(detail)) {
+          errors.push(`${name}:${at(detail)}: detail must be a mapping`);
+          continue;
+        }
+        rejectUnknown(detail, new Set(["id", "text", "proposed"]));
+        const detailId = takeString(detail, "id");
+        const detailText = takeString(detail, "text");
+        if (detailText && !isOneSentence(detailText.text)) {
+          errors.push(`${name}:${detailText.line}: detail text must be one sentence`);
+        }
+        const proposedPair = yamlPair(detail, "proposed");
+        let status = "Implemented";
+        if (proposedPair) {
+          if (!isScalar(proposedPair.value) || proposedPair.value.value !== true) {
+            const where = proposedPair.value ?? proposedPair.key;
+            errors.push(`${name}:${at(where)}: proposed must be true`);
+            status = null;
+          } else {
+            status = "Proposed";
+          }
+        }
+        const parentId = reqOk ? reqId.text : null;
+        const detailOk =
+          detailId && ID_RE.test(detailId.text) && parentId && parentOf(detailId.text) === parentId;
+        if (detailId && !detailOk) {
+          const why = parentId
+            ? `${detailId.text} is not under ${parentId}`
+            : `${detailId.text} is outside category ${categoryId}`;
+          errors.push(`${name}:${detailId.line}: ${why}`);
+        } else if (detailId) {
+          addReq(detailId.text, detailId.line, status);
+        }
+      }
+    }
+  }
+
+  checkContiguous(name, reqs, errors);
+  return { errors, reqs };
+}
+
 function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] }) {
   const errors = [];
   const byId = new Map();
   const files = [...requirementFiles].sort((a, b) => a.name.localeCompare(b.name));
 
   for (const file of files) {
-    if (file.name === "README.md" || !file.name.endsWith(".md")) continue;
-    const parsed = parseCategory(file.name, file.text);
+    if (file.name === "README.md") continue;
+    if (!file.name.endsWith(".md") && !file.name.endsWith(".yaml")) continue;
+    const parsed = file.name.endsWith(".yaml")
+      ? parseYamlCategory(file.name, file.text)
+      : parseCategory(file.name, file.text);
     errors.push(...parsed.errors);
     for (const req of parsed.reqs) {
       const prior = byId.get(req.id);
@@ -469,9 +667,10 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
 
   for (const req of byId.values()) {
     if (req.status && NEEDS_EVIDENCE.has(req.status) && !evidence.has(req.id)) {
-      errors.push(
-        `${req.file}:${req.line}: ${req.id} (${req.status}) has no test, script mention, or Check: manual`,
-      );
+      const cover = req.file.endsWith(".yaml")
+        ? "has no test or script mention"
+        : "has no test, script mention, or Check: manual";
+      errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) ${cover}`);
     }
   }
 
@@ -1017,6 +1216,83 @@ function runCanary() {
     ["F3", "F3.1", "F3.2"],
   );
 
+  const yamlProposed = [
+    "id: F1",
+    "title: MCP",
+    "requirements:",
+    "  - id: F1.1",
+    "    text: A caller can read a recipe.",
+    "    details:",
+    "      - id: F1.1.1",
+    "        text: A deleted recipe is not read.",
+    "        proposed: true",
+    "",
+  ].join("\n");
+  const yamlFile = (text) => [{ name: "F1-mcp.yaml", text }];
+
+  pass("yaml proposed needs no test", { requirementFiles: yamlFile(yamlProposed), testFiles: [], scriptFiles: [] }, [
+    "F1",
+    "F1.1",
+    "F1.1.1",
+  ]);
+  pass(
+    "yaml implemented detail counts a test",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("        proposed: true\n", "")),
+      testFiles: [{ name: "read.test.ts", text: 'it("F1.1.1 reads", () => {});\n' }],
+      scriptFiles: [],
+    },
+    ["F1", "F1.1", "F1.1.1"],
+  );
+  fail(
+    "yaml file name",
+    { requirementFiles: [{ name: "notes.yaml", text: "id: F1\n" }], testFiles: [], scriptFiles: [] },
+    "category file name must look like F1-mcp.yaml",
+  );
+  fail(
+    "yaml implemented detail needs a test",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("        proposed: true\n", "")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "F1.1.1 (Implemented) has no test",
+  );
+  fail(
+    "yaml proposed false",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("proposed: true", "proposed: false")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "proposed must be true",
+  );
+  fail(
+    "yaml flow style",
+    {
+      requirementFiles: yamlFile(
+        [
+          "id: F1",
+          "title: MCP",
+          'requirements: [{id: F1.1, text: "A caller can read a recipe.", details: [{id: F1.1.1, text: "A deleted recipe is not read.", proposed: true}]}]',
+          "",
+        ].join("\n"),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "not flow style",
+  );
+  fail(
+    "yaml category mismatch",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("id: F1\n", "id: F2\n")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "F2 does not match file category F1",
+  );
+
   return failures;
 }
 
@@ -1042,7 +1318,9 @@ function isScriptMention(filePath) {
 }
 
 async function loadRepo() {
-  const requirementNames = (await readdir(REQUIREMENTS_DIR)).filter((name) => name.endsWith(".md")).sort();
+  const requirementNames = (await readdir(REQUIREMENTS_DIR))
+    .filter((name) => name.endsWith(".md") || name.endsWith(".yaml"))
+    .sort();
   const requirementFiles = [];
   for (const name of requirementNames) {
     requirementFiles.push({

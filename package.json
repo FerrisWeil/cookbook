@@ -15,6 +15,11 @@
     "secrets": "bash scripts/secrets.sh",
     "smoke": "bash scripts/smoke.sh",
     "requirements": "node scripts/requirements.mjs",
-    "check": "pnpm lint && pnpm test && pnpm build && pnpm secrets && pnpm audit --audit-level=high && pnpm requirements"
+    "format:requirements": "prettier --check \"docs/requirements/**/*.yaml\"",
+    "check": "pnpm lint && pnpm test && pnpm build && pnpm secrets && pnpm audit --audit-level=high && pnpm format:requirements && pnpm requirements"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "yaml": "^2.9.1"
   }
 }
