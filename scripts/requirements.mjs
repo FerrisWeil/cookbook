@@ -619,21 +619,22 @@ function parseYamlCategory(name, text) {
           errors.push(`${name}:${at(detail)}: detail must be a mapping`);
           continue;
         }
-        rejectUnknown(detail, new Set(["id", "text", "proposed"]));
+        rejectUnknown(detail, new Set(["id", "text", "implemented"]));
         const detailId = takeId(detail, "id");
         const detailText = takeString(detail, "text");
         if (detailText && !isOneSentence(detailText.text)) {
           errors.push(`${name}:${detailText.line}: detail text must be one sentence`);
         }
-        const proposedPair = yamlPair(detail, "proposed");
+        const implementedPair = yamlPair(detail, "implemented");
         let status = "Implemented";
-        if (proposedPair) {
-          if (!isScalar(proposedPair.value) || proposedPair.value.value !== true) {
-            const where = proposedPair.value ?? proposedPair.key;
-            errors.push(`${name}:${at(where)}: proposed must be true`);
+        if (implementedPair) {
+          const value = isScalar(implementedPair.value) ? implementedPair.value.value : null;
+          if (value !== true && value !== false) {
+            const where = implementedPair.value ?? implementedPair.key;
+            errors.push(`${name}:${at(where)}: implemented must be true or false`);
             status = null;
-          } else {
-            status = "Proposed";
+          } else if (value === false) {
+            status = null;
           }
         }
         const parentId = reqOk ? reqId.text : null;
@@ -1275,16 +1276,16 @@ function runCanary() {
     "    details:",
     "      - id: 1.1.1",
     "        text: Given a deleted recipe, the agent does not receive it.",
-    "        proposed: true",
+        "        implemented: false",
     "      - id: 1.1.2",
     "        text: Given a recipe, the agent receives its title.",
-    "        proposed: true",
+    "        implemented: false",
     "",
   ].join("\n");
-  const yamlImplemented = yamlProposed.replaceAll("        proposed: true\n", "");
+  const yamlImplemented = yamlProposed.replaceAll("        implemented: false\n", "");
   const yamlFile = (text) => [{ name: "1-mcp.yaml", text }];
 
-  pass("yaml proposed needs no test", { requirementFiles: yamlFile(yamlProposed), testFiles: [], scriptFiles: [] }, [
+  pass("yaml unimplemented needs no test", { requirementFiles: yamlFile(yamlProposed), testFiles: [], scriptFiles: [] }, [
     "1",
     "1.1",
     "1.1.1",
@@ -1342,13 +1343,22 @@ function runCanary() {
     "1.1.1 (Implemented) has no test that names this detail",
   );
   fail(
-    "yaml proposed false",
+    "yaml implemented true still needs a test",
     {
-      requirementFiles: yamlFile(yamlProposed.replace("proposed: true", "proposed: false")),
+      requirementFiles: yamlFile(yamlProposed.replaceAll("implemented: false", "implemented: true")),
       testFiles: [],
       scriptFiles: [],
     },
-    "proposed must be true",
+    "1.1.1 (Implemented) has no test that names this detail",
+  );
+  fail(
+    "yaml proposed key",
+    {
+      requirementFiles: yamlFile(yamlProposed.replaceAll("implemented: false", "proposed: true")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "unknown key proposed",
   );
   fail(
     "yaml missing type",
@@ -1366,7 +1376,7 @@ function runCanary() {
         [
           "id: 1",
           "title: MCP",
-          "requirements: [{id: 1.1, type: functional, text: Agents can read a recipe., details: [{id: 1.1.1, text: Given a deleted recipe, the agent does not receive it., proposed: true}]}]",
+          "requirements: [{id: 1.1, type: functional, text: Agents can read a recipe., details: [{id: 1.1.1, text: Given a deleted recipe, the agent does not receive it., implemented: false}]}]",
           "",
         ].join("\n"),
       ),
