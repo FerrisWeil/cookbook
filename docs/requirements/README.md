@@ -1,6 +1,6 @@
 # Requirements
 
-Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). This file is the index.
+Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). This file is the index. An ADR does not cite a requirement ID.
 
 No category files exist yet. A category file is `docs/requirements/<ID>-slug.md` (example shape `F3-slug.md`). This README is not a category file. The check skips it, so the examples below are not requirements.
 

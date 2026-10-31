@@ -2,6 +2,7 @@
 
 // Requirement ID check. Policy is CONTRIBUTING.md. File shape is docs/requirements/README.md.
 // Fixture IDs stay in this file. The reference scan does not read it.
+// Markdown under docs/decisions is scanned for requirement IDs. Other docs are not.
 
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -10,6 +11,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SELF = path.join(ROOT, "scripts", "requirements.mjs");
 const REQUIREMENTS_DIR = path.join(ROOT, "docs", "requirements");
+const DECISIONS_DIR = path.join(ROOT, "docs", "decisions");
 
 const NEEDS_EVIDENCE = new Set(["Implemented", "Verified"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage"]);
@@ -282,6 +284,18 @@ function scanIds(text) {
   };
 }
 
+// A trailing period is a boundary, so "F3." still counts. A dot before a number stays in the ID.
+const DECISION_PERIOD_RE = new RegExp(
+  `(?<![A-Za-z0-9.])(${ID_SOURCE}(?:\\.${PART})*)\\.(?![0-9])`,
+  "g",
+);
+
+function decisionIdErrors(name, text) {
+  DECISION_PERIOD_RE.lastIndex = 0;
+  const scanned = scanIds(text.replace(DECISION_PERIOD_RE, "$1 "));
+  return [...scanned.ids, ...scanned.invalid].map((id) => `${name}: cites requirement id ${id}`);
+}
+
 function parseCategory(name, text) {
   const errors = [];
   const fileMatch = FILE_RE.exec(name);
@@ -400,7 +414,7 @@ function parseCategory(name, text) {
   return { errors, reqs };
 }
 
-function check({ requirementFiles, testFiles, scriptFiles }) {
+function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] }) {
   const errors = [];
   const byId = new Map();
   const files = [...requirementFiles].sort((a, b) => a.name.localeCompare(b.name));
@@ -459,6 +473,11 @@ function check({ requirementFiles, testFiles, scriptFiles }) {
         `${req.file}:${req.line}: ${req.id} (${req.status}) has no test, script mention, or Check: manual`,
       );
     }
+  }
+
+  const decisions = [...decisionFiles].sort((a, b) => a.name.localeCompare(b.name));
+  for (const file of decisions) {
+    errors.push(...decisionIdErrors(file.name, file.text));
   }
 
   return { errors, ids: [...byId.keys()].sort() };
@@ -941,6 +960,36 @@ function runCanary() {
     ["F3", "F3.1", "F3.2"],
   );
   pass(
+    "adr without an id",
+    {
+      requirementFiles: [],
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [
+        {
+          name: "docs/decisions/0001-choice.md",
+          text: "# Choice\n\n* Status: accepted\n\nStore meals in one place. Requirements stay in the requirements docs.\n",
+        },
+      ],
+    },
+    [],
+  );
+  fail(
+    "adr cites an id",
+    {
+      requirementFiles: [],
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [
+        {
+          name: "docs/decisions/0001-choice.md",
+          text: "# Choice\n\n* Status: accepted\n\nSave a meal (F3.2).\n",
+        },
+      ],
+    },
+    "docs/decisions/0001-choice.md: cites requirement id F3.2",
+  );
+  pass(
     "a real test still counts beside skipped ones",
     {
       requirementFiles: meals(implemented),
@@ -1016,7 +1065,21 @@ async function loadRepo() {
   if (scriptFiles.some((file) => path.resolve(ROOT, file.name) === SELF)) {
     throw new Error("requirements checker scanned itself");
   }
-  return { requirementFiles, testFiles, scriptFiles };
+
+  const decisionFiles = [];
+  async function walkDecisions(dir) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walkDecisions(full);
+      else if (entry.isFile() && entry.name.endsWith(".md")) {
+        decisionFiles.push({ name: path.relative(ROOT, full), text: await readFile(full, "utf8") });
+      }
+    }
+  }
+  await walkDecisions(DECISIONS_DIR);
+
+  return { requirementFiles, testFiles, scriptFiles, decisionFiles };
 }
 
 function report(header, lines) {

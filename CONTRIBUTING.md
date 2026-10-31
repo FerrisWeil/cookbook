@@ -50,7 +50,7 @@ Taylor confirmed this on 2026-10-31.
 1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
 3. Docs are brief and readable: less verbose, understandable over detail.
-4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR.
+4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
    - IDs are a category (`F3`), a requirement (`F3.2`), or a detail or edge case (`F3.2.1`).
    - One file per category. Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
