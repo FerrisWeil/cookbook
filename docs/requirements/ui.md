@@ -74,13 +74,13 @@ The three screens meet WCAG 2.2 AA.
 
 Status: Proposed.
 
-A primary target is at least 44 by 44 CSS pixels. Hover is never the only way to use a control.
+A primary action target is at least 44 by 44 CSS pixels. Hover is never the only way to reach an action.
 
-### F3.5.2 Motion and zoom
+### F3.5.2 Zoom and transparency
 
 Status: Proposed.
 
-Zoom stays available. Reduced motion and reduced transparency keep the same information.
+Zoom is not disabled. When the system asks for less transparency, a control stays opaque.
 
 ## F3.6 Theme
 
@@ -93,9 +93,3 @@ Light and dark both exist. The first paint follows the system. The choice is on 
 Status: Proposed.
 
 A write from the phone asks which actor is writing. It does not pick one.
-
-## F3.8 Reading distance
-
-Status: Proposed.
-
-Body text is readable at arm's length on a phone.
