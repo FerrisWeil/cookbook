@@ -20,7 +20,7 @@ Another agent's report is not evidence. A screenshot is not a passing test.
 
 Follow [Checks](../../../CONTRIBUTING.md#checks) and [Work types](../../../CONTRIBUTING.md#work-types).
 
-- `pnpm check` when the change can affect lint, unit tests, the build, or secrets.
+- `pnpm check` when the change can affect lint, unit tests, the build, secrets, or requirement IDs.
 - `pnpm smoke` when the change touches Compose, images, health, or startup.
 - A Feature demo is the evidence that row requires. Collect it before claiming the feature works.
 

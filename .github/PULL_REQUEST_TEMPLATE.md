@@ -19,6 +19,12 @@ ADR text has no versions, ports, file paths, env names, commands, or schemas. Th
 - Accepted (Taylor confirmed in chat, or already merged to `master`):
 - Proposed (this PR stays draft until Taylor confirms these):
 
+## Requirements
+
+One pull request per requirement change. List the IDs. The format is in CONTRIBUTING.md.
+
+- IDs:
+
 ## Demo
 
 Fill this when the type requires a demo. The rule is in CONTRIBUTING.md.
