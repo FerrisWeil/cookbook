@@ -66,4 +66,4 @@ Bad. Renumbering the next detail onto a deleted number. Keep `"1.2.2"` as `remov
 
 ## Commands
 
-`pnpm format` writes Prettier on the YAML. `pnpm requirements:index` rewrites `docs/requirements/index.md`. `pnpm check` runs Prettier with `--check`, the schema, the index, and the ID rules.
+`pnpm format` writes Prettier on the YAML. `pnpm check` runs Prettier with `--check`, the schema, and the ID rules. Search the YAML for a sentence. There is no generated index.

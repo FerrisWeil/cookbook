@@ -5,7 +5,7 @@
 // Markdown under docs/decisions is scanned for requirement IDs. Other docs are not.
 
 import { readFileSync } from "node:fs";
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMap, isScalar, isSeq, LineCounter, parseDocument } from "yaml";
@@ -26,7 +26,6 @@ const YAML_TYPES = new Set(["functional", "non-functional", "system"]);
 const NUMERIC_ID_RE = new RegExp(`(?<![A-Za-z0-9.])${PART}(?:\\.${PART}){1,2}(?![A-Za-z0-9.])`, "g");
 const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART}(?:\\.${PART}){1,2})(?![A-Za-z0-9.])`, "g");
 const SCHEMA = JSON.parse(readFileSync(path.join(REQUIREMENTS_DIR, "schema.json"), "utf8"));
-const INDEX_PATH = path.join(REQUIREMENTS_DIR, "index.md");
 const TEST_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
 
@@ -395,33 +394,6 @@ function validateAgainstSchema(value, name) {
   return check(SCHEMA, value, name);
 }
 
-function compareId(a, b) {
-  const as = a.split(".").map(Number);
-  const bs = b.split(".").map(Number);
-  const count = Math.max(as.length, bs.length);
-  for (let i = 0; i < count; i += 1) {
-    const diff = (as[i] ?? -1) - (bs[i] ?? -1);
-    if (diff !== 0) return diff;
-  }
-  return 0;
-}
-
-function renderIndex(entries) {
-  const lines = entries
-    .filter((entry) => entry.kind === "requirement" || entry.kind === "detail" || entry.kind === "removed")
-    .slice()
-    .sort((a, b) => compareId(a.id, b.id))
-    .map((entry) => (entry.kind === "removed" ? `${entry.id} removed` : `${entry.id} ${entry.text}`));
-  return [
-    "# Requirements",
-    "",
-    "Generated from the YAML topic files. Do not edit. `pnpm requirements:index` rewrites this file.",
-    "",
-    ...lines,
-    "",
-  ].join("\n");
-}
-
 function parseYamlCategory(name, text) {
   const fileMatch = YAML_FILE_RE.exec(name);
   if (!fileMatch) {
@@ -724,11 +696,10 @@ function parseYamlCategory(name, text) {
 function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] }) {
   const errors = [];
   const byId = new Map();
-  let indexReady = true;
   const files = [...requirementFiles].sort((a, b) => a.name.localeCompare(b.name));
 
   for (const file of files) {
-    if (file.name === "README.md" || file.name === "index.md") continue;
+    if (file.name === "README.md") continue;
     if (!file.name.endsWith(".yaml")) {
       if (file.name.endsWith(".md")) {
         errors.push(`${file.name}: topic files are YAML, named like 1-mcp.yaml`);
@@ -736,7 +707,6 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
       continue;
     }
     const parsed = parseYamlCategory(file.name, file.text);
-    if (parsed.errors.length > 0) indexReady = false;
     errors.push(...parsed.errors);
     for (const req of parsed.reqs) {
       const prior = byId.get(req.id);
@@ -843,8 +813,6 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
   return {
     errors,
     ids: [...byId.keys()].sort(),
-    entries: [...byId.values()].filter((req) => req.file.endsWith(".yaml")),
-    indexReady,
   };
 }
 
@@ -1097,14 +1065,14 @@ function runCanary() {
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
   );
-  pass(
-    "index is not a category",
+  fail(
+    "markdown index is rejected",
     {
       requirementFiles: [{ name: "index.md", text: "1.1 Agents can read.\n" }],
       testFiles: [],
       scriptFiles: [],
     },
-    [],
+    "topic files are YAML",
   );
   const yamlGap = [
     'id: "1"',
@@ -1377,20 +1345,6 @@ if (isMain) {
     process.exit(1);
   }
   const result = check(await loadRepo());
-  if (result.indexReady) {
-    const index = renderIndex(result.entries);
-    if (process.argv.includes("--write-index")) {
-      await writeFile(INDEX_PATH, index);
-    } else {
-      let current = "";
-      try {
-        current = await readFile(INDEX_PATH, "utf8");
-      } catch {
-        current = "";
-      }
-      if (current !== index) result.errors.push("docs/requirements/index.md is stale. Run pnpm requirements:index");
-    }
-  }
   if (result.errors.length > 0) {
     report("requirements:", result.errors);
     process.exit(1);

@@ -4,8 +4,6 @@ Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](.
 
 Topic files are YAML: `docs/requirements/1-mcp.yaml`. This README is not a topic file. The check skips it, so the examples below are not requirements.
 
-The sentence list is [index.md](index.md). It is generated. `pnpm requirements:index` rewrites it, and `pnpm check` fails when it is stale.
-
 ## File
 
 The shape is [schema.json](schema.json). IDs are double-quoted strings with no type letter. Write block lists, not flow style (`[]` or `{}`). `pnpm format` writes Prettier. `pnpm check` runs Prettier with `--check` and rejects flow style.
