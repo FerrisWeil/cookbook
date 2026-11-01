@@ -65,11 +65,10 @@ requirements:
 
   - id: "4.6"
     type: non-functional
-    text: v1 does not authenticate household users.
+    text: The API does not require a shared secret.
     details:
       - id: "4.6.1"
-        text: v1 has no household login.
-        implemented: false
+        removed: true
       - id: "4.6.2"
-        text: The API does not require a shared secret.
+        text: Given an API call, the caller is not asked for a shared secret.
         implemented: false
