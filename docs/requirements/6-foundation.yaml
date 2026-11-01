@@ -1,0 +1,65 @@
+id: "6"
+title: Foundation
+requirements:
+  - id: "6.1"
+    type: system
+    text: The local Compose stack starts the app.
+    details:
+      - id: "6.1.1"
+        text: Given docker compose up --build, web, the API, Postgres, and MCP are running.
+        implemented: false
+
+  - id: "6.2"
+    type: functional
+    text: The home page reports the stack.
+    details:
+      - id: "6.2.1"
+        text: Given the home page, it loads.
+        implemented: false
+      - id: "6.2.2"
+        text: Given the home page, it shows whether the API and the database are ready.
+        implemented: false
+
+  - id: "6.3"
+    type: functional
+    text: A health check does not ask for a secret.
+    details:
+      - id: "6.3.1"
+        text: Given a health check, the API answers without a secret.
+      - id: "6.3.2"
+        text: Given a health check, the MCP server answers without a secret.
+
+  - id: "6.4"
+    type: functional
+    text: The MCP server requires the bearer secret.
+    details:
+      - id: "6.4.1"
+        text: Given a call without the bearer secret, the MCP server refuses it.
+      - id: "6.4.2"
+        text: Given an authorized caller, the hello tool returns a structured greeting.
+
+  - id: "6.5"
+    type: system
+    text: Postgres applies the foundation schema.
+    details:
+      - id: "6.5.1"
+        text: Given the migrations, each pending one is applied.
+      - id: "6.5.2"
+        text: Given the seed, app_meta receives the seed row.
+
+  - id: "6.6"
+    type: system
+    text: The repo commands are the checks.
+    details:
+      - id: "6.6.1"
+        text: Given pnpm check, it runs lint, unit tests, the build, secret scanning, and the requirement check.
+        implemented: false
+      - id: "6.6.2"
+        text: Given pnpm smoke, it starts the Compose stack and checks health.
+        implemented: false
+      - id: "6.6.3"
+        text: Given CI, it runs pnpm check and pnpm smoke.
+        implemented: false
+      - id: "6.6.4"
+        text: CI does not repeat the steps inside those commands.
+        implemented: false
