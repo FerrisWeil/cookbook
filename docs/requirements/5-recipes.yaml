@@ -113,7 +113,7 @@ requirements:
     text: Git ships the household actors.
     details:
       - id: "5.7.1"
-        text: The actors shipped in git are taylor and chef.
+        text: The actors shipped in git are taylor, chef, and system.
         implemented: false
       - id: "5.7.2"
         text: An actor field has no default.
