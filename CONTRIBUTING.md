@@ -54,6 +54,7 @@ Taylor confirmed this on 2026-10-31.
 
    - One topic per file, for example `docs/requirements/1-mcp.yaml`. The topic is `1`, a requirement is `1.2`, and a detail is `1.2.1`. Quote every ID. The shape is in [docs/requirements/README.md](docs/requirements/README.md).
    - An ID is never reused and never renumbered. Deleting one leaves a gap, or `removed: true` on that number.
+   - A requirement states testable product behavior. A design idea, a visual style, and a scope or non-goal live in docs or an ADR. A negative detail is allowed only when it guards a real limit: permission, data safety, or security.
    - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test named `req:1.2.1`. `check: manual` is only for behavior outside this repo. `see` is rare.
    - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
 

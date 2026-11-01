@@ -41,11 +41,9 @@ requirements:
         text: A local stack may publish ports.
         implemented: false
       - id: "3.2.7"
-        text: That local path is not how the household reaches production.
-        implemented: false
+        removed: true
       - id: "3.2.8"
-        text: Tailnet HTTPS is off.
-        implemented: false
+        removed: true
       - id: "3.2.9"
         text: The production tailnet address does not have to offer install.
         implemented: false
@@ -73,15 +71,7 @@ requirements:
         implemented: false
 
   - id: "3.5"
-    type: system
-    text: v1 is one household stack.
-    details:
-      - id: "3.5.1"
-        text: v1 is the web app, the API, Postgres, and one cookbook MCP.
-        implemented: false
-      - id: "3.5.2"
-        text: Chef is outside this repo.
-        implemented: false
+    removed: true
 
   - id: "3.6"
     type: system
