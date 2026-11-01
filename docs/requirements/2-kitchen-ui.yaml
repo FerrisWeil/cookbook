@@ -104,8 +104,7 @@ requirements:
         text: Zoom is not disabled.
         implemented: false
       - id: "2.5.5"
-        text: When the system asks for less transparency, a control's fill still hides the surface behind it.
-        implemented: false
+        removed: true
       - id: "2.5.6"
         text: Recipe text is never read through a control.
         implemented: false
