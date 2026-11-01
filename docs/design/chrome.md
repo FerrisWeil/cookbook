@@ -2,11 +2,11 @@
 
 Detail for [0016](../decisions/0016-kitchen-ui.md).
 
-The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar.
+The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar. v1 does not cache the library and does not serve it offline. Search, a meal plan, fullscreen reading, a Chef panel, and live updates stay out ([0016](../decisions/0016-kitchen-ui.md)).
 
 ## Controls
 
-A floating control uses an opaque fill from a contrast-tested pair in [tokens](tokens.md). Recipe text is not read through a button. Backdrop blur does not cover the only copy of a line. `prefers-reduced-transparency` uses that same opaque fill.
+A floating control uses an opaque fill from a contrast-tested pair in [tokens](tokens.md). Recipe text is not read through a button. Backdrop blur does not cover the only copy of a line. When the system asks for less transparency, that fill still hides the surface behind it.
 
 A control is at least 44px on each side. Its name is text, not color alone. Zoom stays on.
 
