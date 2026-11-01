@@ -54,7 +54,7 @@ describe("mcp hello over streamable HTTP", () => {
     }
   });
 
-  it("calls hello", async () => {
+  it("req:6.4.2 calls hello", async () => {
     const client = await connectClient(baseUrl);
     try {
       const result = await client.callTool({ name: "hello", arguments: {} });

@@ -69,13 +69,13 @@ describe("http auth", () => {
     await close();
   });
 
-  it("serves /health without a token", async () => {
+  it("req:6.3.2 serves /health without a token", async () => {
     const response = await fetch(`${baseUrl}/health`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "ok" });
   });
 
-  it("rejects /mcp when the token is missing", async () => {
+  it("req:6.4.1 rejects /mcp when the token is missing", async () => {
     const response = await fetch(`${baseUrl}/mcp`, { method: "POST" });
     assert.equal(response.status, 401);
     assert.equal(
