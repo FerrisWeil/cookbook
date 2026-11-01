@@ -1,24 +1,29 @@
 # Requirements
 
-Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). This file is the index. An ADR does not cite a requirement ID.
+Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). An ADR does not cite a requirement ID.
 
-The kitchen UI topic is `docs/requirements/F3-kitchen-ui.md`. A topic file is `docs/requirements/<ID>-slug.md`. This README is not a topic file. The check skips it, so the example below is not a requirement.
+Topic files are YAML: `docs/requirements/1-mcp.yaml`. This README is not a topic file. The check skips it, so the examples below are not requirements.
 
-## F1 MCP
-F1.2 The MCP lists recipes.
-- F1.2.1 Results are sorted by title.
-- F1.2.2 An empty cookbook returns an empty list. [Proposed]
+## File
 
-F1.2.1 needs a test. F1.2 needs a describe because F1.2.1 is unmarked. F1.2.2 needs no test.
+The shape is [schema.json](schema.json). IDs are double-quoted strings with no type letter. Write block lists, not flow style (`[]` or `{}`). `pnpm format` writes Prettier. `pnpm check` runs Prettier with `--check` and rejects flow style.
 
-A topic is a short heading. A requirement is one sentence. A detail is one sentence. `[Proposed]` is the only marker, and only on a detail.
+- `id` is the topic number (`"1"`) and matches the file name. `title` is a short heading.
+- Each requirement has `id` (`"1.2"`), `type` (`functional`, `non-functional`, or `system`), `text`, and `details`.
+- Each detail has `id` (`"1.2.1"`) and `text` (one behavior: the condition and the outcome). Do not put an error code or a response body in the text.
+- `implemented: false` means the behavior is not built. Omit `implemented` once it is built. The same commit adds the test. A detail marked `implemented: false` must not already have a test.
+- An implemented detail is named by exactly one test title, as `req:1.2.1`. A skipped or to-do test does not count. A mention in the test body does not count.
+- `check: manual` replaces that test when the behavior is outside this repo. It is not for a function or a file in this repo.
+- `see` is an optional list of other IDs. Use it rarely.
+- A deleted requirement or detail keeps its number with `removed: true`, or leaves a gap. Do not renumber. Do not reuse an ID.
 
-Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
+## Check
 
 `pnpm check` runs [scripts/requirements.mjs](../../scripts/requirements.mjs).
 
-- An unmarked detail needs a `test` or `it` name that contains its ID. `[Proposed]` details need none. A `describe` named with the requirement ID is required when any detail is unmarked. If every detail is `[Proposed]`, no describe and no tests are required.
-- A requirement with no details needs that describe and a test named with its ID.
+- A detail without `implemented: false` needs `req:1.2.1` in one test title. `implemented: false` must not already have a test.
+- `check: manual` is the check for that detail. A test must not also name it.
 - `skip` and `todo` do not count. A mention only in the test body does not count.
-- An ID in a test or script must be a topic, requirement, or detail in a topic file. Sibling numbers in one topic file have no gaps.
+- An unknown `req:` ID fails. `req:` on a requirement fails. A detail in more than one test fails.
+- A decision must not cite a requirement ID.
 - No topic files and no ID references is a pass.
