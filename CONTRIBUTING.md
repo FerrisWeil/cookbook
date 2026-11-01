@@ -50,12 +50,12 @@ Taylor confirmed this on 2026-10-31.
 1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
 3. Docs are brief and readable: less verbose, understandable over detail.
-4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
+4. Requirements are `functional`, `non-functional`, or `system`. The type is a field. IDs have no type letter. The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
-   - One topic per file: a short heading (`F1`). A requirement (`F1.2`) is one sentence. A detail (`F1.2.1`) is one sentence under it. `[Proposed]` marks a detail that is not implemented yet. The shape is in [docs/requirements/](docs/requirements/).
-   - Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
-   - Each requirement change is its own pull request.
-   - An unmarked detail needs a test named with its ID. A describe block named with the requirement ID is required when any detail is unmarked. A requirement with no details needs that describe and a test named with its ID.
+   - One topic per file, for example `docs/requirements/1-mcp.yaml`. The topic is `1`, a requirement is `1.2`, and a detail is `1.2.1`. Quote every ID. The shape is in [docs/requirements/README.md](docs/requirements/README.md).
+   - An ID is never reused and never renumbered. Deleting one leaves a gap, or `removed: true` on that number.
+   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test named `req:1.2.1`. `check: manual` is only for behavior outside this repo. `see` is rare.
+   - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 
