@@ -124,10 +124,10 @@ requirements:
 
   - id: "2.7"
     type: functional
-    text: A write from the phone asks which actor is writing.
+    text: A phone write is attributed to system.
     details:
       - id: "2.7.1"
-        text: A phone write does not pick an actor.
+        text: A phone write records the actor as system.
         implemented: false
       - id: "2.7.2"
         text: A phone write may set the favorite and the rating.
@@ -136,5 +136,7 @@ requirements:
         text: A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged.
         implemented: false
       - id: "2.7.4"
-        text: The phone offers only actors that already exist.
+        removed: true
+      - id: "2.7.5"
+        text: The phone does not ask who is writing.
         implemented: false
