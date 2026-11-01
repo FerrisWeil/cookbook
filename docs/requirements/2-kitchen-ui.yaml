@@ -96,7 +96,7 @@ requirements:
     text: Controls float on the screen.
     details:
       - id: "2.4.1"
-        text: Controls use an opaque fill.
+        text: Given a floating control, its fill hides the surface behind it.
         implemented: false
       - id: "2.4.2"
         text: There is no rail, header bar, or bottom bar.
