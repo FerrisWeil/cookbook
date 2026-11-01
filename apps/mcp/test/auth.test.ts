@@ -31,7 +31,7 @@ describe("config", () => {
     );
   });
 
-  it("allows the local dev token only when MCP_ALLOW_DEV_TOKEN=1", () => {
+  it("req:4.5.2 allows the local dev token only when MCP_ALLOW_DEV_TOKEN=1", () => {
     assert.throws(
       () => loadConfig({ MCP_AUTH_TOKEN: "local-dev-token-not-for-nas" }),
       /MCP_ALLOW_DEV_TOKEN=1/,
