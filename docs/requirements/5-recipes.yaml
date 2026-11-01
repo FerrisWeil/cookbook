@@ -1,0 +1,192 @@
+id: "5"
+title: Recipes
+requirements:
+  - id: "5.1"
+    type: functional
+    text: The ingredient line is the source of truth.
+    details:
+      - id: "5.1.1"
+        text: Amount, unit, and name may be empty.
+        implemented: false
+      - id: "5.1.2"
+        text: Given a line that does not state a parsed field, that field stays empty.
+        implemented: false
+      - id: "5.1.3"
+        removed: true
+      - id: "5.1.4"
+        text: The written ingredient line is required.
+        implemented: false
+      - id: "5.1.5"
+        text: The order of the ingredient list is the stored order.
+        implemented: false
+      - id: "5.1.6"
+        text: A save replaces the stored ingredient lines.
+        implemented: false
+
+  - id: "5.2"
+    type: functional
+    text: A recipe has a favorite flag.
+    details:
+      - id: "5.2.1"
+        text: A recipe has one favorite.
+        implemented: false
+      - id: "5.2.2"
+        text: The favorite is the household's.
+        implemented: false
+      - id: "5.2.3"
+        text: The favorite defaults to off.
+        implemented: false
+
+  - id: "5.3"
+    type: functional
+    text: A recipe may have a rating.
+    details:
+      - id: "5.3.1"
+        text: A rating is empty or a whole number from 1 to 5.
+        implemented: false
+      - id: "5.3.2"
+        text: A rating does not change the favorite.
+        implemented: false
+      - id: "5.3.3"
+        text: A favorite does not require a rating.
+        implemented: false
+
+  - id: "5.4"
+    type: functional
+    text: A recipe may have nutrition.
+    details:
+      - id: "5.4.1"
+        text: A recipe has at most one nutrition row.
+        implemented: false
+      - id: "5.4.2"
+        text: The numbers are per serving.
+        implemented: false
+      - id: "5.4.3"
+        text: The source is chef, manual, or label.
+        implemented: false
+      - id: "5.4.4"
+        text: The divisor is the recipe's stored servings.
+        implemented: false
+      - id: "5.4.5"
+        text: That servings is greater than zero.
+        implemented: false
+      - id: "5.4.6"
+        removed: true
+      - id: "5.4.7"
+        removed: true
+      - id: "5.4.8"
+        text: Given a save that omits nutrition, the stored nutrition row stays.
+        implemented: false
+      - id: "5.4.9"
+        text: Given a save that clears nutrition, the recipe has no nutrition row.
+        implemented: false
+
+  - id: "5.5"
+    type: functional
+    text: Delete hides a recipe.
+    details:
+      - id: "5.5.1"
+        text: A deleted recipe is hidden from read and from list.
+        implemented: false
+      - id: "5.5.2"
+        text: The recipe stays stored.
+        implemented: false
+      - id: "5.5.3"
+        removed: true
+      - id: "5.5.4"
+        removed: true
+      - id: "5.5.5"
+        text: A later save does not make a deleted recipe visible again.
+        implemented: false
+      - id: "5.5.6"
+        text: The hidden recipe records when it was hidden.
+        implemented: false
+      - id: "5.5.7"
+        text: The hidden recipe records who hid it.
+        implemented: false
+
+  - id: "5.6"
+    removed: true
+
+  - id: "5.7"
+    type: functional
+    text: Git ships the household actors.
+    details:
+      - id: "5.7.1"
+        text: The actors shipped in git are taylor, chef, and system.
+        implemented: false
+      - id: "5.7.2"
+        text: An actor field has no default.
+        implemented: false
+      - id: "5.7.3"
+        removed: true
+      - id: "5.7.4"
+        text: Another cook is added on the NAS, outside git.
+        implemented: false
+
+  - id: "5.8"
+    type: functional
+    text: A recipe has a title.
+    details:
+      - id: "5.8.1"
+        text: The title is non-empty.
+        implemented: false
+      - id: "5.8.2"
+        text: Two recipes may share a title.
+        implemented: false
+
+  - id: "5.9"
+    type: functional
+    text: A recipe stores steps.
+    details:
+      - id: "5.9.1"
+        text: Steps are stored in the order they were saved.
+        implemented: false
+      - id: "5.9.2"
+        text: A step is stored as plain text.
+        implemented: false
+
+  - id: "5.10"
+    type: functional
+    text: A recipe has servings.
+    details:
+      - id: "5.10.1"
+        text: A recipe stores its servings.
+        implemented: false
+      - id: "5.10.2"
+        text: Without a servings count greater than zero, a save is refused.
+        implemented: false
+      - id: "5.10.3"
+        text: Given a scaled view, the stored recipe stays the authored one.
+        implemented: false
+
+  - id: "5.11"
+    removed: true
+
+  - id: "5.12"
+    type: functional
+    text: A recipe keeps a stable id.
+    details:
+      - id: "5.12.1"
+        text: A recipe id is opaque.
+        implemented: false
+      - id: "5.12.2"
+        text: Given an id from the caller, the saved recipe uses that id.
+        implemented: false
+      - id: "5.12.3"
+        text: Given the id of a visible recipe, a later save updates that recipe.
+        implemented: false
+      - id: "5.12.4"
+        text: The actor recorded at creation does not change.
+        implemented: false
+
+  - id: "5.13"
+    type: functional
+    text: A recipe may have a description.
+    details:
+      - id: "5.13.1"
+        text: Given no description, the recipe is still stored.
+        implemented: false
+      - id: "5.13.2"
+        text: Given a description, the recipe stores that text.
+        implemented: false
