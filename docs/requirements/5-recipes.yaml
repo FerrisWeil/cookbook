@@ -12,8 +12,7 @@ requirements:
         text: Given a line that does not state a parsed field, that field stays empty.
         implemented: false
       - id: "5.1.3"
-        text: The only parsed fields are amount, unit, and name.
-        implemented: false
+        removed: true
       - id: "5.1.4"
         text: The written ingredient line is required.
         implemented: false
@@ -72,11 +71,9 @@ requirements:
         text: That servings is greater than zero.
         implemented: false
       - id: "5.4.6"
-        text: v1 does not fix which nutrients a row contains.
-        implemented: false
+        removed: true
       - id: "5.4.7"
-        text: v1 has no per-ingredient nutrition.
-        implemented: false
+        removed: true
       - id: "5.4.8"
         text: Given a save that omits nutrition, the stored nutrition row stays.
         implemented: false
@@ -95,11 +92,9 @@ requirements:
         text: The recipe stays stored.
         implemented: false
       - id: "5.5.3"
-        text: v1 has no restore.
-        implemented: false
+        removed: true
       - id: "5.5.4"
-        text: v1 has no erase.
-        implemented: false
+        removed: true
       - id: "5.5.5"
         text: A later save does not make a deleted recipe visible again.
         implemented: false
@@ -111,15 +106,7 @@ requirements:
         implemented: false
 
   - id: "5.6"
-    type: functional
-    text: v1 leaves photos and meal plans out.
-    details:
-      - id: "5.6.1"
-        text: v1 stores no photo.
-        implemented: false
-      - id: "5.6.2"
-        text: v1 stores no meal plan.
-        implemented: false
+    removed: true
 
   - id: "5.7"
     type: functional
@@ -132,8 +119,7 @@ requirements:
         text: An actor field has no default.
         implemented: false
       - id: "5.7.3"
-        text: Git ships no other actor.
-        implemented: false
+        removed: true
       - id: "5.7.4"
         text: Another cook is added on the NAS, outside git.
         implemented: false
@@ -175,27 +161,7 @@ requirements:
         implemented: false
 
   - id: "5.11"
-    type: functional
-    text: v1 leaves notes, tags, a journal, a recipe source, times, and search out.
-    details:
-      - id: "5.11.1"
-        text: v1 stores no notes.
-        implemented: false
-      - id: "5.11.2"
-        text: v1 stores no tags.
-        implemented: false
-      - id: "5.11.3"
-        text: v1 stores no journal.
-        implemented: false
-      - id: "5.11.4"
-        text: v1 stores no recipe source.
-        implemented: false
-      - id: "5.11.5"
-        text: v1 stores no times.
-        implemented: false
-      - id: "5.11.6"
-        text: v1 has no search.
-        implemented: false
+    removed: true
 
   - id: "5.12"
     type: functional
