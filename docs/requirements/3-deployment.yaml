@@ -1,0 +1,95 @@
+id: "3"
+title: Deployment
+requirements:
+  - id: "3.1"
+    type: system
+    text: Production is one Compose stack on the household Unraid NAS.
+    details:
+      - id: "3.1.1"
+        text: Given the production stack, the NAS runs images built elsewhere.
+        implemented: false
+      - id: "3.1.2"
+        text: Given the production stack, the NAS does not compile the app.
+        implemented: false
+      - id: "3.1.3"
+        text: Production publishes no host ports.
+        implemented: false
+      - id: "3.1.4"
+        text: Production has no default secret.
+        implemented: false
+
+  - id: "3.2"
+    type: system
+    text: The household reaches the app only over the tailnet.
+    details:
+      - id: "3.2.1"
+        text: The app and the MCP server are separate tailnet identities.
+        implemented: false
+      - id: "3.2.2"
+        text: Family devices can open the app.
+        implemented: false
+      - id: "3.2.3"
+        text: The bot can open the MCP server only.
+        implemented: false
+      - id: "3.2.4"
+        text: There is no public ingress.
+        implemented: false
+      - id: "3.2.5"
+        text: Funnel is off.
+        implemented: false
+      - id: "3.2.6"
+        text: A local stack may publish ports.
+        implemented: false
+      - id: "3.2.7"
+        text: That local path is not how the household reaches production.
+        implemented: false
+      - id: "3.2.8"
+        text: Tailnet HTTPS is off.
+        implemented: false
+      - id: "3.2.9"
+        text: The production tailnet address does not have to offer install.
+        implemented: false
+
+  - id: "3.3"
+    type: system
+    text: The database is backed up while it is running.
+    details:
+      - id: "3.3.1"
+        text: Backups are logical dumps of the running database.
+        implemented: false
+      - id: "3.3.2"
+        text: A dump includes a deleted recipe.
+        implemented: false
+
+  - id: "3.4"
+    type: system
+    text: An update waits for a current dump.
+    details:
+      - id: "3.4.1"
+        text: An update does not start until a dump of the current database has been taken.
+        implemented: false
+      - id: "3.4.2"
+        text: Nothing pulls new images on its own.
+        implemented: false
+
+  - id: "3.5"
+    type: system
+    text: v1 is one household stack.
+    details:
+      - id: "3.5.1"
+        text: v1 is the web app, the API, Postgres, and one cookbook MCP.
+        implemented: false
+      - id: "3.5.2"
+        text: Chef is outside this repo.
+        implemented: false
+
+  - id: "3.6"
+    type: system
+    text: The API stays inside the stack.
+    details:
+      - id: "3.6.1"
+        text: Only the web app and the MCP server can call the API.
+        implemented: false
+      - id: "3.6.2"
+        text: The API is not a tailnet identity.
+        implemented: false
