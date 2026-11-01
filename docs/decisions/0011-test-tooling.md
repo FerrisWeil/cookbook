@@ -1,27 +1,24 @@
-# 0011. Test tooling
+# 0011. Node's test runner
 
 * Status: accepted
 * Date: 2026-10-25
-* Confirmed: Taylor, 2026-10-26, agent chat (merged means accepted; foundation PR #1 merged 2026-10-26)
+* Confirmed: Taylor, 2026-10-26
 
-The foundation skeleton implements this choice for unit tests. Functional (browser) tests stay unwired until Taylor confirms a feature by demo.
+## Problem
 
-## Context
-
-Working agreement: every feature is tested in code. Unit tests cover functions and classes. Functional tests use a real browser to prove features work and do not regress. **Do not write functional tests until Taylor confirms the feature works end to end** (demo on the PR, or Taylor runs it locally).
+Features need unit tests now. Browser tests must not land before Taylor has confirmed the feature.
 
 ## Options considered
 
-1. **`node:test` + `tsx` for unit tests; Playwright later for functional tests** — Zero extra unit-test framework. Matches nas-mcp. Playwright is added in the first feature PR that Taylor has already confirmed by demo. Recommended.
-2. **Vitest + Playwright** — Better DX and watch mode, another framework both API and web must agree on.
-3. **Jest + Playwright** — Familiar, slower, more config, no benefit at this size.
+1. **Node's built-in runner now, a browser runner only after confirmation** — no extra unit-test framework.
+2. **A second unit-test framework now** — better watch mode, another framework to share.
+3. **A third framework** — familiar, and more config than this repo needs.
 
 ## Decision
 
-Use Node's built-in test runner with `tsx` for unit tests. Add Playwright only after a feature has a confirmed manual demo. CI runs lint, unit tests, and secret scanning. CI does not run browser tests until they exist.
+Unit tests use Node's built-in runner. A browser test runner is not added until a feature is confirmed. That confirmation rule lives in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Consequences
 
-* Foundation CI is green without Playwright.
-* The first recipe feature PR is two steps: demo, then (after Taylor confirms) browser tests.
-* Choosing Vitest later is a new ADR.
+* Choosing a different unit runner is a new ADR.
+* What a UI pull request attaches is [0018](0018-ui-demos.md).

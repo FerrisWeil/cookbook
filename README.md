@@ -27,6 +27,8 @@ Postgres is not published on the host. `docker compose exec db psql -U postgres`
 | MCP health | http://localhost:8787/health |
 | MCP (bearer token required) | http://localhost:8787/mcp |
 
+The web home page shows Cookbook and `database up`.
+
 Local MCP token (not for the NAS): `local-dev-token-not-for-nas`. Local compose sets `MCP_ALLOW_DEV_TOKEN=1` so that token can boot. The NAS file does not.
 
 ```bash
@@ -40,12 +42,14 @@ Stop with `docker compose down`. Data lives in the `cookbook_pg` volume.
 
 Access is Tailscale-only, with tag-based grants, plus a bearer token on MCP. See [0001](docs/decisions/0001-self-host-on-unraid.md) and [0002](docs/decisions/0002-tailscale-only.md).
 
+The file in the tree is the skeleton. It builds on the NAS and turns Tailscale Serve on. The accepted production file is not in the tree. See [Unraid production](docs/unraid-production.md).
+
 ```bash
 cp .env.example .env   # set MCP_AUTH_TOKEN, POSTGRES_PASSWORD, the three local POSTGRES_* passwords, TS_WEB_AUTHKEY, TS_MCP_AUTHKEY
 docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
 ```
 
-State is stored under `COOKBOOK_DATA_DIR` (default `/mnt/user/appdata/cookbook`), with `postgres`, `tailscale-web`, and `tailscale-mcp` subdirectories. The web sidecar and the MCP sidecar each need their own Tailscale auth key. MCP and nginx listen on `127.0.0.1` inside the Tailscale network namespace, so Tailscale Serve on 443 is the tailnet ingress.
+State is stored under `COOKBOOK_DATA_DIR` (default `/mnt/user/appdata/cookbook`), with `postgres`, `tailscale-web`, and `tailscale-mcp` subdirectories. The web sidecar and the MCP sidecar each need their own Tailscale auth key. In this skeleton, nginx and MCP listen on `127.0.0.1` inside the Tailscale network namespace, and Serve on 443 is the tailnet ingress.
 
 Do not publish host ports on the NAS. Do not enable Tailscale Funnel. Do not set `MCP_ALLOW_DEV_TOKEN` on the NAS.
 
@@ -58,13 +62,12 @@ apps/web            Responsive PWA skeleton (Vite + React)
 apps/api            HTTP API, migrations, seed
 apps/mcp            Cookbook MCP (hello + bearer auth)
 packages/shared     Shared TypeScript types
-db/                 SQL migrations and seed
+db/migrations/      Numbered SQL. The API applies it on startup. First file is `app_meta`.
 docs/decisions/     ADRs
-features/           Per-feature docs
-deploy/nas/         Unraid Compose (no host ports)
+deploy/nas/         Unraid skeleton (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Local Postgres roles and supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). Language, migration tooling, test tooling, the parallel-agent convention, the security review, and the Unraid production stack are accepted. See [docs](docs/README.md). The accepted Unraid file is `docker-compose.unraid.yml` at the repo root. That file is not in the tree yet. The NAS command above is still the skeleton at `deploy/nas/docker-compose.yml`.
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Web is Vite + React. The API is a Node HTTP server. MCP uses the TypeScript MCP SDK. Local Postgres roles are in [security review](docs/security-review.md). Supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). See [docs](docs/README.md).
 
 ## Development without Docker
 

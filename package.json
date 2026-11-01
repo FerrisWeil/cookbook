@@ -14,6 +14,7 @@
     "test": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/shared test && pnpm --filter @cookbook/api test && pnpm --filter @cookbook/mcp test",
     "secrets": "bash scripts/secrets.sh",
     "smoke": "bash scripts/smoke.sh",
-    "check": "pnpm lint && pnpm test && pnpm build && pnpm secrets && pnpm audit --audit-level=high"
+    "requirements": "node scripts/requirements.mjs",
+    "check": "pnpm lint && pnpm test && pnpm build && pnpm secrets && pnpm audit --audit-level=high && pnpm requirements"
   }
 }
