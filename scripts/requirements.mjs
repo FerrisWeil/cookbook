@@ -15,29 +15,20 @@ const SELF = path.join(ROOT, "scripts", "requirements.mjs");
 const REQUIREMENTS_DIR = path.join(ROOT, "docs", "requirements");
 const DECISIONS_DIR = path.join(ROOT, "docs", "decisions");
 
-const NEEDS_EVIDENCE = new Set(["Implemented", "Verified"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage"]);
 
 const PART = "[1-9][0-9]*";
 const ID_SOURCE = `[FNS]${PART}(?:\\.${PART}){0,2}`;
-const ID_RE = new RegExp(`^${ID_SOURCE}$`);
 const TOKEN_RE = new RegExp(`(?<![A-Za-z0-9.])${ID_SOURCE}(?![A-Za-z0-9.])`, "g");
 const OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(?![A-Za-z0-9.])`, "g");
-const FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.md$`);
 const YAML_FILE_RE = new RegExp(`^(${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
 const YAML_TYPES = new Set(["functional", "non-functional", "system"]);
 const NUMERIC_ID_RE = new RegExp(`(?<![A-Za-z0-9.])${PART}(?:\\.${PART}){1,2}(?![A-Za-z0-9.])`, "g");
 const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART}(?:\\.${PART}){1,2})(?![A-Za-z0-9.])`, "g");
 const SCHEMA = JSON.parse(readFileSync(path.join(REQUIREMENTS_DIR, "schema.json"), "utf8"));
 const INDEX_PATH = path.join(REQUIREMENTS_DIR, "index.md");
-const HEADING_RE = new RegExp(`^(#{1,3}) +(${ID_SOURCE}) +(.+)$`);
-const LOOSE_HEADING_RE = /^(#{1,6}) +([FNS][0-9][0-9A-Za-z.]*) *(.*)$/;
-const STATUS_RE = /^Status:\s+(Proposed|Accepted|Implemented|Verified)(?:\s*\([^)]*\))?$/;
-const MANUAL_RE = /^Check:\s+manual(?:\s+.+)?$/;
 const TEST_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
-
-const STATUS_HINT = "Status: Proposed, Accepted, Implemented, or Verified";
 
 function isIdentChar(char) {
   return typeof char === "string" && /[A-Za-z0-9_$]/.test(char);
@@ -252,7 +243,6 @@ function evidenceFromTests(text) {
     if (call[1] === "skip" || call[1] === "todo") continue;
     if (followingOptionsSkip(masked, call.index + call[0].length)) continue;
     const title = call[3];
-    const ids = [...scanIds(title).ids];
     const reqIds = [];
     const seen = new Set();
     REQ_REF_RE.lastIndex = 0;
@@ -261,7 +251,7 @@ function evidenceFromTests(text) {
       seen.add(match[1]);
       reqIds.push(match[1]);
     }
-    calls.push({ title, ids, reqIds });
+    calls.push({ reqIds });
   }
   return calls;
 }
@@ -307,123 +297,6 @@ function decisionNumericIdErrors(name, text, knownIds) {
     if (knownIds.has(match[0])) errors.push(`${name}: cites requirement id ${match[0]}`);
   }
   return errors;
-}
-
-function parseCategory(name, text) {
-  const errors = [];
-  const fileMatch = FILE_RE.exec(name);
-  if (!fileMatch) {
-    return {
-      errors: [`${name}: category file name must look like F3-slug.md`],
-      reqs: [],
-    };
-  }
-
-  const categoryId = fileMatch[1];
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const reqs = [];
-  const seen = new Set();
-  let fence = false;
-  let current = null;
-
-  function closeSection() {
-    if (!current) return;
-    const req = current;
-    current = null;
-    if (req.statuses.length === 0 && !req.badStatus) {
-      errors.push(`${name}:${req.line}: ${req.id} is missing Status`);
-    } else if (req.statuses.length > 1) {
-      errors.push(`${name}:${req.line}: ${req.id} has more than one Status`);
-    }
-    const parent = parentOf(req.id);
-    if (parent && !seen.has(parent)) {
-      errors.push(`${name}:${req.line}: ${req.id} is missing parent ${parent}`);
-    }
-    if (seen.has(req.id)) {
-      errors.push(`${name}:${req.line}: duplicate id ${req.id}`);
-      return;
-    }
-    seen.add(req.id);
-    reqs.push({
-      id: req.id,
-      line: req.line,
-      file: name,
-      status: req.statuses.length === 1 ? req.statuses[0] : null,
-      manual: req.manual,
-    });
-  }
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const lineNo = index + 1;
-    const line = lines[index].trim();
-    if (line.startsWith("```")) {
-      fence = !fence;
-      continue;
-    }
-    if (fence) continue;
-
-    const heading = HEADING_RE.exec(line);
-    if (heading) {
-      closeSection();
-      const level = heading[1].length;
-      const id = heading[2];
-      const depth = id.split(".").length;
-      if (level !== depth) {
-        errors.push(`${name}:${lineNo}: ${id} needs a level-${depth} heading`);
-      }
-      if (depth === 1 && id !== categoryId) {
-        errors.push(`${name}:${lineNo}: ${id} does not match file category ${categoryId}`);
-      } else if (depth > 1 && !id.startsWith(`${categoryId}.`)) {
-        errors.push(`${name}:${lineNo}: ${id} is outside category ${categoryId}`);
-      }
-      current = { id, line: lineNo, statuses: [], manual: false, badStatus: false };
-      continue;
-    }
-
-    const loose = LOOSE_HEADING_RE.exec(line);
-    if (loose) {
-      closeSection();
-      const token = loose[2];
-      const title = loose[3].trim();
-      if (!ID_RE.test(token)) {
-        errors.push(`${name}:${lineNo}: ${token} is not a valid requirement heading`);
-      } else if (!title) {
-        errors.push(`${name}:${lineNo}: ${token} heading needs a title`);
-      } else {
-        errors.push(`${name}:${lineNo}: ${token} needs a level-${token.split(".").length} heading`);
-      }
-      continue;
-    }
-
-    if (!current) {
-      if (/^Status:/i.test(line)) errors.push(`${name}:${lineNo}: Status outside a heading`);
-      continue;
-    }
-    const status = STATUS_RE.exec(line);
-    if (status) {
-      current.statuses.push(status[1]);
-      continue;
-    }
-    if (/^Status:/i.test(line)) {
-      current.badStatus = true;
-      errors.push(`${name}:${lineNo}: status line must be ${STATUS_HINT}`);
-      continue;
-    }
-    if (MANUAL_RE.test(line)) {
-      current.manual = true;
-      continue;
-    }
-    if (/^Check:/i.test(line)) {
-      errors.push(`${name}:${lineNo}: Check must be "Check: manual"`);
-    }
-  }
-
-  closeSection();
-  if (fence) errors.push(`${name}: unclosed code fence`);
-  if (!seen.has(categoryId)) {
-    errors.push(`${name}: missing category heading for ${categoryId}`);
-  }
-  return { errors, reqs };
 }
 
 function yamlLine(lineCounter, node) {
@@ -553,7 +426,7 @@ function parseYamlCategory(name, text) {
   const fileMatch = YAML_FILE_RE.exec(name);
   if (!fileMatch) {
     return {
-      errors: [`${name}: category file name must look like 1-mcp.yaml`],
+      errors: [`${name}: topic file name must look like 1-mcp.yaml`],
       reqs: [],
     };
   }
@@ -574,7 +447,7 @@ function parseYamlCategory(name, text) {
 
   const root = doc.contents;
   if (!isMap(root)) {
-    return { errors: [`${name}:1: category file must be a mapping`], reqs: [] };
+    return { errors: [`${name}:1: topic file must be a mapping`], reqs: [] };
   }
 
   const errors = [];
@@ -856,11 +729,14 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
 
   for (const file of files) {
     if (file.name === "README.md" || file.name === "index.md") continue;
-    if (!file.name.endsWith(".md") && !file.name.endsWith(".yaml")) continue;
-    const parsed = file.name.endsWith(".yaml")
-      ? parseYamlCategory(file.name, file.text)
-      : parseCategory(file.name, file.text);
-    if (file.name.endsWith(".yaml") && parsed.errors.length > 0) indexReady = false;
+    if (!file.name.endsWith(".yaml")) {
+      if (file.name.endsWith(".md")) {
+        errors.push(`${file.name}: topic files are YAML, named like 1-mcp.yaml`);
+      }
+      continue;
+    }
+    const parsed = parseYamlCategory(file.name, file.text);
+    if (parsed.errors.length > 0) indexReady = false;
     errors.push(...parsed.errors);
     for (const req of parsed.reqs) {
       const prior = byId.get(req.id);
@@ -872,7 +748,6 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     }
   }
 
-  const evidence = new Set();
   const referenced = new Map();
   const detailTests = new Map();
 
@@ -894,7 +769,6 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
     for (const call of evidenceFromTests(text)) {
-      for (const id of call.ids) evidence.add(id);
       for (const id of call.reqIds) noteDetail(id, file.name);
     }
   }
@@ -902,15 +776,8 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
   const scripts = [...scriptFiles].sort((a, b) => a.name.localeCompare(b.name));
   for (const file of scripts) {
     const scanned = scanIds(file.text);
-    for (const id of scanned.ids) {
-      note(id, file.name);
-      evidence.add(id);
-    }
+    for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-  }
-
-  for (const req of byId.values()) {
-    if (!req.file.endsWith(".yaml") && req.manual) evidence.add(req.id);
   }
 
   for (const [id, where] of [...referenced.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
@@ -953,23 +820,17 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
   }
 
   for (const req of byId.values()) {
-    if (req.file.endsWith(".yaml")) {
-      yamlCover(req);
-      for (const target of req.see ?? []) {
-        if (target === req.id) {
-          errors.push(`${req.file}:${req.line}: ${req.id} see itself`);
-          continue;
-        }
-        const other = byId.get(target);
-        if (!other) errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is unknown`);
-        else if (other.kind === "removed") {
-          errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is removed`);
-        }
+    yamlCover(req);
+    for (const target of req.see ?? []) {
+      if (target === req.id) {
+        errors.push(`${req.file}:${req.line}: ${req.id} see itself`);
+        continue;
       }
-      continue;
-    }
-    if (req.status && NEEDS_EVIDENCE.has(req.status) && !evidence.has(req.id)) {
-      errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) has no test, script mention, or Check: manual`);
+      const other = byId.get(target);
+      if (!other) errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is unknown`);
+      else if (other.kind === "removed") {
+        errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is removed`);
+      }
     }
   }
 
@@ -1019,11 +880,6 @@ function runCanary() {
     }
   }
 
-  const meals = (body) => [{ name: "F3-meals.md", text: body }];
-  const proposed = "# F3 Meals\n\nStatus: Proposed\n";
-  const implemented =
-    "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 Keep\n\nStatus: Proposed\n\n## F3.2 Save\n\nStatus: Implemented\n";
-
   pass("empty", { requirementFiles: [], testFiles: [], scriptFiles: [] }, []);
   pass(
     "readme is not a category",
@@ -1034,434 +890,10 @@ function runCanary() {
     },
     [],
   );
-  pass("prose is not an id", { requirementFiles: meals(`${proposed}\nSee F3.2.1 in prose.\n`), testFiles: [], scriptFiles: [] }, ["F3"]);
-  pass(
-    "fenced heading is not an id",
-    {
-      requirementFiles: meals(`${proposed}\n\`\`\`md\n## F9.9 Planted\n\nStatus: Implemented\n\`\`\`\n`),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3"],
-  );
-  pass("proposed needs no test", { requirementFiles: meals(proposed), testFiles: [], scriptFiles: [] }, ["F3"]);
-  pass(
-    "accepted needs no test",
-    {
-      requirementFiles: meals(
-        "# F3 Meals\n\nStatus: Accepted\n\n## F3.1 Save\n\nStatus: Accepted\n",
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1"],
-  );
-  pass(
-    "it title counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'it("F3.2 saves", () => {});\n' }],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "test title counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: "test('F3.2 saves', () => {});\n" }],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "multiline title counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'it(\n  "F3.2 saves",\n  () => {},\n);\n' }],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "accepted may say merged",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Accepted (merged)\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3"],
-  );
-  pass(
-    "subtest title counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [
-        {
-          name: "save.test.ts",
-          text: 'test("meals", async (t) => {\n  await t.test("F3.2 saves", async () => {});\n});\n',
-        },
-      ],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "it.only counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'it.only("F3.2 runs", () => {});\n' }],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "script mention counts",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [],
-      scriptFiles: [{ name: "scripts/smoke.sh", text: "# checks F3.2\n" }],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "manual label counts for that id only",
-    {
-      requirementFiles: meals(
-        `${implemented}\n### F3.2.1 Empty name\n\nStatus: Verified\nCheck: manual\n`,
-      ),
-      testFiles: [{ name: "save.test.ts", text: 'it("F3.2 saves", () => {});\n' }],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2", "F3.2.1"],
-  );
-
-  fail("bad file name", { requirementFiles: [{ name: "notes.md", text: "hello\n" }], testFiles: [], scriptFiles: [] }, "category file name must look like F3-slug.md");
-  fail("bad slug", { requirementFiles: [{ name: "F3-Meals.md", text: proposed }], testFiles: [], scriptFiles: [] }, "category file name must look like F3-slug.md");
-  fail("implemented without evidence", { requirementFiles: meals(implemented), testFiles: [], scriptFiles: [] }, "F3.2 (Implemented) has no test");
   fail(
-    "verified without evidence",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Verified\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "F3 (Verified) has no test",
-  );
-  fail(
-    "skip does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'it.skip("F3.2 skipped", () => {});\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "todo does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'it.todo("F3.2 later");\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "body mention does not satisfy",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'const id = "F3.2";\nit("saves", () => {});\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "a longer id does not cover the shorter one",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: "test('F3.2.1 empty', () => {});\n" }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "a child id does not cover the category",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Implemented\n\n## F3.2 Save\n\nStatus: Proposed\n"),
-      testFiles: [{ name: "save.test.ts", text: "test('F3.2 saves', () => {});\n" }],
-      scriptFiles: [],
-    },
-    "F3 (Implemented) has no test",
-  );
-  fail(
-    "unknown test id",
-    {
-      requirementFiles: [],
-      testFiles: [{ name: "save.test.ts", text: "test('N9.1 missing', () => {});\n" }],
-      scriptFiles: [],
-    },
-    "unknown id N9.1 in save.test.ts",
-  );
-  fail(
-    "unknown script id",
-    {
-      requirementFiles: [],
-      testFiles: [],
-      scriptFiles: [{ name: "scripts/smoke.sh", text: "echo F8\n" }],
-    },
-    "unknown id F8 in scripts/smoke.sh",
-  );
-  fail(
-    "overlong id",
-    {
-      requirementFiles: [],
-      testFiles: [{ name: "save.test.ts", text: "test('F3.2.1.1 too deep', () => {});\n" }],
-      scriptFiles: [],
-    },
-    "invalid id F3.2.1.1 in save.test.ts",
-  );
-  fail(
-    "wrong heading level",
-    { requirementFiles: meals("## F3 Meals\n\nStatus: Proposed\n"), testFiles: [], scriptFiles: [] },
-    "F3 needs a level-1 heading",
-  );
-  fail(
-    "missing parent",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\n\n### F3.2.1 Early\n\nStatus: Proposed\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "F3.2.1 is missing parent F3.2",
-  );
-  fail(
-    "missing status",
-    { requirementFiles: meals("# F3 Meals\n"), testFiles: [], scriptFiles: [] },
-    "F3 is missing Status",
-  );
-  fail(
-    "bad status",
-    { requirementFiles: meals("# F3 Meals\n\nStatus: Done\n"), testFiles: [], scriptFiles: [] },
-    "status line must be",
-  );
-  fail(
-    "retired is rejected",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Accepted\n\n## F3.1 Save\n\nStatus: Retired\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "status line must be",
-  );
-  pass(
-    "sibling ids may have a gap",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\n\n## F3.2 Save\n\nStatus: Proposed\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3", "F3.2"],
-  );
-  pass(
-    "detail ids may have a gap",
-    {
-      requirementFiles: meals(
-        "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 Save\n\nStatus: Proposed\n\n### F3.1.2 Empty\n\nStatus: Proposed\n",
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.1.2"],
-  );
-  pass(
-    "sibling ids are contiguous",
-    {
-      requirementFiles: meals(
-        "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 First\n\nStatus: Proposed\n\n## F3.2 Second\n\nStatus: Accepted\n",
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  fail(
-    "two statuses",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\nStatus: Accepted\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "F3 has more than one Status",
-  );
-  fail(
-    "category mismatch",
-    { requirementFiles: meals("# F4 Other\n\nStatus: Proposed\n"), testFiles: [], scriptFiles: [] },
-    "F4 does not match file category F3",
-  );
-  fail(
-    "duplicate id",
-    {
-      requirementFiles: [
-        { name: "F3-a.md", text: proposed },
-        { name: "F3-b.md", text: "# F3 Other\n\nStatus: Proposed\n" },
-      ],
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "duplicate id F3",
-  );
-  fail(
-    "overlong heading",
-    {
-      requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\n\n#### F3.2.1.1 Too deep\n\nStatus: Proposed\n"),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "F3.2.1.1 is not a valid requirement heading",
-  );
-  fail(
-    "manual does not cover the parent",
-    {
-      requirementFiles: meals(
-        "# F3 Meals\n\nStatus: Implemented\n\n## F3.2 Save\n\nStatus: Proposed\nCheck: manual\n",
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "F3 (Implemented) has no test",
-  );
-  fail(
-    "unclosed fence",
-    { requirementFiles: meals(`${proposed}\n\`\`\`\n## F3.2 Hidden\n`), testFiles: [], scriptFiles: [] },
-    "unclosed code fence",
-  );
-  fail(
-    "test options skip does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { skip: true }, () => {});\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "test options todo does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { todo: true }, () => {});\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "it options skip does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [
-        {
-          name: "save.test.ts",
-          text: 'it(\n  "F3.2 saves",\n  { skip: true },\n  () => {},\n);\n',
-        },
-      ],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "it options todo does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'it("F3.2 saves", { todo: true }, () => {});\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "describe.skip does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [
-        {
-          name: "save.test.ts",
-          text: 'describe.skip("suite", () => { it("F3.2 saves", () => {}); });\n',
-        },
-      ],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "describe.todo does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [
-        {
-          name: "save.test.ts",
-          text: 'describe.todo("suite", () => {\n  it("F3.2 saves", () => {});\n});\n',
-        },
-      ],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "block comment does not count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: '/*\nit("F3.2 saves", () => {});\n*/\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "line comment is not a test",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: '// it("F3.2 saves", () => {});\n' }],
-      scriptFiles: [],
-    },
-    "F3.2 (Implemented) has no test",
-  );
-  fail(
-    "line comment unknown id still fails",
-    {
-      requirementFiles: [],
-      testFiles: [{ name: "save.test.ts", text: "// see F3.2 later\n" }],
-      scriptFiles: [],
-    },
-    "unknown id F3.2 in save.test.ts",
-  );
-  fail(
-    "block comment unknown id still fails",
-    {
-      requirementFiles: [],
-      testFiles: [{ name: "save.test.ts", text: "/* see N4.4 later */\n" }],
-      scriptFiles: [],
-    },
-    "unknown id N4.4 in save.test.ts",
-  );
-  pass(
-    "running options still count",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [{ name: "save.test.ts", text: 'test("F3.2 saves", { timeout: 1000 }, () => {});\n' }],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
-  );
-  pass(
-    "describe keeps a test",
-    {
-      requirementFiles: meals(implemented),
-      testFiles: [
-        {
-          name: "save.test.ts",
-          text: 'describe("meals", () => {\n  it("F3.2 saves", () => {});\n});\n',
-        },
-      ],
-      scriptFiles: [],
-    },
-    ["F3", "F3.1", "F3.2"],
+    "markdown topic file",
+    { requirementFiles: [{ name: "F3-meals.md", text: "# F3 Meals\n" }], testFiles: [], scriptFiles: [] },
+    "topic files are YAML",
   );
   pass(
     "adr without an id",
@@ -1493,32 +925,14 @@ function runCanary() {
     },
     "docs/decisions/0001-choice.md: cites requirement id F3.2",
   );
-  pass(
-    "a real test still counts beside skipped ones",
+  fail(
+    "letter id in a test is unknown",
     {
-      requirementFiles: meals(implemented),
-      testFiles: [
-        {
-          name: "save.test.ts",
-          text: [
-            'test("F3.2 saves", { skip: true }, () => {});',
-            'test("F3.2 saves", { todo: true }, () => {});',
-            'it("F3.2 saves", { skip: true }, () => {});',
-            'it("F3.2 saves", { todo: true }, () => {});',
-            'describe.skip("suite", () => { it("F3.2 saves", () => {}); });',
-            'describe.todo("suite", () => { it("F3.2 saves", () => {}); });',
-            "/*",
-            'it("F3.2 saves", () => {});',
-            "*/",
-            'test.skip("F3.2 saves", () => {});',
-            'it.todo("F3.2 later");',
-            'it("F3.2 saves", () => {});',
-          ].join("\n"),
-        },
-      ],
+      requirementFiles: [],
+      testFiles: [{ name: "save.test.ts", text: "// see F3.2 later\n" }],
       scriptFiles: [],
     },
-    ["F3", "F3.1", "F3.2"],
+    "unknown id F3.2 in save.test.ts",
   );
 
   const yamlProposed = [
@@ -1558,12 +972,12 @@ function runCanary() {
   fail(
     "yaml file name",
     { requirementFiles: [{ name: "notes.yaml", text: "id: 1\n" }], testFiles: [], scriptFiles: [] },
-    "category file name must look like 1-mcp.yaml",
+    "topic file name must look like 1-mcp.yaml",
   );
   fail(
     "yaml letter id file name",
     { requirementFiles: [{ name: "F1-mcp.yaml", text: "id: 1\n" }], testFiles: [], scriptFiles: [] },
-    "category file name must look like 1-mcp.yaml",
+    "topic file name must look like 1-mcp.yaml",
   );
   fail(
     "yaml implemented detail needs a test",
@@ -1781,6 +1195,34 @@ function runCanary() {
     {
       requirementFiles: yamlFile(yamlImplemented),
       testFiles: [{ name: "read.test.ts", text: 'it("1.1.1 and 1.1.2 read", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "has no test that names req:1.1.1",
+  );
+  fail(
+    "yaml skipped test does not count",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'test.skip("req:1.1.1 reads", () => {});\nit.todo("req:1.1.2 later");\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "has no test that names req:1.1.1",
+  );
+  fail(
+    "yaml describe.skip does not count",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'describe.skip("suite", () => { it("req:1.1.1 reads", () => {}); });\n',
+        },
+      ],
       scriptFiles: [],
     },
     "has no test that names req:1.1.1",

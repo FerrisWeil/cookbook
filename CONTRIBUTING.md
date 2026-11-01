@@ -25,8 +25,8 @@ Every pull request is checked against the [security checklist](docs/security-rev
 
 | Type | Meaning | Required with the pull request |
 | --- | --- | --- |
-| Feature | New user-facing behavior | A page under `features/`, and a demo (screenshots or a recording) before Taylor confirms. Functional Playwright tests only after he confirms it works. |
-| Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. No `features/` page. |
+| Feature | New user-facing behavior | Requirements in `docs/requirements/`, and a demo (screenshots or a recording) in the pull request before Taylor confirms. Functional Playwright tests only after he confirms it works. |
+| Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. |
 | Docs | Documentation and workflow rules only | The doc change. |
 | Bug | A fix for broken behavior | A regression test that proves the fix, in this pull request. |
 | Spike | A throwaway experiment | Labeled as a spike. Commits on a branch. No pull request. Never a commit on `master`. |
@@ -50,13 +50,12 @@ Taylor confirmed this on 2026-10-31.
 1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
 3. Docs are brief and readable: less verbose, understandable over detail.
-4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
+4. Requirements are `functional`, `non-functional`, or `system`. The type is a field. IDs have no type letter. The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
-   - IDs are a category (`F3`), a requirement (`F3.2`), or a detail or edge case (`F3.2.1`).
-   - One file per category. An ID is never reused and never renumbered. Deleting one leaves a gap, or a one-line removed marker that keeps the number.
-   - Statuses: Proposed, Accepted (merged), Implemented, Verified (a referencing test passes). A requirement can merge before it is implemented.
+   - One topic per file, for example `docs/requirements/1-mcp.yaml`. The topic is `1`, a requirement is `1.2`, and a detail is `1.2.1`. Quote every ID. The shape is in [docs/requirements/README.md](docs/requirements/README.md).
+   - An ID is never reused and never renumbered. Deleting one leaves a gap, or `removed: true` on that number.
+   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test named `req:1.2.1`. `check: manual` is only for behavior outside this repo. `see` is rare.
    - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
-   - Name every requirement in a test, for example `test('F3.2.1 …')` or `test('req:1.1.1 …')`. A smoke or script check, or an explicit manual label, covers a Markdown requirement that is hard to unit test. `pnpm check` enforces this for Implemented and Verified. YAML coverage is in the requirements README.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 
@@ -75,17 +74,7 @@ Unit tests for functions and classes live next to the app they test (`apps/*/tes
 
 ## Full stack
 
-One command starts the whole local stack, including seed data:
-
-```bash
-docker compose up --build
-```
-
-That is the path cloud agents use. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md)). The command below is the skeleton. It builds on the NAS and reads a repo-root `.env`.
-
-```bash
-docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
-```
+Run commands are in the [README](README.md). Cloud agents use the local command. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md)).
 
 ## Secrets
 
@@ -94,4 +83,3 @@ This repo is public. Never commit `.env`, tokens, Tailscale keys, or real recipe
 ## Templates
 
 * [ADR](docs/templates/adr.md) — problem, options considered, decision, consequences, status
-* [Feature](docs/templates/feature.md) — what it does, acceptance checks, how to run it
