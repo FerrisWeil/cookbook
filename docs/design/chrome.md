@@ -1,6 +1,6 @@
 # Chrome
 
-Detail for [0026](../decisions/0026-floating-glass-chrome.md). The amendment of 2026-10-25 is the current decision.
+Detail for [0016](../decisions/0016-kitchen-ui.md).
 
 The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar.
 
@@ -22,4 +22,4 @@ A card has one fill, `--bg-elevated`. It is not a second translucent layer.
 
 The first paint follows the system setting. The selector is on the settings screen only.
 
-How a surface is painted belongs to `@cookbook/ui` ([0023](../decisions/0023-design-system-approach.md)). This doc does not pick a library.
+How a surface is painted belongs to the UI package ([0017](../decisions/0017-ui-package.md)). This doc does not pick a library.

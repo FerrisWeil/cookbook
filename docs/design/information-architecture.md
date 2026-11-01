@@ -1,12 +1,8 @@
 # Information architecture
 
-Detail for [0022](../decisions/0022-navigation-ia.md).
+Screens for [0016](../decisions/0016-kitchen-ui.md). Not in the tree.
 
-v1 is three screens: a list of recipes, one recipe opened to read, and settings. Search, weekly planning, fullscreen, live updates, and a Chef panel are later. They are not drawn here.
-
-The feature PR adds example recipes in the repo. This docs PR does not. Titles start with `Example:`. Ids are explicit. Body text is a placeholder and does not name schema fields. The same data can show the list, one recipe, an empty list, and a failed load. That failed load is after the page has loaded. A real schema and API are later, and they are not the first UI PR.
-
-Chrome is [0026](../decisions/0026-floating-glass-chrome.md). See [chrome](chrome.md).
+v1 is three screens: a list of recipes, one recipe opened to read, and settings. Search, weekly planning, fullscreen, live updates, and a Chef panel are later. Chrome is [chrome](chrome.md).
 
 Wireframes use invented example recipes. They are not household data.
 
@@ -18,7 +14,7 @@ Wireframes use invented example recipes. They are not household data.
 | `/recipes/:id` | yes | One recipe. `:id` is explicit in the example data. |
 | `/settings` | yes | Theme only, for now. |
 
-`/guide` is the style guide from [0025](../decisions/0025-ui-demos.md). It is not part of this information architecture.
+`/guide` is the review route from [0018](../decisions/0018-ui-demos.md). It is not part of this information architecture.
 
 ## Screens
 
@@ -40,13 +36,13 @@ One `h1`, the example title. Then `Placeholder meta · fields undecided`. Then p
 
 ### Settings
 
-Title: Settings. The only choice, for now, is Theme. The default is the system setting. More UI design comes later. This screen does not decide whether the control is a menu button or a control at the top of the screen.
+Title: Settings. The only choice, for now, is Theme. The default is the system setting. This screen does not decide whether the control is a menu button or a control at the top of the screen.
 
 ![Phone wireframe of settings, theme only](wireframes/settings-phone.svg)
 
 ## Example cards
 
-These strings are what the feature PR's committed examples use.
+Titles start with `Example:`. Ids are explicit. The body is placeholder text and does not name schema fields. The same data can show the list, one recipe, an empty list, and a failed load. That failed load is after the page has loaded. A document that never arrives is the browser error page ([0016](../decisions/0016-kitchen-ui.md)).
 
 | Id | Title | Placeholder meta |
 | --- | --- | --- |

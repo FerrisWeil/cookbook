@@ -5,52 +5,133 @@ updates:
     schedule:
       interval: weekly
       day: monday
+      time: "06:00"
     cooldown:
       default-days: 1
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
+    # One group cannot set applies-to to both version updates and security
+    # updates. Two catch-all groups are the smallest split Dependabot allows.
     groups:
-      npm-minor-patch:
+      npm:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - major
           - minor
           - patch
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
+          - minor
+          - patch
+    # Taylor, 2026-10-27. Stay on @types/node 22 so the types match the Node 22
+    # line (engines, CI node-version, and node:22.23.4-alpine). Revisit only
+    # when that line moves: prefer Node 24 LTS, and move CI, engines, images,
+    # and @types/node together. Major version updates only. Security updates
+    # still open.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+    open-pull-requests-limit: 1
     groups:
       actions:
+        applies-to: version-updates
         patterns:
           - "*"
+        update-types:
+          - major
+          - minor
+          - patch
+      actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
+          - minor
+          - patch
 
   - package-ecosystem: docker
     directory: /docker
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+    open-pull-requests-limit: 1
+    # Dockerfiles live in /docker. docker-compose is a different ecosystem, so
+    # this entry cannot list the compose files.
     groups:
-      docker-minor-patch:
+      docker:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - major
           - minor
           - patch
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
+          - minor
+          - patch
+    # Taylor, 2026-10-27. Stay on the Node 22 image. Node 26 Alpine has no
+    # corepack, which these Dockerfiles run. Revisit only when the line moves:
+    # prefer Node 24 LTS, and move CI, engines, images, and @types/node
+    # together. Major version updates only. Security updates still open.
+    ignore:
+      - dependency-name: "node"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: docker-compose
-    directory: /
+    directories:
+      - "/"
+      - "/deploy/nas"
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+      time: "06:00"
+    open-pull-requests-limit: 1
+    # directory / lists only that directory. The NAS compose file is
+    # deploy/nas/docker-compose.yml, so it is a second path on this same
+    # entry. Dockerfiles stay on the docker ecosystem.
     groups:
-      compose-minor-patch:
+      compose:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - major
           - minor
           - patch
+      compose-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
+          - minor
+          - patch
+    # Taylor, 2026-10-27. Stay on Postgres 16 until a dump, a restore drill,
+    # and a volume-path plan exist. The 18 image does not start with the
+    # volume at /var/lib/postgresql/data. Revisit with that plan. Major
+    # version updates only. Security updates still open.
+    ignore:
+      - dependency-name: "postgres"
+        update-types:
+          - "version-update:semver-major"

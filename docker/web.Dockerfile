@@ -11,7 +11,7 @@ COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN pnpm --filter @cookbook/web build
 
-FROM nginx:1.27.5-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+FROM nginx:1.31.7-alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d
 RUN apk add --no-cache wget
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
