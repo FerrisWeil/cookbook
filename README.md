@@ -27,6 +27,8 @@ Postgres is not published on the host. `docker compose exec db psql -U postgres`
 | MCP health | http://localhost:8787/health |
 | MCP (bearer token required) | http://localhost:8787/mcp |
 
+The web home page shows Cookbook and `database up`.
+
 Local MCP token (not for the NAS): `local-dev-token-not-for-nas`. Local compose sets `MCP_ALLOW_DEV_TOKEN=1` so that token can boot. The NAS file does not.
 
 ```bash
@@ -62,7 +64,6 @@ apps/mcp            Cookbook MCP (hello + bearer auth)
 packages/shared     Shared TypeScript types
 db/migrations/      Numbered SQL. The API applies it on startup. First file is `app_meta`.
 docs/decisions/     ADRs
-features/           Per-feature docs
 deploy/nas/         Unraid skeleton (no host ports)
 ```
 

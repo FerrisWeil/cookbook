@@ -14,8 +14,8 @@ Current state:
 | Requirements | [requirements/](requirements/) |
 | Agent skills | [agent-skills.md](agent-skills.md) |
 
-Templates: [ADR](templates/adr.md), [feature](templates/feature.md).
+Template: [ADR](templates/adr.md).
 
-How we work is [CONTRIBUTING.md](../CONTRIBUTING.md). Feature pages are in [features/](../features/).
+How we work is [CONTRIBUTING.md](../CONTRIBUTING.md). Requirements define a user-facing feature.
 
 The production Compose file is not in the tree. The skeleton is [deploy/nas/docker-compose.yml](../deploy/nas/docker-compose.yml). The UI package is not in the tree. The sequence check is not in the tree.
