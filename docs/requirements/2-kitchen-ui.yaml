@@ -23,11 +23,9 @@ requirements:
         text: Given a secure context, the app can be installed to the home screen.
         implemented: false
       - id: "2.2.3"
-        text: v1 does not cache the library.
-        implemented: false
+        removed: true
       - id: "2.2.4"
-        text: v1 does not serve the library offline.
-        implemented: false
+        removed: true
       - id: "2.2.5"
         text: Given a document that never loads, the browser shows its own error.
         implemented: false
@@ -49,20 +47,15 @@ requirements:
         text: Settings changes the theme and nothing else.
         implemented: false
       - id: "2.3.3"
-        text: v1 has no search.
-        implemented: false
+        removed: true
       - id: "2.3.4"
-        text: v1 has no meal plan.
-        implemented: false
+        removed: true
       - id: "2.3.5"
-        text: v1 has no fullscreen reading.
-        implemented: false
+        removed: true
       - id: "2.3.6"
-        text: v1 has no Chef panel.
-        implemented: false
+        removed: true
       - id: "2.3.7"
-        text: v1 has no live updates.
-        implemented: false
+        removed: true
       - id: "2.3.8"
         text: The list shows each recipe's title.
         implemented: false
@@ -92,18 +85,7 @@ requirements:
         implemented: false
 
   - id: "2.4"
-    type: non-functional
-    text: Controls float on the screen.
-    details:
-      - id: "2.4.1"
-        text: Given a floating control, its fill hides the surface behind it.
-        implemented: false
-      - id: "2.4.2"
-        text: There is no rail, header bar, or bottom bar.
-        implemented: false
-      - id: "2.4.3"
-        text: Recipe text is not read through a control.
-        implemented: false
+    removed: true
 
   - id: "2.5"
     type: non-functional
@@ -122,7 +104,10 @@ requirements:
         text: Zoom is not disabled.
         implemented: false
       - id: "2.5.5"
-        text: When the system asks for less transparency, a control stays opaque.
+        text: When the system asks for less transparency, a control's fill still hides the surface behind it.
+        implemented: false
+      - id: "2.5.6"
+        text: Recipe text is never read through a control.
         implemented: false
 
   - id: "2.6"

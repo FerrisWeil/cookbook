@@ -2,7 +2,7 @@
 
 Detail for [0016](../decisions/0016-kitchen-ui.md).
 
-The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar.
+The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar. v1 does not cache the library and does not serve it offline. Search, a meal plan, fullscreen reading, a Chef panel, and live updates stay out ([0016](../decisions/0016-kitchen-ui.md)).
 
 ## Controls
 
