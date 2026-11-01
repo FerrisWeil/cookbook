@@ -1,0 +1,24 @@
+id: "7"
+title: Design system
+requirements:
+  - id: "7.1"
+    type: non-functional
+    text: A theme's colors stay readable.
+    details:
+      - id: "7.1.1"
+        text: Given a theme, its text on its background meets WCAG 2.2 AA contrast.
+        implemented: false
+      - id: "7.1.2"
+        text: Given a theme, a control's boundary on its background meets WCAG 2.2 AA contrast.
+        implemented: false
+
+  - id: "7.2"
+    type: non-functional
+    text: Screens use the shared components.
+    details:
+      - id: "7.2.1"
+        text: A control on a screen is a component from the shared UI package.
+        implemented: false
+      - id: "7.2.2"
+        text: Given a selected theme, that component uses the theme's colors.
+        implemented: false

@@ -2,7 +2,7 @@
 
 Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). An ADR does not cite a requirement ID.
 
-Topic files are YAML: `docs/requirements/1-mcp.yaml` and `docs/requirements/2-kitchen-ui.yaml`. This README is not a topic file. The check skips it, so the examples below are not requirements.
+Topic files are YAML: `docs/requirements/1-mcp.yaml`, `docs/requirements/2-kitchen-ui.yaml`, and `docs/requirements/7-design-system.yaml`. This README is not a topic file. The check skips it, so the examples below are not requirements.
 
 ## File
 

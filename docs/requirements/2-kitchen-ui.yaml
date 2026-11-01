@@ -111,16 +111,15 @@ requirements:
 
   - id: "2.6"
     type: functional
-    text: The app has a light theme and a dark theme.
+    text: The user can select a theme.
     details:
       - id: "2.6.1"
-        text: Light and dark both exist.
-        implemented: false
+        removed: true
       - id: "2.6.2"
         text: The first paint follows the system.
         implemented: false
       - id: "2.6.3"
-        text: The theme choice is on settings.
+        text: Given a theme chosen on settings, the three screens use that theme.
         implemented: false
 
   - id: "2.7"
