@@ -25,8 +25,8 @@ Every pull request is checked against the [security checklist](docs/security-rev
 
 | Type | Meaning | Required with the pull request |
 | --- | --- | --- |
-| Feature | New user-facing behavior | A page under `features/`, and a demo (screenshots or a recording) before Taylor confirms. Functional Playwright tests only after he confirms it works. |
-| Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. No `features/` page. |
+| Feature | New user-facing behavior | Requirements in `docs/requirements/`, and a demo (screenshots or a recording) in the pull request before Taylor confirms. Functional Playwright tests only after he confirms it works. |
+| Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. |
 | Docs | Documentation and workflow rules only | The doc change. |
 | Bug | A fix for broken behavior | A regression test that proves the fix, in this pull request. |
 | Spike | A throwaway experiment | Labeled as a spike. Commits on a branch. No pull request. Never a commit on `master`. |
@@ -74,17 +74,7 @@ Unit tests for functions and classes live next to the app they test (`apps/*/tes
 
 ## Full stack
 
-One command starts the whole local stack, including seed data:
-
-```bash
-docker compose up --build
-```
-
-That is the path cloud agents use. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md)). The command below is the skeleton. It builds on the NAS and reads a repo-root `.env`.
-
-```bash
-docker compose --env-file .env -f deploy/nas/docker-compose.yml up --build -d
-```
+Run commands are in the [README](README.md). Cloud agents use the local command. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md)).
 
 ## Secrets
 
@@ -93,4 +83,3 @@ This repo is public. Never commit `.env`, tokens, Tailscale keys, or real recipe
 ## Templates
 
 * [ADR](docs/templates/adr.md) — problem, options considered, decision, consequences, status
-* [Feature](docs/templates/feature.md) — what it does, acceptance checks, how to run it
