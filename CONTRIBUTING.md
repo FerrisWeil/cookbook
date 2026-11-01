@@ -53,10 +53,10 @@ Taylor confirmed this on 2026-10-31.
 4. Requirements are functional (F), non-functional (N), or system (S). The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
    - IDs are a category (`F3`), a requirement (`F3.2`), or a detail or edge case (`F3.2.1`).
-   - One file per category. Removing a requirement deletes it and renumbers later siblings so IDs stay contiguous. Update tests that name the moved IDs in the same pull request.
+   - One file per category. An ID is never reused and never renumbered. Deleting one leaves a gap, or a one-line removed marker that keeps the number.
    - Statuses: Proposed, Accepted (merged), Implemented, Verified (a referencing test passes). A requirement can merge before it is implemented.
-   - Each requirement change is its own pull request.
-   - Name every requirement in a test, for example `test('F3.2.1 …')`. A smoke or script check, or an explicit manual label, covers a requirement that is hard to unit test. `pnpm check` enforces this for Implemented and Verified.
+   - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
+   - Name every requirement in a test, for example `test('F3.2.1 …')` or `test('req:1.1.1 …')`. A smoke or script check, or an explicit manual label, covers a Markdown requirement that is hard to unit test. `pnpm check` enforces this for Implemented and Verified. YAML coverage is in the requirements README.
 
 The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
 

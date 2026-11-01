@@ -4,7 +4,8 @@
 // Fixture IDs stay in this file. The reference scan does not read it.
 // Markdown under docs/decisions is scanned for requirement IDs. Other docs are not.
 
-import { readdir, readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMap, isScalar, isSeq, LineCounter, parseDocument } from "yaml";
@@ -26,6 +27,9 @@ const FILE_RE = new RegExp(`^([FNS]${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.md$`);
 const YAML_FILE_RE = new RegExp(`^(${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
 const YAML_TYPES = new Set(["functional", "non-functional", "system"]);
 const NUMERIC_ID_RE = new RegExp(`(?<![A-Za-z0-9.])${PART}(?:\\.${PART}){1,2}(?![A-Za-z0-9.])`, "g");
+const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART}(?:\\.${PART}){1,2})(?![A-Za-z0-9.])`, "g");
+const SCHEMA = JSON.parse(readFileSync(path.join(REQUIREMENTS_DIR, "schema.json"), "utf8"));
+const INDEX_PATH = path.join(REQUIREMENTS_DIR, "index.md");
 const HEADING_RE = new RegExp(`^(#{1,3}) +(${ID_SOURCE}) +(.+)$`);
 const LOOSE_HEADING_RE = /^(#{1,6}) +([FNS][0-9][0-9A-Za-z.]*) *(.*)$/;
 const STATUS_RE = /^Status:\s+(Proposed|Accepted|Implemented|Verified)(?:\s*\([^)]*\))?$/;
@@ -240,18 +244,26 @@ function followingOptionsSkip(text, index) {
   return objectDeclaresSkipOrTodo(text, i);
 }
 
-function evidenceIdsInTest(text) {
+function evidenceFromTests(text) {
   const masked = maskInactiveRegions(text);
-  const ids = [];
+  const calls = [];
   TEST_CALL_RE.lastIndex = 0;
   for (const call of masked.matchAll(TEST_CALL_RE)) {
     if (call[1] === "skip" || call[1] === "todo") continue;
     if (followingOptionsSkip(masked, call.index + call[0].length)) continue;
-    ids.push(...scanIds(call[3]).ids);
-    NUMERIC_ID_RE.lastIndex = 0;
-    for (const match of call[3].matchAll(NUMERIC_ID_RE)) ids.push(match[0]);
+    const title = call[3];
+    const ids = [...scanIds(title).ids];
+    const reqIds = [];
+    const seen = new Set();
+    REQ_REF_RE.lastIndex = 0;
+    for (const match of title.matchAll(REQ_REF_RE)) {
+      if (seen.has(match[1])) continue;
+      seen.add(match[1]);
+      reqIds.push(match[1]);
+    }
+    calls.push({ title, ids, reqIds });
   }
-  return ids;
+  return calls;
 }
 
 function yamlChildId(parent) {
@@ -261,30 +273,6 @@ function yamlChildId(parent) {
 function parentOf(id) {
   const dot = id.lastIndexOf(".");
   return dot === -1 ? null : id.slice(0, dot);
-}
-
-function checkContiguous(name, reqs, errors) {
-  const children = new Map();
-  for (const req of reqs) {
-    const parent = parentOf(req.id);
-    if (!parent) continue;
-    const segment = Number(req.id.slice(parent.length + 1));
-    let segments = children.get(parent);
-    if (!segments) {
-      segments = new Set();
-      children.set(parent, segments);
-    }
-    segments.add(segment);
-  }
-  for (const [parent, segments] of children) {
-    const nums = [...segments].sort((a, b) => a - b);
-    for (let i = 0; i < nums.length; i += 1) {
-      if (nums[i] !== i + 1) {
-        errors.push(`${name}: ${parent} skips ${parent}.${i + 1}`);
-        break;
-      }
-    }
-  }
 }
 
 function scanIds(text) {
@@ -435,7 +423,6 @@ function parseCategory(name, text) {
   if (!seen.has(categoryId)) {
     errors.push(`${name}: missing category heading for ${categoryId}`);
   }
-  checkContiguous(name, reqs, errors);
   return { errors, reqs };
 }
 
@@ -449,8 +436,117 @@ function yamlPair(map, key) {
   return map.items.find((pair) => isScalar(pair.key) && pair.key.value === key);
 }
 
-function isOneSentence(text) {
-  return text.length > 1 && text.endsWith(".") && !text.slice(0, -1).includes(".");
+const SCHEMA_SKIP = new Set(["$schema", "$id", "title", "description", "$defs"]);
+const SCHEMA_KEYS = new Set([
+  "type",
+  "additionalProperties",
+  "required",
+  "properties",
+  "items",
+  "oneOf",
+  "enum",
+  "const",
+  "pattern",
+  "minLength",
+  "minItems",
+  "$ref",
+]);
+
+function validateAgainstSchema(value, name) {
+  const defs = SCHEMA.$defs ?? {};
+
+  function check(sub, val, loc) {
+    if (sub.$ref) {
+      const ref = sub.$ref.startsWith("#/$defs/") ? sub.$ref.slice("#/$defs/".length) : "";
+      if (!defs[ref]) return [`${loc}: unknown schema ref ${sub.$ref}`];
+      return check(defs[ref], val, loc);
+    }
+
+    const unknown = Object.keys(sub).filter((key) => !SCHEMA_SKIP.has(key) && !SCHEMA_KEYS.has(key));
+    if (unknown.length > 0) return [`${loc}: unsupported schema keyword ${unknown[0]}`];
+
+    if (sub.oneOf) {
+      const attempts = sub.oneOf.map((option) => check(option, val, loc));
+      const matched = attempts.filter((list) => list.length === 0);
+      if (matched.length === 1) return [];
+      if (matched.length > 1) return [`${loc}: matches more than one schema`];
+      return attempts.sort((a, b) => a.length - b.length)[0] ?? [`${loc}: does not match schema`];
+    }
+
+    const errors = [];
+    if (sub.type === "object") {
+      if (!val || typeof val !== "object" || Array.isArray(val)) return [`${loc}: must be an object`];
+    } else if (sub.type === "array") {
+      if (!Array.isArray(val)) return [`${loc}: must be a list`];
+    } else if (sub.type === "string") {
+      if (typeof val !== "string") return [`${loc}: must be a string`];
+    } else if (sub.type === "boolean") {
+      if (typeof val !== "boolean") return [`${loc}: must be true or false`];
+    }
+
+    if (Object.hasOwn(sub, "const") && !Object.is(val, sub.const)) {
+      errors.push(`${loc}: must be ${JSON.stringify(sub.const)}`);
+    }
+    if (sub.enum && !sub.enum.includes(val)) errors.push(`${loc}: must be ${sub.enum.join(", ")}`);
+    if (sub.pattern && typeof val === "string" && !new RegExp(sub.pattern).test(val)) {
+      errors.push(`${loc}: must match ${sub.pattern}`);
+    }
+    if (typeof sub.minLength === "number" && typeof val === "string" && val.length < sub.minLength) {
+      errors.push(`${loc}: must not be empty`);
+    }
+    if (sub.type === "object") {
+      const props = sub.properties ?? {};
+      if (sub.additionalProperties === false) {
+        for (const key of Object.keys(val)) {
+          if (!Object.hasOwn(props, key)) errors.push(`${loc}/${key}: unknown property`);
+        }
+      }
+      for (const key of sub.required ?? []) {
+        if (!Object.hasOwn(val, key)) errors.push(`${loc}: missing ${key}`);
+      }
+      for (const [key, child] of Object.entries(props)) {
+        if (Object.hasOwn(val, key)) errors.push(...check(child, val[key], `${loc}/${key}`));
+      }
+    }
+    if (sub.type === "array") {
+      if (typeof sub.minItems === "number" && val.length < sub.minItems) errors.push(`${loc}: must not be empty`);
+      if (sub.items) {
+        val.forEach((item, index) => {
+          errors.push(...check(sub.items, item, `${loc}/${index}`));
+        });
+      }
+    }
+    return errors;
+  }
+
+  return check(SCHEMA, value, name);
+}
+
+function compareId(a, b) {
+  const as = a.split(".").map(Number);
+  const bs = b.split(".").map(Number);
+  const count = Math.max(as.length, bs.length);
+  for (let i = 0; i < count; i += 1) {
+    const diff = (as[i] ?? -1) - (bs[i] ?? -1);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+function renderIndex(entries) {
+  const lines = entries
+    .filter((entry) => entry.kind === "requirement" || entry.kind === "detail" || entry.kind === "removed")
+    .slice()
+    .sort((a, b) => compareId(a.id, b.id))
+    .map((entry) => (entry.kind === "removed" ? `${entry.id} removed` : `${entry.id} ${entry.text}`));
+  return [
+    "# Requirements",
+    "",
+    "Generated from the YAML topic files. Do not edit. `pnpm requirements:index` rewrites this file.",
+    "",
+    ...lines,
+    "",
+  ].join("\n");
 }
 
 function parseYamlCategory(name, text) {
@@ -504,7 +600,7 @@ function parseYamlCategory(name, text) {
     return yamlLine(lineCounter, node);
   }
 
-  function addReq(id, line, status) {
+  function addReq(id, line, fields) {
     const parent = parentOf(id);
     if (parent && !seen.has(parent)) {
       errors.push(`${name}:${line}: ${id} is missing parent ${parent}`);
@@ -514,7 +610,62 @@ function parseYamlCategory(name, text) {
       return;
     }
     seen.add(id);
-    reqs.push({ id, line, file: name, status, manual: false });
+    reqs.push({
+      id,
+      line,
+      file: name,
+      status: null,
+      manual: false,
+      kind: "topic",
+      text: null,
+      see: [],
+      implementedFalse: false,
+      skipCoverage: false,
+      ...fields,
+    });
+  }
+
+  function isRemoved(map) {
+    const pair = yamlPair(map, "removed");
+    if (!pair) return false;
+    const node = pair.value;
+    if (!isScalar(node) || node.value !== true) {
+      errors.push(`${name}:${at(node ?? pair.key)}: removed must be true`);
+    }
+    return true;
+  }
+
+  function takeSee(map) {
+    const pair = yamlPair(map, "see");
+    if (!pair) return [];
+    if (!isSeq(pair.value)) {
+      errors.push(`${name}:${at(pair.value ?? pair.key)}: see must be a list`);
+      return [];
+    }
+    if (pair.value.items.length === 0) {
+      errors.push(`${name}:${at(pair.value)}: see must name an id`);
+      return [];
+    }
+    const ids = [];
+    const seeRe = new RegExp(`^${PART}(?:\\.${PART}){1,2}$`);
+    for (const item of pair.value.items) {
+      if (!isScalar(item) || item.type !== "QUOTE_DOUBLE" || typeof item.value !== "string" || !seeRe.test(item.value)) {
+        errors.push(`${name}:${at(item)}: see id must be a double-quoted requirement id`);
+        continue;
+      }
+      ids.push(item.value);
+    }
+    return ids;
+  }
+
+  function takeManual(map) {
+    const pair = yamlPair(map, "check");
+    if (!pair) return false;
+    if (!isScalar(pair.value) || pair.value.value !== "manual") {
+      errors.push(`${name}:${at(pair.value ?? pair.key)}: check must be manual`);
+      return false;
+    }
+    return true;
   }
 
   function rejectUnknown(map, allowed) {
@@ -556,12 +707,15 @@ function parseYamlCategory(name, text) {
       return null;
     }
     const node = pair.value;
-    const source = isScalar(node) && typeof node.source === "string" ? node.source : "";
-    if (!source || source !== source.trim() || source.includes("\n")) {
-      errors.push(`${name}:${at(node ?? pair.key)}: ${key} must be an id`);
+    if (!isScalar(node) || node.type !== "QUOTE_DOUBLE" || typeof node.value !== "string") {
+      errors.push(`${name}:${at(node ?? pair.key)}: ${key} must be a double-quoted string`);
       return null;
     }
-    return { text: source, line: at(node) };
+    if (!node.value || node.value !== node.value.trim() || node.value.includes("\n")) {
+      errors.push(`${name}:${at(node)}: ${key} must be an id`);
+      return null;
+    }
+    return { text: node.value, line: at(node) };
   }
 
   rejectUnknown(root, new Set(["id", "title", "requirements"]));
@@ -570,7 +724,7 @@ function parseYamlCategory(name, text) {
   if (idField && idField.text !== categoryId) {
     errors.push(`${name}:${idField.line}: ${idField.text} does not match file category ${categoryId}`);
   } else if (idField) {
-    addReq(idField.text, idField.line, null);
+    addReq(idField.text, idField.line, { kind: "topic" });
   }
 
   const requirementsPair = yamlPair(root, "requirements");
@@ -584,7 +738,18 @@ function parseYamlCategory(name, text) {
         errors.push(`${name}:${at(item)}: requirement must be a mapping`);
         continue;
       }
-      rejectUnknown(item, new Set(["id", "type", "text", "details"]));
+      if (isRemoved(item)) {
+        rejectUnknown(item, new Set(["id", "removed"]));
+        const removedId = takeId(item, "id");
+        const removedOk = removedId && yamlChildId(categoryId).test(removedId.text);
+        if (removedId && !removedOk) {
+          errors.push(`${name}:${removedId.line}: ${removedId.text} is outside category ${categoryId}`);
+        } else if (removedId) {
+          addReq(removedId.text, removedId.line, { kind: "removed" });
+        }
+        continue;
+      }
+      rejectUnknown(item, new Set(["id", "type", "text", "details", "see"]));
       const reqId = takeId(item, "id");
       const typePair = yamlPair(item, "type");
       if (!typePair) {
@@ -595,14 +760,16 @@ function parseYamlCategory(name, text) {
         );
       }
       const reqText = takeString(item, "text");
-      if (reqText && !isOneSentence(reqText.text)) {
-        errors.push(`${name}:${reqText.line}: requirement text must be one sentence`);
-      }
+      const reqSee = takeSee(item);
       const reqOk = reqId && yamlChildId(categoryId).test(reqId.text);
       if (reqId && !reqOk) {
         errors.push(`${name}:${reqId.line}: ${reqId.text} is outside category ${categoryId}`);
       } else if (reqId) {
-        addReq(reqId.text, reqId.line, null);
+        addReq(reqId.text, reqId.line, {
+          kind: "requirement",
+          text: reqText ? reqText.text : null,
+          see: reqSee,
+        });
       }
 
       const detailsPair = yamlPair(item, "details");
@@ -619,22 +786,40 @@ function parseYamlCategory(name, text) {
           errors.push(`${name}:${at(detail)}: detail must be a mapping`);
           continue;
         }
-        rejectUnknown(detail, new Set(["id", "text", "implemented"]));
+        if (isRemoved(detail)) {
+          rejectUnknown(detail, new Set(["id", "removed"]));
+          const removedId = takeId(detail, "id");
+          const parentId = reqOk ? reqId.text : null;
+          const removedOk = removedId && parentId && yamlChildId(parentId).test(removedId.text);
+          if (removedId && !removedOk) {
+            const why = parentId
+              ? `${removedId.text} is not under ${parentId}`
+              : `${removedId.text} is outside category ${categoryId}`;
+            errors.push(`${name}:${removedId.line}: ${why}`);
+          } else if (removedId) {
+            addReq(removedId.text, removedId.line, { kind: "removed" });
+          }
+          continue;
+        }
+        rejectUnknown(detail, new Set(["id", "text", "implemented", "check", "see"]));
         const detailId = takeId(detail, "id");
         const detailText = takeString(detail, "text");
-        if (detailText && !isOneSentence(detailText.text)) {
-          errors.push(`${name}:${detailText.line}: detail text must be one sentence`);
-        }
+        const detailSee = takeSee(detail);
+        const manual = takeManual(detail);
         const implementedPair = yamlPair(detail, "implemented");
         let status = "Implemented";
+        let implementedFalse = false;
+        let skipCoverage = false;
         if (implementedPair) {
           const value = isScalar(implementedPair.value) ? implementedPair.value.value : null;
           if (value !== true && value !== false) {
             const where = implementedPair.value ?? implementedPair.key;
             errors.push(`${name}:${at(where)}: implemented must be true or false`);
             status = null;
+            skipCoverage = true;
           } else if (value === false) {
             status = null;
+            implementedFalse = true;
           }
         }
         const parentId = reqOk ? reqId.text : null;
@@ -645,27 +830,37 @@ function parseYamlCategory(name, text) {
             : `${detailId.text} is outside category ${categoryId}`;
           errors.push(`${name}:${detailId.line}: ${why}`);
         } else if (detailId) {
-          addReq(detailId.text, detailId.line, status);
+          addReq(detailId.text, detailId.line, {
+            kind: "detail",
+            text: detailText ? detailText.text : null,
+            status,
+            manual,
+            see: detailSee,
+            implementedFalse,
+            skipCoverage,
+          });
         }
       }
     }
   }
 
-  checkContiguous(name, reqs, errors);
+  errors.push(...validateAgainstSchema(doc.toJS(), name));
   return { errors, reqs };
 }
 
 function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] }) {
   const errors = [];
   const byId = new Map();
+  let indexReady = true;
   const files = [...requirementFiles].sort((a, b) => a.name.localeCompare(b.name));
 
   for (const file of files) {
-    if (file.name === "README.md") continue;
+    if (file.name === "README.md" || file.name === "index.md") continue;
     if (!file.name.endsWith(".md") && !file.name.endsWith(".yaml")) continue;
     const parsed = file.name.endsWith(".yaml")
       ? parseYamlCategory(file.name, file.text)
       : parseCategory(file.name, file.text);
+    if (file.name.endsWith(".yaml") && parsed.errors.length > 0) indexReady = false;
     errors.push(...parsed.errors);
     for (const req of parsed.reqs) {
       const prior = byId.get(req.id);
@@ -679,9 +874,17 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
 
   const evidence = new Set();
   const referenced = new Map();
+  const detailTests = new Map();
 
   function note(id, where) {
     if (!referenced.has(id)) referenced.set(id, where);
+  }
+
+  function noteDetail(id, where) {
+    const list = detailTests.get(id) ?? [];
+    list.push(where);
+    detailTests.set(id, list);
+    note(id, where);
   }
 
   const tests = [...testFiles].sort((a, b) => a.name.localeCompare(b.name));
@@ -690,9 +893,9 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     const scanned = scanIds(text);
     for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-    for (const id of evidenceIdsInTest(text)) {
-      evidence.add(id);
-      if (/^[0-9]/.test(id)) note(id, file.name);
+    for (const call of evidenceFromTests(text)) {
+      for (const id of call.ids) evidence.add(id);
+      for (const id of call.reqIds) noteDetail(id, file.name);
     }
   }
 
@@ -707,19 +910,66 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
   }
 
   for (const req of byId.values()) {
-    if (req.manual) evidence.add(req.id);
+    if (!req.file.endsWith(".yaml") && req.manual) evidence.add(req.id);
   }
 
   for (const [id, where] of [...referenced.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (!byId.has(id)) errors.push(`unknown id ${id} in ${where}`);
   }
 
+  function yamlCover(req) {
+    const named = detailTests.get(req.id) ?? [];
+    if (req.skipCoverage) return;
+    if (req.kind === "topic" || req.kind === "requirement") {
+      if (named.length > 0) errors.push(`${req.file}:${req.line}: req:${req.id} is not a detail`);
+      return;
+    }
+    if (req.kind === "removed") {
+      if (named.length > 0) errors.push(`${req.file}:${req.line}: ${req.id} is removed and is named in a test`);
+      return;
+    }
+    if (req.kind !== "detail") return;
+    if (req.implementedFalse && req.manual) {
+      errors.push(`${req.file}:${req.line}: ${req.id} is implemented: false and uses check: manual`);
+    }
+    if (req.implementedFalse) {
+      if (named.length > 0) {
+        errors.push(`${req.file}:${req.line}: ${req.id} is implemented: false and is named in a test`);
+      }
+      return;
+    }
+    if (req.manual) {
+      if (named.length > 0) {
+        errors.push(`${req.file}:${req.line}: ${req.id} uses check: manual and is named in a test`);
+      }
+      return;
+    }
+    if (named.length === 0) {
+      errors.push(`${req.file}:${req.line}: ${req.id} (Implemented) has no test that names req:${req.id}`);
+    }
+    if (named.length > 1) {
+      errors.push(`${req.file}:${req.line}: ${req.id} is named in more than one test`);
+    }
+  }
+
   for (const req of byId.values()) {
+    if (req.file.endsWith(".yaml")) {
+      yamlCover(req);
+      for (const target of req.see ?? []) {
+        if (target === req.id) {
+          errors.push(`${req.file}:${req.line}: ${req.id} see itself`);
+          continue;
+        }
+        const other = byId.get(target);
+        if (!other) errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is unknown`);
+        else if (other.kind === "removed") {
+          errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is removed`);
+        }
+      }
+      continue;
+    }
     if (req.status && NEEDS_EVIDENCE.has(req.status) && !evidence.has(req.id)) {
-      const cover = req.file.endsWith(".yaml")
-        ? "has no test that names this detail"
-        : "has no test, script mention, or Check: manual";
-      errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) ${cover}`);
+      errors.push(`${req.file}:${req.line}: ${req.id} (${req.status}) has no test, script mention, or Check: manual`);
     }
   }
 
@@ -729,7 +979,12 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     errors.push(...decisionNumericIdErrors(file.name, file.text, byId));
   }
 
-  return { errors, ids: [...byId.keys()].sort() };
+  return {
+    errors,
+    ids: [...byId.keys()].sort(),
+    entries: [...byId.values()].filter((req) => req.file.endsWith(".yaml")),
+    indexReady,
+  };
 }
 
 function sameIds(got, want) {
@@ -998,17 +1253,17 @@ function runCanary() {
     },
     "status line must be",
   );
-  fail(
-    "sibling ids have a gap",
+  pass(
+    "sibling ids may have a gap",
     {
       requirementFiles: meals("# F3 Meals\n\nStatus: Proposed\n\n## F3.2 Save\n\nStatus: Proposed\n"),
       testFiles: [],
       scriptFiles: [],
     },
-    "F3 skips F3.1",
+    ["F3", "F3.2"],
   );
-  fail(
-    "detail ids have a gap",
+  pass(
+    "detail ids may have a gap",
     {
       requirementFiles: meals(
         "# F3 Meals\n\nStatus: Proposed\n\n## F3.1 Save\n\nStatus: Proposed\n\n### F3.1.2 Empty\n\nStatus: Proposed\n",
@@ -1016,7 +1271,7 @@ function runCanary() {
       testFiles: [],
       scriptFiles: [],
     },
-    "F3.1 skips F3.1.1",
+    ["F3", "F3.1", "F3.1.2"],
   );
   pass(
     "sibling ids are contiguous",
@@ -1267,17 +1522,17 @@ function runCanary() {
   );
 
   const yamlProposed = [
-    "id: 1",
+    'id: "1"',
     "title: MCP",
     "requirements:",
-    "  - id: 1.1",
+    '  - id: "1.1"',
     "    type: functional",
     "    text: Agents can read a recipe.",
     "    details:",
-    "      - id: 1.1.1",
+    '      - id: "1.1.1"',
     "        text: Given a deleted recipe, the agent does not receive it.",
-        "        implemented: false",
-    "      - id: 1.1.2",
+    "        implemented: false",
+    '      - id: "1.1.2"',
     "        text: Given a recipe, the agent receives its title.",
     "        implemented: false",
     "",
@@ -1295,7 +1550,7 @@ function runCanary() {
     "yaml one test can name several details",
     {
       requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("1.1.1 and 1.1.2 read", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1.1 and req:1.1.2 read", () => {});\n' }],
       scriptFiles: [],
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
@@ -1313,16 +1568,16 @@ function runCanary() {
   fail(
     "yaml implemented detail needs a test",
     { requirementFiles: yamlFile(yamlImplemented), testFiles: [], scriptFiles: [] },
-    "1.1.1 (Implemented) has no test that names this detail",
+    "1.1.1 (Implemented) has no test that names req:1.1.1",
   );
   fail(
-    "yaml requirement id does not cover a detail",
+    "yaml requirement id is not a detail",
     {
       requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("1.1 reads", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1 reads", () => {});\n' }],
       scriptFiles: [],
     },
-    "1.1.1 (Implemented) has no test that names this detail",
+    "is not a detail",
   );
   fail(
     "yaml id in the test body does not count",
@@ -1331,7 +1586,7 @@ function runCanary() {
       testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  const id = "1.1.1";\n});\n' }],
       scriptFiles: [],
     },
-    "1.1.1 (Implemented) has no test that names this detail",
+    "1.1.1 (Implemented) has no test that names req:1.1.1",
   );
   fail(
     "yaml script mention does not cover a detail",
@@ -1340,7 +1595,7 @@ function runCanary() {
       testFiles: [],
       scriptFiles: [{ name: "scripts/smoke.sh", text: "# 1.1.1\n" }],
     },
-    "1.1.1 (Implemented) has no test that names this detail",
+    "1.1.1 (Implemented) has no test that names req:1.1.1",
   );
   fail(
     "yaml implemented true still needs a test",
@@ -1349,7 +1604,7 @@ function runCanary() {
       testFiles: [],
       scriptFiles: [],
     },
-    "1.1.1 (Implemented) has no test that names this detail",
+    "1.1.1 (Implemented) has no test that names req:1.1.1",
   );
   fail(
     "yaml proposed key",
@@ -1376,7 +1631,7 @@ function runCanary() {
         [
           "id: 1",
           "title: MCP",
-          "requirements: [{id: 1.1, type: functional, text: Agents can read a recipe., details: [{id: 1.1.1, text: Given a deleted recipe, the agent does not receive it., implemented: false}]}]",
+          'requirements: [{id: "1.1", type: functional, text: Agents can read a recipe., details: [{id: "1.1.1", text: Given a deleted recipe, the agent does not receive it., implemented: false}]}]',
           "",
         ].join("\n"),
       ),
@@ -1388,7 +1643,7 @@ function runCanary() {
   fail(
     "yaml category mismatch",
     {
-      requirementFiles: yamlFile(yamlProposed.replace("id: 1\n", "id: 2\n")),
+      requirementFiles: yamlFile(yamlProposed.replace('id: "1"\n', 'id: "2"\n')),
       testFiles: [],
       scriptFiles: [],
     },
@@ -1413,6 +1668,192 @@ function runCanary() {
       decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  pass(
+    "yaml text may contain more than one period",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace(
+          "Given a deleted recipe, the agent does not receive it.",
+          "Given a deleted recipe, the agent does not receive it. The row stays.",
+        ),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  pass(
+    "index is not a category",
+    {
+      requirementFiles: [{ name: "index.md", text: "1.1 Agents can read.\n" }],
+      testFiles: [],
+      scriptFiles: [],
+    },
+    [],
+  );
+  const yamlGap = [
+    'id: "1"',
+    "title: MCP",
+    "requirements:",
+    '  - id: "1.1"',
+    "    type: functional",
+    "    text: Agents can read a recipe.",
+    "    details:",
+    '      - id: "1.1.1"',
+    "        text: Given a recipe, the agent receives its title.",
+    "        implemented: false",
+    '  - id: "1.3"',
+    "    removed: true",
+    "",
+  ].join("\n");
+  pass(
+    "yaml ids may gap and a removed marker keeps its number",
+    { requirementFiles: yamlFile(yamlGap), testFiles: [], scriptFiles: [] },
+    ["1", "1.1", "1.1.1", "1.3"],
+  );
+  fail(
+    "yaml removed id in a test",
+    {
+      requirementFiles: yamlFile(yamlGap),
+      testFiles: [{ name: "read.test.ts", text: 'it("req:1.3 stays", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "is removed and is named in a test",
+  );
+  pass(
+    "yaml quoted 1.10 keeps its id",
+    {
+      requirementFiles: yamlFile(
+        [
+          'id: "1"',
+          "title: Ten",
+          "requirements:",
+          '  - id: "1.10"',
+          "    type: system",
+          "    text: Agents can reach the tenth requirement.",
+          "    details:",
+          '      - id: "1.10.1"',
+          "        text: Given a call, the agent is told the tenth detail.",
+          "        implemented: false",
+          "",
+        ].join("\n"),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.10", "1.10.1"],
+  );
+  fail(
+    "yaml unquoted id",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace('id: "1.1"\n', "id: 1.1\n")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "double-quoted",
+  );
+  fail(
+    "yaml implemented false already has a test",
+    {
+      requirementFiles: yamlFile(yamlProposed),
+      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1.1 reads", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "implemented: false and is named in a test",
+  );
+  fail(
+    "yaml detail named in two tests",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'it("req:1.1.1 reads", () => {});\nit("req:1.1.1 again", () => {});\nit("req:1.1.2 reads", () => {});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "named in more than one test",
+  );
+  fail(
+    "yaml bare id in a title does not count",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [{ name: "read.test.ts", text: 'it("1.1.1 and 1.1.2 read", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "has no test that names req:1.1.1",
+  );
+  fail(
+    "yaml unknown req id",
+    {
+      requirementFiles: yamlFile(yamlProposed),
+      testFiles: [{ name: "read.test.ts", text: 'it("req:9.9.9 missing", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "unknown id 9.9.9",
+  );
+  const yamlManual = yamlProposed.replace(
+    '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
+    '      - id: "1.1.2"\n        text: Given a NAS boot, the documented token is rejected.\n        check: manual\n',
+  );
+  pass("yaml check manual needs no test", { requirementFiles: yamlFile(yamlManual), testFiles: [], scriptFiles: [] }, [
+    "1",
+    "1.1",
+    "1.1.1",
+    "1.1.2",
+  ]);
+  fail(
+    "yaml check manual with a test",
+    {
+      requirementFiles: yamlFile(yamlManual),
+      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1.2 rejects the token", () => {});\n' }],
+      scriptFiles: [],
+    },
+    "uses check: manual and is named in a test",
+  );
+  fail(
+    "yaml implemented false cannot use check manual",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace(
+          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
+          '      - id: "1.1.2"\n        text: Given a NAS boot, the documented token is rejected.\n        implemented: false\n        check: manual\n',
+        ),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "implemented: false and uses check: manual",
+  );
+  pass(
+    "yaml see names another id",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace(
+          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
+          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n        see:\n          - "1.1.1"\n',
+        ),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  fail(
+    "yaml see target must exist",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace(
+          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
+          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n        see:\n          - "9.9"\n',
+        ),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "see 9.9 is unknown",
   );
 
   return failures;
@@ -1494,6 +1935,20 @@ if (isMain) {
     process.exit(1);
   }
   const result = check(await loadRepo());
+  if (result.indexReady) {
+    const index = renderIndex(result.entries);
+    if (process.argv.includes("--write-index")) {
+      await writeFile(INDEX_PATH, index);
+    } else {
+      let current = "";
+      try {
+        current = await readFile(INDEX_PATH, "utf8");
+      } catch {
+        current = "";
+      }
+      if (current !== index) result.errors.push("docs/requirements/index.md is stale. Run pnpm requirements:index");
+    }
+  }
   if (result.errors.length > 0) {
     report("requirements:", result.errors);
     process.exit(1);

@@ -1,105 +1,105 @@
-id: 1
+id: "1"
 title: MCP
 requirements:
-  - id: 1.1
+  - id: "1.1"
     type: functional
     text: Agents can retrieve the details of one recipe.
     details:
-      - id: 1.1.1
+      - id: "1.1.1"
         text: Given a recipe ID, the agent receives that recipe.
         implemented: false
-      - id: 1.1.2
+      - id: "1.1.2"
         text: Without a recipe ID, the agent is told an ID is required.
         implemented: false
-      - id: 1.1.3
+      - id: "1.1.3"
         text: Given an ID that matches no recipe, the agent is told the recipe was not found.
         implemented: false
-      - id: 1.1.4
+      - id: "1.1.4"
         text: Given the ID of a deleted recipe, the agent is told the recipe was not found.
         implemented: false
-      - id: 1.1.5
+      - id: "1.1.5"
         text: Given any combination of fields, the agent receives only those fields.
         implemented: false
-      - id: 1.1.6
+      - id: "1.1.6"
         text: Given a field that doesn't exist, the agent is told which field is invalid.
         implemented: false
-      - id: 1.1.7
+      - id: "1.1.7"
         text: Without fields, the agent receives the title, steps in saved order, servings, and nutrition when present.
         implemented: false
 
-  - id: 1.2
+  - id: "1.2"
     type: functional
     text: Agents can list recipes.
     details:
-      - id: 1.2.1
+      - id: "1.2.1"
         text: Given a deleted recipe, the list does not include it.
         implemented: false
 
-  - id: 1.3
+  - id: "1.3"
     type: functional
     text: Agents can save a recipe.
     details:
-      - id: 1.3.1
+      - id: "1.3.1"
         text: Given a nutrition row, the saved recipe records that one row.
         implemented: false
-      - id: 1.3.2
+      - id: "1.3.2"
         text: Given an actor, the saved recipe records that actor.
         implemented: false
-      - id: 1.3.3
+      - id: "1.3.3"
         text: Without an actor, the agent is told an actor is required.
         implemented: false
-      - id: 1.3.4
+      - id: "1.3.4"
         text: Given a non-empty title, the saved recipe records that title.
         implemented: false
-      - id: 1.3.5
+      - id: "1.3.5"
         text: Without a non-empty title, the agent is told a title is required.
         implemented: false
-      - id: 1.3.6
+      - id: "1.3.6"
         text: Given steps, the saved recipe records them in that order.
         implemented: false
-      - id: 1.3.7
+      - id: "1.3.7"
         text: Without steps, the agent is told steps are required.
         implemented: false
-      - id: 1.3.8
+      - id: "1.3.8"
         text: Given servings, the saved recipe records those servings.
         implemented: false
-      - id: 1.3.9
+      - id: "1.3.9"
         text: Without servings, the agent is told servings are required.
         implemented: false
-      - id: 1.3.10
+      - id: "1.3.10"
         text: Given a favorite, the saved recipe records that favorite.
         implemented: false
-      - id: 1.3.11
+      - id: "1.3.11"
         text: Given a rating, the saved recipe records that rating.
         implemented: false
 
-  - id: 1.4
+  - id: "1.4"
     type: non-functional
     text: Recipe calls require the shared secret.
     details:
-      - id: 1.4.1
+      - id: "1.4.1"
         text: Without the shared secret, the agent is told the call is not allowed.
         implemented: false
-      - id: 1.4.2
+      - id: "1.4.2"
         text: Given a liveness check, the agent is not asked for the shared secret.
         implemented: false
-      - id: 1.4.3
+      - id: "1.4.3"
         text: Given a liveness check, the agent is told whether the server is up.
         implemented: false
-      - id: 1.4.4
+      - id: "1.4.4"
         text: Given a liveness check, the agent is not given recipe data.
         implemented: false
 
-  - id: 1.5
+  - id: "1.5"
     type: functional
     text: v1 limits recipe operations to read, list, and save.
     details:
-      - id: 1.5.1
+      - id: "1.5.1"
         text: Given a journal request, the agent is told that operation is not available.
         implemented: false
-      - id: 1.5.2
+      - id: "1.5.2"
         text: Given a tag request, the agent is told that operation is not available.
         implemented: false
-      - id: 1.5.3
+      - id: "1.5.3"
         text: Given a search request, the agent is told that operation is not available.
         implemented: false
