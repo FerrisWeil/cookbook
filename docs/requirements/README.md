@@ -2,7 +2,7 @@
 
 Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). This file is the index. An ADR does not cite a requirement ID.
 
-No topic files exist yet. A topic file is `docs/requirements/<ID>-slug.md` (for example `F1-mcp.md`). This README is not a topic file. The check skips it, so the example below is not a requirement.
+The recipes topic is `docs/requirements/F2-recipes.md`. A topic file is `docs/requirements/<ID>-slug.md`. This README is not a topic file. The check skips it, so the example below is not a requirement.
 
 ## F1 MCP
 F1.2 The MCP lists recipes.
