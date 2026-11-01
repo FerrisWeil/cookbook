@@ -7,7 +7,7 @@ description: Use when starting a feature, task, bug, docs change, spike, chore, 
 
 Read [CONTRIBUTING.md](../../../CONTRIBUTING.md) and follow it. Do not restate it.
 
-Docs stay brief and readable: understandable over detail. The rules live in [Docs](../../../CONTRIBUTING.md#docs). Do not copy them.
+Docs stay brief and readable: understandable over detail. Requirements and the other rules live in [Docs](../../../CONTRIBUTING.md#docs). Do not copy them.
 
 ## Start
 

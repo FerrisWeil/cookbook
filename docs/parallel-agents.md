@@ -7,7 +7,6 @@ The sequence check, the per-run Compose project, and the feature-folder loaders 
 ## A feature owns a folder
 
 ```
-features/<slug>/feature.md    required, from docs/templates/feature.md
 features/<slug>/server.ts     optional API routes
 features/<slug>/mcp.ts        optional MCP tools
 features/<slug>/web.tsx       optional UI
@@ -16,7 +15,7 @@ features/<slug>/seed.sql      optional seed, applied after db/seed.sql
 
 `<slug>` is lowercase kebab-case. The API, web app, and MCP each grow one loader that reads `features/*/`. Presence is registration. Those loaders are not in the tree yet.
 
-Migrations stay in `db/migrations/`, not inside the feature folder. The feature doc names the migration file it added.
+Migrations stay in `db/migrations/`, not inside the feature folder.
 
 Feature code is ordinary TypeScript imported by the loaders. It does not become a pnpm package. A new dependency is added to the app that imports it, and that agent rebases `pnpm-lock.yaml` last.
 
@@ -53,7 +52,7 @@ Each Compose project has its own Postgres container and its own gitignored env f
 
 Files stay `docs/decisions/NNNN-slug.md`, contiguous, same claim steps as migrations (`ADRs: 0012` in the pull request body). A merged ADR keeps its number. Taylor allowed one rewrite on 2026-10-31 that renumbered the set to `0001`–`0018`. Do not renumber again. The next ADR is `0019`.
 
-The status table in `docs/README.md` is gone. Status stays in each file. `features/README.md` still has a table. Removing that table is part of the sequence-check follow-up, which is not this docs rewrite.
+The status table in `docs/README.md` is gone. Status stays in each file.
 
 ## Other shared files
 
