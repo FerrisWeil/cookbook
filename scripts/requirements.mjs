@@ -293,7 +293,10 @@ function decisionNumericIdErrors(name, text, knownIds) {
   const errors = [];
   NUMERIC_ID_RE.lastIndex = 0;
   for (const match of normalized.matchAll(NUMERIC_ID_RE)) {
-    if (knownIds.has(match[0])) errors.push(`${name}: cites requirement id ${match[0]}`);
+    if (!knownIds.has(match[0])) continue;
+    const before = normalized.slice(Math.max(0, match.index - 5), match.index);
+    if (before === "WCAG ") continue;
+    errors.push(`${name}: cites requirement id ${match[0]}`);
   }
   return errors;
 }
@@ -1050,6 +1053,39 @@ function runCanary() {
       decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  const yamlWcag = [
+    'id: "2"',
+    "title: UI",
+    "requirements:",
+    '  - id: "2.2"',
+    "    type: non-functional",
+    "    text: The app installs.",
+    "    details:",
+    '      - id: "2.2.1"',
+    "        text: Given a secure context, the app installs.",
+    "        implemented: false",
+    "",
+  ].join("\n");
+  pass(
+    "wcag 2.2 does not cite requirement 2.2",
+    {
+      requirementFiles: [{ name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
+    },
+    ["2", "2.2", "2.2.1"],
+  );
+  fail(
+    "a decision cites requirement 2.2",
+    {
+      requirementFiles: [{ name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See 2.2.\n" }],
+    },
+    "cites requirement id 2.2",
   );
   pass(
     "yaml text may contain more than one period",

@@ -1,0 +1,157 @@
+id: "2"
+title: Kitchen UI
+requirements:
+  - id: "2.1"
+    type: functional
+    text: Taylor and his wife can open the app.
+    details:
+      - id: "2.1.1"
+        text: Given a desktop browser, the app opens.
+        implemented: false
+      - id: "2.1.2"
+        text: Given an iPhone, the app opens.
+        implemented: false
+
+  - id: "2.2"
+    type: non-functional
+    text: The app is an installable responsive web app.
+    details:
+      - id: "2.2.1"
+        text: The layout responds to the screen size.
+        implemented: false
+      - id: "2.2.2"
+        text: Given a secure context, the app can be installed to the home screen.
+        implemented: false
+      - id: "2.2.3"
+        text: v1 does not cache the library.
+        implemented: false
+      - id: "2.2.4"
+        text: v1 does not serve the library offline.
+        implemented: false
+      - id: "2.2.5"
+        text: Given a document that never loads, the browser shows its own error.
+        implemented: false
+      - id: "2.2.6"
+        text: Given a loaded app, a failed read is told in words.
+        implemented: false
+      - id: "2.2.7"
+        text: Install is not required from the production tailnet address.
+        implemented: false
+
+  - id: "2.3"
+    type: functional
+    text: v1 has three screens.
+    details:
+      - id: "2.3.1"
+        text: The screens are the recipe list, one recipe, and settings.
+        implemented: false
+      - id: "2.3.2"
+        text: Settings changes the theme and nothing else.
+        implemented: false
+      - id: "2.3.3"
+        text: v1 has no search.
+        implemented: false
+      - id: "2.3.4"
+        text: v1 has no meal plan.
+        implemented: false
+      - id: "2.3.5"
+        text: v1 has no fullscreen reading.
+        implemented: false
+      - id: "2.3.6"
+        text: v1 has no Chef panel.
+        implemented: false
+      - id: "2.3.7"
+        text: v1 has no live updates.
+        implemented: false
+      - id: "2.3.8"
+        text: The list shows each recipe's title.
+        implemented: false
+      - id: "2.3.9"
+        text: The list shows each recipe's favorite.
+        implemented: false
+      - id: "2.3.10"
+        text: The recipe screen shows the title.
+        implemented: false
+      - id: "2.3.11"
+        text: The recipe screen shows the ingredient lines.
+        implemented: false
+      - id: "2.3.12"
+        text: The recipe screen shows the steps in saved order.
+        implemented: false
+      - id: "2.3.13"
+        text: Given a nutrition row, the recipe screen shows it.
+        implemented: false
+      - id: "2.3.14"
+        text: Given a rating, the recipe screen shows it.
+        implemented: false
+      - id: "2.3.15"
+        text: The recipe screen does not show amount, unit, or name.
+        implemented: false
+      - id: "2.3.16"
+        text: The list includes recipes that are not favorites.
+        implemented: false
+
+  - id: "2.4"
+    type: non-functional
+    text: Controls float on the screen.
+    details:
+      - id: "2.4.1"
+        text: Controls use an opaque fill.
+        implemented: false
+      - id: "2.4.2"
+        text: There is no rail, header bar, or bottom bar.
+        implemented: false
+      - id: "2.4.3"
+        text: Recipe text is not read through a control.
+        implemented: false
+
+  - id: "2.5"
+    type: non-functional
+    text: The three screens have an accessibility floor.
+    details:
+      - id: "2.5.1"
+        text: The three screens meet WCAG 2.2 AA.
+        implemented: false
+      - id: "2.5.2"
+        text: A primary action target is at least 44 by 44 CSS pixels.
+        implemented: false
+      - id: "2.5.3"
+        text: Hover is never the only way to reach an action.
+        implemented: false
+      - id: "2.5.4"
+        text: Zoom is not disabled.
+        implemented: false
+      - id: "2.5.5"
+        text: When the system asks for less transparency, a control stays opaque.
+        implemented: false
+
+  - id: "2.6"
+    type: functional
+    text: The app has a light theme and a dark theme.
+    details:
+      - id: "2.6.1"
+        text: Light and dark both exist.
+        implemented: false
+      - id: "2.6.2"
+        text: The first paint follows the system.
+        implemented: false
+      - id: "2.6.3"
+        text: The theme choice is on settings.
+        implemented: false
+
+  - id: "2.7"
+    type: functional
+    text: A write from the phone asks which actor is writing.
+    details:
+      - id: "2.7.1"
+        text: A phone write does not pick an actor.
+        implemented: false
+      - id: "2.7.2"
+        text: A phone write may set the favorite and the rating.
+        implemented: false
+      - id: "2.7.3"
+        text: A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged.
+        implemented: false
+      - id: "2.7.4"
+        text: The phone offers only actors that already exist.
+        implemented: false
