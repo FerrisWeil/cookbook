@@ -21,7 +21,7 @@ ADR text has no versions, ports, file paths, env names, commands, or schemas. Th
 
 ## Requirements
 
-One pull request per requirement change. List the IDs. The format is in CONTRIBUTING.md.
+Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky. List the IDs. The format is in CONTRIBUTING.md.
 
 - IDs:
 
