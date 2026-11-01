@@ -20,9 +20,15 @@ Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`. Never renumber. Never reuse a number.
 
 Batch wording in one pull request. Split the pull request when the behavior change is risky.
 
-## Details
+## What belongs
 
-One behavior. Condition, then outcome. No error code, status code, or response body.
+A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body.
+
+A design idea, a visual style, and a scope or non-goal live in docs or an ADR. They are not requirements.
+
+A negative detail is allowed only when it guards a real limit: permission, data safety, or security.
+
+## Details
 
 `implemented` defaults to true. Write `implemented: false` until the behavior exists. Remove that field in the same commit that adds the one test. A detail has one test. The title contains `req:1.1.1`.
 
@@ -50,6 +56,30 @@ Good test, in the commit that deletes `implemented: false`:
 
 ```js
 it("req:1.1.1 returns that recipe", () => {});
+```
+
+Bad. Visual style. It belongs in the design doc:
+
+```yaml
+- id: "2.4.1"
+  text: Controls use an opaque fill.
+  implemented: false
+```
+
+Bad. A list of what v1 lacks. The same limit, as behavior, is the search example above:
+
+```yaml
+- id: "2.3.3"
+  text: v1 has no search.
+  implemented: false
+```
+
+Good. A negative that guards a real limit:
+
+```yaml
+- id: "2.7.3"
+  text: A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged.
+  implemented: false
 ```
 
 Bad. Two behaviors, and an error code:

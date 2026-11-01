@@ -1,0 +1,74 @@
+id: "4"
+title: Security
+requirements:
+  - id: "4.1"
+    type: non-functional
+    text: The public repo contains no secret, recipe, or personal note.
+    details:
+      - id: "4.1.1"
+        text: CI rejects a secret in the tree.
+        implemented: false
+      - id: "4.1.2"
+        text: A demo, fixture, or doc uses no real recipe, note, token, or tailnet name.
+        implemented: false
+      - id: "4.1.3"
+        text: A stand-in title starts with Example:.
+        implemented: false
+      - id: "4.1.4"
+        text: Git refuses a .env file.
+        implemented: false
+      - id: "4.1.5"
+        text: .env.example holds placeholders and no real secret.
+        implemented: false
+
+  - id: "4.2"
+    type: non-functional
+    text: The database stays unpublished.
+    details:
+      - id: "4.2.1"
+        text: The database is not on a published port.
+
+  - id: "4.3"
+    type: non-functional
+    text: Database roles stay separate.
+    details:
+      - id: "4.3.1"
+        text: The request role cannot change the schema.
+        implemented: false
+      - id: "4.3.2"
+        text: The migrator is a different role.
+        implemented: false
+      - id: "4.3.3"
+        text: The image superuser is used only to initialize the database.
+        implemented: false
+
+  - id: "4.4"
+    type: non-functional
+    text: Every pull request is checked against the security checklist.
+    details:
+      - id: "4.4.1"
+        text: The check happens before the pull request is marked ready.
+        implemented: false
+      - id: "4.4.2"
+        text: The pull request records a security finding only when there is one.
+        implemented: false
+
+  - id: "4.5"
+    type: non-functional
+    text: A local stack may boot with a documented token.
+    details:
+      - id: "4.5.1"
+        text: That token is not a secret.
+        implemented: false
+      - id: "4.5.2"
+        text: Given that documented token, the server starts only when the local flag is set.
+
+  - id: "4.6"
+    type: non-functional
+    text: The API does not require a shared secret.
+    details:
+      - id: "4.6.1"
+        removed: true
+      - id: "4.6.2"
+        text: Given an API call, the caller is not asked for a shared secret.
+        implemented: false

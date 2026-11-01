@@ -18,6 +18,7 @@ Run this list before a pull request is marked ready. Add a Security section only
 
 ## Auth and tokens
 
+- v1 has no household login.
 - Every new API route and MCP tool says whether the bearer secret is required.
 - Unauthenticated responses stay status-only.
 
