@@ -50,7 +50,7 @@ Each Compose project has its own Postgres container and its own gitignored env f
 
 ## ADR numbers
 
-Files stay `docs/decisions/NNNN-slug.md`, contiguous, same claim steps as migrations (`ADRs: 0012` in the pull request body). A merged ADR keeps its number. Taylor allowed one rewrite on 2026-10-31 that renumbered the set to `0001`–`0018`. Do not renumber again. The next ADR is `0019`.
+Files stay `docs/decisions/NNNN-slug.md`, contiguous, same claim steps as migrations (`ADRs: 0012` in the pull request body). A merged ADR keeps its number. Taylor allowed one rewrite on 2026-10-31 that renumbered the set to `0001`–`0018`. Do not renumber again. The next ADR is `0020`.
 
 The status table in `docs/README.md` is gone. Status stays in each file.
 
