@@ -26,9 +26,9 @@ Batch wording in one pull request. Split the pull request when the behavior chan
 
 ## What belongs
 
-A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body.
+A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body. Do not name a version. State the behavior that is true now.
 
-A design idea, a visual style, and a scope or non-goal live in docs or an ADR. They are not requirements.
+A design idea, a visual style, a version name, and a scope or non-goal live in docs or an ADR. They are not requirements.
 
 A negative detail is allowed only when it guards a real limit: permission, data safety, or security.
 
@@ -70,7 +70,7 @@ Bad. Visual style. It belongs in the design doc:
   implemented: false
 ```
 
-Bad. A list of what v1 lacks. The same limit, as behavior, is the search example above:
+Bad. A version name. The same limit, as behavior, is the search example above:
 
 ```yaml
 - id: "9.1.2"
