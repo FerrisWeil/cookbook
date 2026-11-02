@@ -84,6 +84,23 @@ grep -q '"database":"up"' /tmp/cookbook-api-ready.json
 grep -q '"seed":true' /tmp/cookbook-api-ready.json
 grep -q '"status":"ok"' /tmp/cookbook-api-ready.json
 
+actors="$(docker compose exec -T db psql -U postgres -d cookbook -tAc "SELECT string_agg(name, ',' ORDER BY name) FROM actors" | tr -d '[:space:]')"
+if [[ "$actors" != "chef,system,taylor" ]]; then
+  echo "expected shipped actors chef,system,taylor; got ${actors}" >&2
+  exit 1
+fi
+if docker compose exec -T db psql -U postgres -d cookbook -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO recipes (id, title, servings, actor) VALUES ('smoke-empty-title', '', 1, 'chef');" \
+  >/tmp/cookbook-empty-title.txt 2>&1; then
+  echo "empty recipe title was accepted" >&2
+  exit 1
+fi
+if ! grep -q 'recipes_title_present' /tmp/cookbook-empty-title.txt; then
+  echo "empty recipe title did not fail recipes_title_present" >&2
+  cat /tmp/cookbook-empty-title.txt >&2
+  exit 1
+fi
+
 curl -fsS http://127.0.0.1:8787/health | tee /tmp/cookbook-mcp-health.json
 grep -q '"status":"ok"' /tmp/cookbook-mcp-health.json
 

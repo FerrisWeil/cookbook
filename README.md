@@ -63,7 +63,7 @@ apps/api            HTTP API, migrations, seed
 apps/mcp            Cookbook MCP (hello + bearer auth)
 packages/shared     Shared TypeScript types
 packages/test       `covers()` helper for requirement IDs in tests
-db/migrations/      Numbered SQL. The API applies it on startup. First file is `app_meta`.
+db/migrations/      Numbered SQL. The API applies it on startup. `0001` is `app_meta`. `0002` is the recipe model.
 docs/decisions/     ADRs
 deploy/nas/         Unraid skeleton (no host ports)
 ```

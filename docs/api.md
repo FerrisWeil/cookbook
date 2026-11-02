@@ -1,6 +1,6 @@
 # API
 
-Contract for [0021](decisions/0021-mcp-recipe-tools.md). Recipe routes are not in the tree. Token comparison, headers, and the health body are in [security-review.md](security-review.md). MCP tools are in [mcp.md](mcp.md).
+Contract for [0021](decisions/0021-mcp-recipe-tools.md). Recipe routes are not in the tree. Tables and domain rules are in [recipes.md](recipes.md). Token comparison, headers, and the health body are in [security-review.md](security-review.md). MCP tools are in [mcp.md](mcp.md).
 
 ## Liveness
 
