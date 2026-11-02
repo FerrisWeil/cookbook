@@ -1,7 +1,8 @@
 # 0019. v1 recipe data model
 
-* Status: proposed
+* Status: accepted
 * Date: 2026-10-27
+* Confirmed: Taylor, 2026-10-27
 
 ## Problem
 
