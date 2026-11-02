@@ -18,8 +18,8 @@ The kitchen app has to run in a desktop or phone browser, load recipes without s
 6. **Document hint plus color-scheme, tokens from the design system** — first paint can follow the system; semantic CSS variables key off the hint ([0020](0020-kitchen-design-system.md)).
 7. **A service worker for install** — offline cache, which [0016](0016-kitchen-ui.md) deferred.
 8. **Manifest and Apple home-screen tags, no service worker** — installable, still online.
-9. **A browser test runner in the first feature pull request** — pixels before the screens are accepted ([0018](0018-ui-demos.md)).
-10. **Node tests for theme, contrast, and proxy; captures for layout; browser tests after confirmation** — matches 0018.
+9. **A browser test runner, a CI screenshot job, or a per-pull-request preview** — pixels or a hosted copy before the screens are accepted ([0018](0018-ui-demos.md), [0020](0020-kitchen-design-system.md)).
+10. **Node tests for theme, contrast, and proxy; local guide-route review; browser tests after confirmation** — matches 0020.
 
 ## Decision
 
@@ -31,7 +31,7 @@ Theme is light, dark, or system. Missing or unreadable storage means system. The
 
 Install is the browser home-screen flow and a manifest. No service worker. Icon artwork is still open.
 
-Tests use Node's runner ([0011](0011-test-tooling.md)). The feature pull request tests theme resolution, the contrast pairs that are already in the tokens doc, and that a browser response has no token. Layout and access are shown with desktop and phone captures and the guide route ([0018](0018-ui-demos.md), [0020](0020-kitchen-design-system.md)). A browser test runner waits until the screens are confirmed. Spacing, radius, motion, and icons have no tests until those tokens exist.
+Tests use Node's runner ([0011](0011-test-tooling.md)). The feature pull request tests theme resolution, the contrast pairs that are already in the tokens doc, and that a browser response has no token. The designer reviews each UI pull request by running the app locally. The guide route uses the real UI-package components and shows every state in light and dark, with theme and reduced-motion toggles. Not a CI screenshot job. Not a per-pull-request preview. A browser test runner waits until the screens are confirmed. Spacing, radius, and icons have no tests until those tokens exist.
 
 ## Consequences
 

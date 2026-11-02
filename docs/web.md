@@ -8,7 +8,7 @@ The kitchen screens and the UI package are not in the tree. The web image still 
 
 Client-rendered React. The web image serves static files. The reverse proxy's `/` location already falls back to `index.html`, so new screens are client routes.
 
-Screens import `@cookbook/ui`. That package holds Radix primitives and semantic CSS variables ([system](design/system.md)). The API and MCP do not import it.
+Screens import `@cookbook/ui`. That package holds Radix primitives and semantic CSS variables ([system](design/system.md)). The API and MCP do not import it. `/guide` is a hand-built route that uses those real components. It shows every state in light and dark, with theme and reduced-motion toggles.
 
 | Route | Screen |
 | --- | --- |
@@ -54,7 +54,7 @@ The manifest and Apple home-screen tags already exist. No service worker. Viewpo
 
 ## Tests
 
-[demo](design/demo.md) is the capture and browser-test bar. In addition, when the proxy lands:
+The designer reviews each UI pull request by running the app locally. [demo](design/demo.md) is that bar. No CI screenshot job and no per-pull-request preview. In addition, when the proxy lands:
 
 - The web token is not present in a document or a client bundle.
 - A proxied recipe request leaves the server with the web `Authorization` header.
