@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 
 import type { ReadyStatus } from "@cookbook/shared";
+import { covers } from "@cookbook/test";
 
 import { getReadyStatus } from "../src/health.ts";
 import { listen } from "../src/http.ts";
@@ -68,7 +69,8 @@ describe("http health", () => {
     await close();
   });
 
-  it("req:6.3.1 serves /health without touching the database", async () => {
+  it("serves /health without touching the database", async () => {
+    covers("6.3.1");
     const response = await fetch(`${baseUrl}/health`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "ok" });

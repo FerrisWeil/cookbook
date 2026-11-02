@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 
+import { covers } from "@cookbook/test";
+
 import { loadConfig } from "../src/config.ts";
 import { listen } from "../src/http.ts";
 import { TEST_TOKEN, testConfig } from "./helpers.ts";
@@ -69,13 +71,15 @@ describe("http auth", () => {
     await close();
   });
 
-  it("req:6.3.2 serves /health without a token", async () => {
+  it("serves /health without a token", async () => {
+    covers("6.3.2");
     const response = await fetch(`${baseUrl}/health`);
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "ok" });
   });
 
-  it("req:6.4.1 rejects /mcp when the token is missing", async () => {
+  it("rejects /mcp when the token is missing", async () => {
+    covers("6.4.1");
     const response = await fetch(`${baseUrl}/mcp`, { method: "POST" });
     assert.equal(response.status, 401);
     assert.equal(
