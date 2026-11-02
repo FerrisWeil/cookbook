@@ -164,14 +164,3 @@ requirements:
       - id: "5.10.5"
         text: Given a changed title, the recipe keeps its id.
         implemented: false
-
-  - id: "5.11"
-    type: functional
-    text: A recipe may have a description.
-    details:
-      - id: "5.11.1"
-        text: Given no description, the recipe is still stored.
-        implemented: false
-      - id: "5.11.2"
-        text: Given a description, the recipe stores that text.
-        implemented: false
