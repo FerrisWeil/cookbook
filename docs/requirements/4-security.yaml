@@ -68,7 +68,5 @@ requirements:
     text: The API does not require a shared secret.
     details:
       - id: "4.6.1"
-        removed: true
-      - id: "4.6.2"
         text: Given an API call, the caller is not asked for a shared secret.
         implemented: false
