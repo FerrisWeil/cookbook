@@ -2,7 +2,7 @@
 
 Detail for [0018](../decisions/0018-ui-demos.md) and [0020](../decisions/0020-kitchen-design-system.md).
 
-Review is this running app: the `/guide` route plus desktop and phone captures. Not a Figma file.
+The designer reviews each UI pull request by running the app locally. Not a CI screenshot job. Not a per-pull-request preview. Not a Figma file. Desktop and phone captures still attach to the pull request ([0018](../decisions/0018-ui-demos.md)).
 
 Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The unit runner is [0011](../decisions/0011-test-tooling.md).
 
@@ -21,11 +21,11 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 
 ## Review route
 
-The UI feature adds `/guide`.
+`/guide` is a hand-built route in `apps/web`. It uses the real `@cookbook/ui` components.
 
 - Not linked from the list, the recipe, or settings.
-- Renders the components on example data: colors in both themes, type scale, button, card, article, filter chips, a step check-off, load and error messages.
-- Opening it on a phone after a deploy is in addition to the pull-request images. Review has to be possible before a deploy.
+- Shows every state on example data, in light and dark: colors, type scale, button, card, article, filter chips, a step check-off, load and error messages.
+- Theme and reduced-motion toggles live on the route.
 
 ## Tests
 

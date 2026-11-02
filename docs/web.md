@@ -19,6 +19,8 @@ Screens import `@cookbook/ui`. That package holds Radix primitives and semantic 
 
 ## Proxy
 
+The kitchen web proxy is not in the tree.
+
 The web process holds `API_AUTH_TOKEN_WEB`. The reverse proxy attaches `Authorization: Bearer` when it forwards recipe requests to the API. The token is not in the JavaScript bundle, not in a cookie, and not in a browser response body.
 
 The browser calls same-origin `/api/…` only. It does not call the API origin.
