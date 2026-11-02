@@ -117,3 +117,33 @@ requirements:
       - id: "2.6.4"
         text: The phone write screen offers the favorite and the rating.
         implemented: false
+
+  - id: "2.7"
+    type: functional
+    text: On the recipe screen, steps can be checked off.
+    details:
+      - id: "2.7.1"
+        text: On the recipe screen, steps can be checked off.
+        implemented: false
+      - id: "2.7.2"
+        text: A checked step is stored on the device.
+        implemented: false
+      - id: "2.7.3"
+        text: A checked step is not sent to the API.
+        implemented: false
+
+  - id: "2.8"
+    type: functional
+    text: While a recipe is open, the screen stays awake where the browser supports it.
+    details:
+      - id: "2.8.1"
+        text: While a recipe is open, the screen stays awake where the browser supports it.
+        implemented: false
+
+  - id: "2.9"
+    type: functional
+    text: On the recipe list, a user can show only favorites.
+    details:
+      - id: "2.9.1"
+        text: On the recipe list, a user can show only favorites.
+        implemented: false
