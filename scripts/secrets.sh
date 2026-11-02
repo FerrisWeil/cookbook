@@ -116,4 +116,5 @@ if ! grep -q 'aws-access-token' "$report"; then
 fi
 rm -f "$report"
 
-"$bin" detect --source . --config .gitleaks.toml --no-banner --redact --exit-code 1
+# HEAD only. A full fetch otherwise scans every open branch.
+"$bin" detect --source . --config .gitleaks.toml --no-banner --redact --log-opts="HEAD" --exit-code 1
