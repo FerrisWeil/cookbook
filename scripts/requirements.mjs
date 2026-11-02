@@ -605,6 +605,9 @@ function parseYamlCategory(name, text) {
         );
       }
       const reqText = takeString(item, "text");
+      if (reqText && /\bv1\b/i.test(reqText.text)) {
+        errors.push(`${name}:${reqText.line}: ${reqId ? reqId.text : "text"} names a version`);
+      }
       const reqSee = takeSee(item);
       const reqOk = reqId && yamlChildId(categoryId).test(reqId.text);
       if (reqId && !reqOk) {
@@ -649,6 +652,9 @@ function parseYamlCategory(name, text) {
         rejectUnknown(detail, new Set(["id", "text", "implemented", "check", "see"]));
         const detailId = takeId(detail, "id");
         const detailText = takeString(detail, "text");
+        if (detailText && /\bv1\b/i.test(detailText.text)) {
+          errors.push(`${name}:${detailText.line}: ${detailId ? detailId.text : "text"} names a version`);
+        }
         const detailSee = takeSee(detail);
         const manual = takeManual(detail);
         const implementedPair = yamlPair(detail, "implemented");
@@ -1064,6 +1070,15 @@ function runCanary() {
       scriptFiles: [],
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  fail(
+    "yaml names a version",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("Agents can read a recipe.", "v1 can read a recipe.")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "names a version",
   );
   fail(
     "markdown index is rejected",
