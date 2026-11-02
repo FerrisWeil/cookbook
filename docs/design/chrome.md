@@ -16,7 +16,7 @@ The last line of content stays clear of any control and of the safe area. On the
 
 ## Cards
 
-A card has one fill, `--bg-elevated`. It is not a second translucent layer. Which fields a card shows, besides the title, is pending.
+A card has one fill, `--bg-elevated`. It is not a second translucent layer. Fields, the sibling favorite, and layout are [information architecture](information-architecture.md).
 
 ## Theme
 
