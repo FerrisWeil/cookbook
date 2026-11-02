@@ -65,7 +65,7 @@ it("req:1.1.1 returns that recipe", () => {});
 Bad. Visual style. It belongs in the design doc:
 
 ```yaml
-- id: "2.4.1"
+- id: "9.1.1"
   text: Controls use an opaque fill.
   implemented: false
 ```
@@ -73,7 +73,7 @@ Bad. Visual style. It belongs in the design doc:
 Bad. A list of what v1 lacks. The same limit, as behavior, is the search example above:
 
 ```yaml
-- id: "2.3.3"
+- id: "9.1.2"
   text: v1 has no search.
   implemented: false
 ```
