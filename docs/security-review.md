@@ -37,6 +37,12 @@ Recipe HTTP (not in the tree):
 - Compare with SHA-256 and `timingSafeEqual`. Missing or wrong token: `401` and `WWW-Authenticate: Bearer`. Rejected recipe bodies stay status-only.
 - Names and placeholders land in `.env.example` with the feature. Real values are never committed or printed.
 
+Kitchen web proxy (not in the tree):
+
+- The web process holds `API_AUTH_TOKEN_WEB` only. The reverse proxy attaches it to recipe requests. The browser never receives a token.
+- Forwarded: list, read, and a favorite-and-rating write. Not forwarded: a full recipe save from the browser. Liveness stays unauthenticated.
+- A response to the browser stays free of the token. Logs and client bundles stay free of the token.
+
 ## Network
 
 - The NAS Compose file has no `ports:` and no Tailscale Funnel.

@@ -35,4 +35,4 @@ Not decided here: list card fields, where the theme control sits on settings, sp
 * Wake Lock is best-effort. A browser that cannot hold the screen still shows the recipe.
 * The recipe data model ([0019](0019-v1-recipe-data-model.md)) has tags as one list. The documented household API list item is id and title. The read field list has no tags. Tag chips cannot work until the API exposes tags on the list. That gap is not closed here.
 * Values, routes, and pending items are in the design docs.
-* How the web app renders, proxies the API, and applies a theme is a separate decision.
+* How the web app renders, proxies the API, and applies a theme is [0023](0023-kitchen-web-implementation.md).
