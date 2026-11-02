@@ -1,6 +1,8 @@
 # UI demos
 
-Detail for [0018](../decisions/0018-ui-demos.md).
+Detail for [0018](../decisions/0018-ui-demos.md) and [0020](../decisions/0020-kitchen-design-system.md).
+
+Review is this running app: the `/guide` route plus desktop and phone captures. Not a Figma file.
 
 Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The unit runner is [0011](../decisions/0011-test-tooling.md).
 
@@ -22,7 +24,7 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 The UI feature adds `/guide`.
 
 - Not linked from the list, the recipe, or settings.
-- Renders the components on example data: colors in both themes, type scale, button, card, article, load and error messages.
+- Renders the components on example data: colors in both themes, type scale, button, card, article, filter chips, a step check-off, load and error messages.
 - Opening it on a phone after a deploy is in addition to the pull-request images. Review has to be possible before a deploy.
 
 ## Tests
@@ -31,6 +33,8 @@ Allowed in the UI feature pull request:
 
 - `node:test` for the contrast pairs in [tokens](tokens.md) and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
 - The web package grows a `test` script, and the root `pnpm test` runs it.
+
+Not until those tokens exist: tests for spacing, radius, motion, or icon artwork.
 
 Not allowed until the feature has been demoed and confirmed in chat:
 

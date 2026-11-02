@@ -1,21 +1,29 @@
 # Design system
 
-Detail for [0017](../decisions/0017-ui-package.md).
+Detail for [0017](../decisions/0017-ui-package.md) and [0020](../decisions/0020-kitchen-design-system.md).
 
-`@cookbook/ui` (`packages/ui`) is not in the tree. When it lands, screens import that package. A well-tested UI library may be used inside it. Which library is an implementation detail. Replacing it later does not need a new ADR.
+`@cookbook/ui` (`packages/ui`) is not in the tree. Screens import that package. The API and MCP do not.
 
-This page does not pick Tailwind, shadcn, Radix, or hand-written CSS. Any of those can sit inside the package.
+## Tokens
+
+Semantic CSS custom properties. The color set is [tokens](tokens.md). The foundation `--paper`, `--ink`, and `--herb` names are not kept. One set. Spacing, radius, and motion tokens are pending.
+
+The package applies the tokens. It does not invent a second palette.
+
+## Primitives
+
+Radix primitives supply accessible behavior (name, role, keyboard). Styling is plain CSS on those primitives, using the custom properties.
+
+Not Tailwind. Not shadcn. A later swap of Radix is a new decision; 0020 amended [0017](../decisions/0017-ui-package.md) on that point.
+
+React stays the React `apps/web` already has. The UI package does not install a second copy.
 
 ## What the package is for
 
-The pieces the screens share: the page shell, a recipe card, the article, buttons, and the load and error message. `/guide` ([0018](../decisions/0018-ui-demos.md)) renders the same pieces with example data.
+The pieces the screens share: the page shell, a recipe card, the article (ingredients and steps), buttons, filter chips, a step check-off, and the load and error message. `/guide` ([0018](../decisions/0018-ui-demos.md)) renders the same pieces with example data.
 
-Token values are [tokens](tokens.md). The package applies them. It does not invent a second palette.
-
-The API and MCP do not depend on `@cookbook/ui`.
+List card fields, theme control placement, icons, and the pending tokens above wait for a later design pass. The package still exports structure those can drop into: semantic token names, a document theme hint, and Radix-backed controls.
 
 ## Supply chain
 
-Prefer a library that is widely used and already maintained. Do not add a package for each widget just in case. Blur and translucency for [chrome](chrome.md) stay inside this package.
-
-React stays the React `apps/web` already has. The UI package does not install a second copy.
+Prefer a library that is widely used and already maintained. Do not add a package for each widget just in case. Radix is the allowed primitive kit. Blur and translucency for [chrome](chrome.md) stay inside this package.

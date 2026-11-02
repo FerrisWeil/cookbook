@@ -4,6 +4,8 @@ import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { covers } from "@cookbook/test";
+
 import { loadConfig } from "../src/config.ts";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -139,7 +141,8 @@ describe("local supply-chain files", () => {
     assert.doesNotMatch(script, /:-cookbook/);
   });
 
-  it("req:4.2.1 does not publish Postgres or fall back to the old password", () => {
+  it("does not publish Postgres or fall back to the old password", () => {
+    covers("4.2.1");
     const compose = readFileSync(join(repoRoot, "docker-compose.yml"), "utf8");
     assert.doesNotMatch(compose, /5432:5432/);
     assert.doesNotMatch(compose, /:-cookbook/);

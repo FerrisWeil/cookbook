@@ -1,10 +1,10 @@
 # Tokens, accessibility, breakpoints, iPhone
 
-Values for [0016](../decisions/0016-kitchen-ui.md). The UI package is not in the tree. A unit test locks these pairs when that package lands.
+Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). The UI package is not in the tree. A unit test locks the color pairs when that package lands.
 
 Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot.
 
-The file format inside the UI package follows [0017](../decisions/0017-ui-package.md). The hex values can move with that format.
+Tokens are semantic CSS custom properties. The hex values can move with the file format inside the UI package. Spacing, radius, and motion tokens are pending.
 
 ## Color
 
@@ -68,24 +68,16 @@ Recipes use the serif stack (the foundation choice; Iowan Old Style is on iOS). 
 
 Root font size stays the browser default so iOS text settings and pinch zoom can enlarge the page. Do not set `font-size` on `html` to a pixel value.
 
-## Spacing, radius, targets
+## Targets and measure
 
 | Token | Value |
 | --- | --- |
-| `--space-1` | 0.25rem |
-| `--space-2` | 0.5rem |
-| `--space-3` | 0.75rem |
-| `--space-4` | 1rem |
-| `--space-5` | 1.5rem |
-| `--space-6` | 2rem |
-| `--space-7` | 3rem |
-| `--space-8` | 4rem |
-| `--radius-card` | 0.75rem |
-| `--radius-control` | 0.5rem |
 | `--hit` | 2.75rem |
 | `--read` | 65ch |
 
-Page padding is `--space-4` on a phone and `--space-5` from the wide breakpoint up. The end of the page adds at least `--space-7` plus the safe-area inset, so the last line stays clear of any control and of the home indicator. Gap between two targets is at least `--space-2`.
+Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). The list content column caps near `--read` from the wide breakpoint up. Page padding, gaps, and corner radii wait for spacing and radius tokens.
+
+The end of the page stays clear of any control and of the home indicator: padding plus the safe-area inset.
 
 ## Accessibility baseline
 
@@ -109,23 +101,35 @@ The default CSS is the phone. There is one min-width query.
 | Name | Query | Layout |
 | --- | --- | --- |
 | phone | default | One column. Floating actions ([0016](../decisions/0016-kitchen-ui.md)), not a bottom bar. |
-| wide | `min-width: 48rem` | Same chrome, wider content. Content column caps near `65ch` on the list. |
+| wide | `min-width: 48rem` | Same chrome, wider content. List column caps near `65ch`. On the recipe, ingredients and steps sit side by side. |
 
 No tablet layout and no compact density. A desktop browser window narrower than 48rem gets the phone layout, which is the right fallback.
 
 ## iPhone and install
 
-The manifest, apple touch icon, and `apple-mobile-web-app-capable` already exist. This decision adds the page rules a home-screen install needs. It does not add a service worker.
+The page rules a home-screen install needs. No service worker. Icon artwork and home-screen icons are pending.
 
 * Viewport meta: `width=device-width, initial-scale=1, viewport-fit=cover`. Do not add `maximum-scale=1` or `user-scalable=no`.
 * Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. Floating controls sit inside that padding, above the home indicator. There is no bottom bar ([0016](../decisions/0016-kitchen-ui.md)).
 * The shell uses `min-height: 100dvh`, not `100vh`, so Safari's toolbars do not cover the page.
 * `apple-mobile-web-app-status-bar-style` is `default`. The OS keeps status-bar contrast. Safe-area padding is still applied so a later style change does not slide the title under the clock.
 * `theme-color` is updated to `--bg` of the active theme (light `#f6f1e9`, dark `#1c1915`). The manifest `background_color` and `theme_color` stay the light pair for the install splash. iOS does not reliably read a dark `theme_color` from the manifest.
-* Inputs are 1rem or larger (principle 3).
+* Inputs are 1rem or larger.
 * `-webkit-tap-highlight-color` may be transparent only when the control has its own pressed background.
 * Install path stays Safari Share → Add to Home Screen. No prompt library and no App Store.
 
-## Theme storage
+## Theme
 
-`localStorage` key `cookbook-theme` is `light`, `dark`, or `system`. Missing or unreadable storage means `system`. The first paint follows the system setting. The selector is on the settings screen, not on the list or the recipe. Changing it writes the key. This is per browser, not per person, and it is not synced to Postgres.
+The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. How it is stored, and how the document exposes light or dark before paint, is the web implementation.
+
+## Pending
+
+Not decided.
+
+- Spacing tokens (page padding, gaps, the space scale)
+- Radius tokens
+- Motion tokens
+- List card fields
+- Theme control placement on settings
+- Icons and home-screen icons
+
