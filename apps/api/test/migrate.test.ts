@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { covers } from "@cookbook/test";
+
 import {
   applyMigrations,
   applySeed,
@@ -80,7 +82,8 @@ function memoryClient(): SqlClient & { statements: string[] } {
 }
 
 describe("applyMigrations", () => {
-  it("req:6.5.1 applies each file on one connection and skips ones already recorded", async () => {
+  it("applies each file on one connection and skips ones already recorded", async () => {
+    covers("6.5.1");
     const db = memoryDb();
     const files = {
       async list() {
@@ -145,7 +148,8 @@ describe("applyMigrations", () => {
 });
 
 describe("applySeed", () => {
-  it("req:6.5.2 runs the seed file", async () => {
+  it("runs the seed file", async () => {
+    covers("6.5.2");
     const client = memoryClient();
     await applySeed(client, "/db/seed.sql", {
       async list() {

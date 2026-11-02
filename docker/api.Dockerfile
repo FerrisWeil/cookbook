@@ -6,6 +6,7 @@ COPY apps/api/package.json apps/api/
 COPY apps/mcp/package.json apps/mcp/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
+COPY packages/test/package.json packages/test/
 RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY apps/api apps/api

@@ -5,7 +5,7 @@ description: Use when writing or editing a requirements YAML file, a requirement
 
 # Requirements
 
-The pilot is `docs/requirements/1-mcp.yaml`. The shape is `docs/requirements/schema.json`. `pnpm check` enforces it. Do not add a web view. Do not add a `covers()` helper. Test titles use `req:1.1.1` until that helper exists.
+The pilot is `docs/requirements/1-mcp.yaml`. The shape is `docs/requirements/schema.json`. `pnpm check` enforces it. Do not add a web view.
 
 An ADR never cites a requirement ID.
 
@@ -36,7 +36,7 @@ A design idea, a visual style, a version name, and a scope or non-goal live in d
 
 ## Details
 
-`implemented` defaults to true. Write `implemented: false` until the behavior exists. Remove that field in the same commit that adds the one test. A detail has one test. The title contains `req:1.1.1`.
+`implemented` defaults to true. Write `implemented: false` until the behavior exists. Remove that field in the same commit that adds the one test. A detail has one test. That test calls `covers("1.1.1")` from `@cookbook/test`. The title is the behavior, not the ID.
 
 `check: manual` is only for behavior outside this repo. A NAS, the tailnet, or a person's eyes. A function or file in this repo gets a test.
 
@@ -61,8 +61,20 @@ Good, from the pilot. Not built yet, so the flag stays:
 Good test, in the commit that deletes `implemented: false`:
 
 ```js
-it("req:1.1.1 returns that recipe", () => {});
+import { covers } from "@cookbook/test";
+
+it("returns that recipe", () => {
+  covers("1.1.1");
+});
 ```
+
+One test may cover several details:
+
+```js
+covers("1.1.2", "1.1.3");
+```
+
+The helper fails on an unknown or removed ID. `pnpm check` fails if the ID is not a detail, if `implemented: false` still remains, or if a second test covers the same detail. Do not put `req:` in the title.
 
 Bad. Visual style. It belongs in the design doc:
 
