@@ -60,18 +60,27 @@ requirements:
         text: The numbers are per serving.
         implemented: false
       - id: "5.4.3"
-        text: The source is estimated, entered, or copied.
+        text: Given the label estimated, the numbers were calculated from the ingredients.
         implemented: false
       - id: "5.4.4"
-        text: The divisor is the recipe's stored servings.
+        text: Given the label entered, a person typed the numbers.
         implemented: false
       - id: "5.4.5"
-        text: That servings is greater than zero.
+        text: Given the label copied, the numbers were taken from a package label or a published recipe.
         implemented: false
       - id: "5.4.6"
-        text: Given a save that omits nutrition, the stored nutrition row stays.
+        text: A nutrition row has exactly one label, and that label is estimated, entered, or copied.
         implemented: false
       - id: "5.4.7"
+        text: The divisor is the recipe's stored servings.
+        implemented: false
+      - id: "5.4.8"
+        text: That servings is greater than zero.
+        implemented: false
+      - id: "5.4.9"
+        text: Given a save that omits nutrition, the stored nutrition row stays.
+        implemented: false
+      - id: "5.4.10"
         text: Given a save that clears nutrition, that nutrition row is removed.
         implemented: false
 
