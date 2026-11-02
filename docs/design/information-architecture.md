@@ -40,7 +40,7 @@ The meta line shows up to two tags as plain text joined by ` · `, then `+N` for
 
 Cards do not show nutrition, author, ingredients, dates, or photos.
 
-Every card is the same height. Reserve the meta line even when there are no tags. Skeleton cards match that size.
+Reserve the meta line even when there are no tags, so heights stay stable. Skeleton cards match that size.
 
 ### Recipe
 
@@ -69,8 +69,8 @@ Titles start with `Example:`. Ids are explicit. The same data can show the list,
 | Id | Title | Tags | Rating | Favorite |
 | --- | --- | --- | --- | --- |
 | `example-tomato-lentils` | Example: Tomato lentils | vegetarian, pantry, weeknight | 4/5 | on |
-| `example-weeknight-oats` | Example: Weeknight oats | breakfast, vegetarian | | |
-| `example-citrus-chicken` | Example: Citrus chicken | dinner | 5/5 | |
+| `example-weeknight-oats` | Example: Weeknight oats | breakfast, vegetarian | | off |
+| `example-citrus-chicken` | Example: Citrus chicken | dinner | 5/5 | off |
 
 ## Tags
 

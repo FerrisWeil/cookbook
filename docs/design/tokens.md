@@ -75,7 +75,7 @@ Root font size stays the browser default so iOS text settings and pinch zoom can
 | `--hit` | 2.75rem |
 | `--read` | 65ch |
 
-Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). The list content column caps near `--read` from the wide breakpoint up. Page padding and gaps wait for spacing tokens. Button radius is in [buttons](buttons.md).
+Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). Recipe text caps near `--read` from the wide breakpoint up. The list is a card grid from that breakpoint. Page padding and gaps wait for spacing tokens. Button radius is in [buttons](buttons.md).
 
 The end of the page stays clear of any control and of the home indicator: padding plus the safe-area inset.
 
@@ -101,7 +101,7 @@ The default CSS is the phone. There is one min-width query.
 | Name | Query | Layout |
 | --- | --- | --- |
 | phone | default | One column. Floating actions ([0016](../decisions/0016-kitchen-ui.md)), not a bottom bar. |
-| wide | `min-width: 48rem` | Same chrome, wider content. List column caps near `65ch`. On the recipe, ingredients and steps sit side by side. |
+| wide | `min-width: 48rem` | Same chrome, wider content. The list is a card grid. Recipe measure caps near `65ch`. On the recipe, ingredients and steps sit side by side. |
 
 No tablet layout and no compact density. A desktop browser window narrower than 48rem gets the phone layout, which is the right fallback.
 
