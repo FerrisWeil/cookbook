@@ -1,10 +1,10 @@
 # MCP
 
-Contract for [0003](decisions/0003-mcp-bearer-token.md) and [0021](decisions/0021-mcp-recipe-tools.md). The recipe tools and `/recipes` routes are not in the tree. Auth that is already running (the token check, the header, and the health body) is in [security-review.md](security-review.md).
+Contract for [0003](decisions/0003-mcp-bearer-token.md) and [0021](decisions/0021-mcp-recipe-tools.md). The recipe tools are not in the tree. Recipe HTTP is in [api.md](api.md). Auth that is already running (the token check, the header, and the health body) is in [security-review.md](security-review.md).
 
 ## Reach
 
-MCP calls the household API. It has no database connection. Local and production keep MCP off the database network.
+MCP calls the household API with the MCP caller token. It has no database connection. Local and production keep MCP off the database network. The Chef-facing MCP secret is not that caller token.
 
 ## Tools
 
@@ -47,12 +47,4 @@ Save replaces title, steps, servings, favorite, rating, and ingredients. Actor i
 
 ## Household API
 
-These routes hold the writes. They do not require the MCP bearer.
-
-| Method | Path | Role |
-| --- | --- | --- |
-| `GET` | `/recipes` | List visible recipes. |
-| `GET` | `/recipes/:id` | Read one visible recipe. Query `fields` for the same projection as `read`. |
-| `PUT` | `/recipes` | Save. Body matches `save`. |
-
-Local compose already publishes the API. On the NAS the API is not a tailnet node; the web proxy and the Docker network reach it.
+Recipe routes, the two caller tokens, and liveness are in [api.md](api.md). MCP presents the MCP caller token. The browser never sees a token.
