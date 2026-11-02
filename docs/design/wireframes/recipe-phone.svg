@@ -5,7 +5,7 @@
   <rect x="16" y="52" width="88" height="44" rx="8" fill="#2a2520" stroke="#8a7d6b"/>
   <text x="60" y="79" text-anchor="middle" fill="#f3ecdf" font-family="system-ui, sans-serif" font-size="16">Back</text>
   <text x="16" y="148" fill="#f3ecdf" font-family="Georgia, serif" font-size="28">Example: Tomato lentils</text>
-  <text x="16" y="180" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="14">&#9733;&#9733;&#9733;&#9733; 4</text>
+  <text x="16" y="180" fill="#c4b8a5" font-family="system-ui, sans-serif" font-size="14">4/5</text>
   <rect x="16" y="208" width="358" height="120" rx="12" fill="#2a2520" stroke="#8a7d6b"/>
   <text x="32" y="256" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Example body text.</text>
   <text x="32" y="288" fill="#f3ecdf" font-family="Georgia, serif" font-size="18">Not a schema. Not a real meal.</text>

@@ -27,8 +27,8 @@ Sentence case. The floating Back button shows an icon and a label. Settings may 
 
 ## Press, focus, loading
 
-Press feedback on `pointerdown`: scale 0.97 plus a darker fill. Drop the scale under `prefers-reduced-motion`. Show a `focus-visible` ring. A loading button keeps its label width. `touch-action: manipulation`.
+Press feedback on `pointerdown`: scale 0.97 plus a darker fill. Under `prefers-reduced-motion`, drop the scale and keep the darker fill. Press uses `--duration-fast` and `--ease-out`. Show a `focus-visible` ring. A loading button keeps its label width. `touch-action: manipulation`.
 
 ## Favorite and rating
 
-The control updates on tap, then writes. On failure it rolls back and shows a worded error.
+Optimistic: updates on tap, then writes; on failure rolls back and shows a worded error, e.g. "Could not save favorite."

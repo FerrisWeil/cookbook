@@ -40,7 +40,7 @@ A missing or short web token refuses to boot, same bar as the other caller token
 
 ## What the list and recipe need
 
-The documented list item is `id` and `title`. The kitchen list also needs `favorite` (the toggle) and `tags` (the chips). The documented read field list has no `tags`. Those fields are an API gap. Filters apply to the loaded list until the API offers a filtered list.
+The documented list item is `id` and `title`. The kitchen list also needs `favorite` (the toggle), `tags` (the chips), and `rating` (read-only on cards). The documented read field list has no `tags`. Those fields are an API gap. Filters apply to the loaded list until the API offers a filtered list.
 
 The documented save replaces the recipe. A phone write may set favorite and rating only, and records the actor as `system`. That write is not in the tree.
 
