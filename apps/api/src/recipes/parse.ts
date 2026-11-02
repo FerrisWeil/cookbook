@@ -81,7 +81,11 @@ export function parseSave(input: SaveRecipeInput): ParsedSave {
     "title_required",
     "A title is required.",
   );
-  if (typeof input.servings !== "number" || !(input.servings > 0)) {
+  if (
+    typeof input.servings !== "number" ||
+    !Number.isFinite(input.servings) ||
+    !(input.servings > 0)
+  ) {
     throw new RecipeError(
       "servings_required",
       "Servings must be greater than zero.",
@@ -93,8 +97,14 @@ export function parseSave(input: SaveRecipeInput): ParsedSave {
     id = presentText(input.id, "invalid_id", "A recipe id is opaque.");
   }
 
-  const favorite =
-    input.favorite === undefined ? undefined : input.favorite === true;
+  let favorite: boolean | undefined;
+  if (input.favorite === undefined) {
+    favorite = undefined;
+  } else if (typeof input.favorite !== "boolean") {
+    throw new RecipeError("invalid_favorite", "A recipe has one favorite.");
+  } else {
+    favorite = input.favorite;
+  }
 
   let rating: number | null | undefined;
   if (input.rating === undefined) {

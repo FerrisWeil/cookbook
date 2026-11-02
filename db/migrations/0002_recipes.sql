@@ -14,7 +14,7 @@ CREATE TABLE recipes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   hidden_at TIMESTAMPTZ,
   hidden_by TEXT REFERENCES actors (name),
-  CONSTRAINT recipes_title_present CHECK (btrim(title) <> ''),
+  CONSTRAINT recipes_title_present CHECK (title ~ '\S'),
   CONSTRAINT recipes_servings_positive CHECK (servings > 0),
   CONSTRAINT recipes_rating_range CHECK (
     rating IS NULL OR (rating >= 1 AND rating <= 5)
@@ -33,7 +33,7 @@ CREATE TABLE recipe_ingredients (
   name TEXT,
   PRIMARY KEY (recipe_id, position),
   CONSTRAINT recipe_ingredients_position CHECK (position >= 0),
-  CONSTRAINT recipe_ingredients_line_present CHECK (btrim(line) <> '')
+  CONSTRAINT recipe_ingredients_line_present CHECK (line ~ '\S')
 );
 
 CREATE TABLE recipe_steps (
