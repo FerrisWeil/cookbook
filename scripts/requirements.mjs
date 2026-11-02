@@ -394,6 +394,14 @@ function validateAgainstSchema(value, name) {
   return check(SCHEMA, value, name);
 }
 
+// Whole words only, so ordinary words such as "yesterday" and "lateral" stay.
+const TIMED_WORD_RE = /\b(?:v\d+|version|release|phase|for now|yet|initially|currently|later)\b/i;
+
+function timedTextError(name, field, idText) {
+  if (!field || !TIMED_WORD_RE.test(field.text)) return null;
+  return `${name}:${field.line}: ${idText} names a version or a time`;
+}
+
 function parseYamlCategory(name, text) {
   const fileMatch = YAML_FILE_RE.exec(name);
   if (!fileMatch) {
@@ -605,9 +613,8 @@ function parseYamlCategory(name, text) {
         );
       }
       const reqText = takeString(item, "text");
-      if (reqText && /\bv1\b/i.test(reqText.text)) {
-        errors.push(`${name}:${reqText.line}: ${reqId ? reqId.text : "text"} names a version`);
-      }
+      const timedReq = timedTextError(name, reqText, reqId ? reqId.text : "text");
+      if (timedReq) errors.push(timedReq);
       const reqSee = takeSee(item);
       const reqOk = reqId && yamlChildId(categoryId).test(reqId.text);
       if (reqId && !reqOk) {
@@ -652,9 +659,8 @@ function parseYamlCategory(name, text) {
         rejectUnknown(detail, new Set(["id", "text", "implemented", "check", "see"]));
         const detailId = takeId(detail, "id");
         const detailText = takeString(detail, "text");
-        if (detailText && /\bv1\b/i.test(detailText.text)) {
-          errors.push(`${name}:${detailText.line}: ${detailId ? detailId.text : "text"} names a version`);
-        }
+        const timedDetail = timedTextError(name, detailText, detailId ? detailId.text : "text");
+        if (timedDetail) errors.push(timedDetail);
         const detailSee = takeSee(detail);
         const manual = takeManual(detail);
         const implementedPair = yamlPair(detail, "implemented");
@@ -1079,6 +1085,43 @@ function runCanary() {
       scriptFiles: [],
     },
     "names a version",
+  );
+  fail(
+    "yaml names a time",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace("Given a deleted recipe, the agent does not receive it.", "Search comes later."),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "names a version",
+  );
+  pass(
+    "yaml ordinary words are not a time",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace("Agents can read a recipe.", "Yesterday a lateral read returns the title."),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  pass(
+    "a decision may name a time",
+    {
+      requirementFiles: yamlFile(yamlProposed),
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [
+        {
+          name: "docs/decisions/0001-choice.md",
+          text: "Search comes later. The v1 release is a phase for now.\n",
+        },
+      ],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
   );
   fail(
     "markdown index is rejected",
