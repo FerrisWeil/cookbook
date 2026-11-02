@@ -25,6 +25,7 @@ const YAML_FILE_RE = new RegExp(`^(${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
 const YAML_TYPES = new Set(["functional", "non-functional", "system"]);
 const NUMERIC_ID_RE = new RegExp(`(?<![A-Za-z0-9.])${PART}(?:\\.${PART}){1,2}(?![A-Za-z0-9.])`, "g");
 const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART}(?:\\.${PART}){1,2})(?![A-Za-z0-9.])`, "g");
+const COVER_ID_RE = new RegExp(`^${PART}(?:\\.${PART}){1,2}$`);
 const SCHEMA = JSON.parse(readFileSync(path.join(REQUIREMENTS_DIR, "schema.json"), "utf8"));
 const TEST_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
@@ -234,25 +235,309 @@ function followingOptionsSkip(text, index) {
   return objectDeclaresSkipOrTodo(text, i);
 }
 
+function skipMatching(text, start) {
+  const open = text[start];
+  const close = open === "(" ? ")" : open === "{" ? "}" : open === "[" ? "]" : "";
+  if (!close) return start;
+  const stack = [{ type: "g", close }];
+  let i = start + 1;
+  const n = text.length;
+  while (i < n && stack.length > 0) {
+    const frame = stack[stack.length - 1];
+    const c = text[i];
+    if (frame.type === "str") {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (frame.q === "`" && c === "$" && text[i + 1] === "{") {
+        stack.push({ type: "g", close: "}" });
+        i += 2;
+        continue;
+      }
+      if (c === frame.q) stack.pop();
+      i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < n && text[i] !== "\n") i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i = Math.min(n, i + 2);
+      continue;
+    }
+    if (c === "'" || c === '"' || c === "`") {
+      stack.push({ type: "str", q: c });
+      i += 1;
+      continue;
+    }
+    if (c === "(" || c === "{" || c === "[") {
+      stack.push({ type: "g", close: c === "(" ? ")" : c === "{" ? "}" : "]" });
+      i += 1;
+      continue;
+    }
+    if (c === ")" || c === "}" || c === "]") {
+      if (c === frame.close) stack.pop();
+      i += 1;
+      continue;
+    }
+    i += 1;
+  }
+  return i;
+}
+
+function skipExpression(text, start) {
+  let i = start;
+  const n = text.length;
+  const stack = [];
+  while (i < n) {
+    const frame = stack[stack.length - 1];
+    const c = text[i];
+    if (frame && frame.type === "str") {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (frame.q === "`" && c === "$" && text[i + 1] === "{") {
+        stack.push({ type: "g", close: "}" });
+        i += 2;
+        continue;
+      }
+      if (c === frame.q) stack.pop();
+      i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < n && text[i] !== "\n") i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i = Math.min(n, i + 2);
+      continue;
+    }
+    if (stack.length === 0 && (c === "," || c === ")")) return i;
+    if (c === "'" || c === '"' || c === "`") {
+      stack.push({ type: "str", q: c });
+      i += 1;
+      continue;
+    }
+    if (c === "(" || c === "{" || c === "[") {
+      stack.push({ type: "g", close: c === "(" ? ")" : c === "{" ? "}" : "]" });
+      i += 1;
+      continue;
+    }
+    if (c === ")" || c === "}" || c === "]") {
+      if (frame && c === frame.close) stack.pop();
+      i += 1;
+      continue;
+    }
+    i += 1;
+  }
+  return i;
+}
+
+function readStringLiteral(text, start) {
+  const q = text[start];
+  if (q !== "'" && q !== '"' && q !== "`") return null;
+  let i = start + 1;
+  let value = "";
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    if (c === "\\") {
+      value += text[i + 1] ?? "";
+      i += 2;
+      continue;
+    }
+    if (q === "`" && c === "$" && text[i + 1] === "{") return null;
+    if (c === q) return { value, end: i + 1 };
+    if (c === "\n" && q !== "`") return null;
+    value += c;
+    i += 1;
+  }
+  return null;
+}
+
+function parseCoverArgs(text, open) {
+  if (text[open] !== "(") return null;
+  const ids = [];
+  let i = skipTrivia(text, open + 1);
+  if (text[i] === ")") return ids;
+  while (i < text.length) {
+    const lit = readStringLiteral(text, i);
+    if (!lit) return null;
+    ids.push(lit.value);
+    i = skipTrivia(text, lit.end);
+    if (text[i] === ",") {
+      i = skipTrivia(text, i + 1);
+      if (text[i] === ")") return ids;
+      continue;
+    }
+    if (text[i] === ")") return ids;
+    return null;
+  }
+  return null;
+}
+
+function coverIdsIn(text) {
+  const ids = [];
+  const seen = new Set();
+  let i = 0;
+  const n = text.length;
+  const stack = [];
+  while (i < n) {
+    const frame = stack[stack.length - 1];
+    const c = text[i];
+    if (frame && frame.type === "str") {
+      if (c === "\\") {
+        i += 2;
+        continue;
+      }
+      if (frame.q === "`" && c === "$" && text[i + 1] === "{") {
+        stack.push({ type: "g", close: "}" });
+        i += 2;
+        continue;
+      }
+      if (c === frame.q) stack.pop();
+      i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < n && text[i] !== "\n") i += 1;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i = Math.min(n, i + 2);
+      continue;
+    }
+    if (c === "'" || c === '"' || c === "`") {
+      stack.push({ type: "str", q: c });
+      i += 1;
+      continue;
+    }
+    if (c === "(" || c === "{" || c === "[") {
+      stack.push({ type: "g", close: c === "(" ? ")" : c === "{" ? "}" : "]" });
+      i += 1;
+      continue;
+    }
+    if (c === ")" || c === "}" || c === "]") {
+      if (frame && c === frame.close) stack.pop();
+      i += 1;
+      continue;
+    }
+    if (
+      !isIdentChar(text[i - 1]) &&
+      text[i - 1] !== "." &&
+      text.startsWith("covers", i) &&
+      !isIdentChar(text[i + "covers".length])
+    ) {
+      const afterName = skipTrivia(text, i + "covers".length);
+      if (text[afterName] === "(") {
+        const args = parseCoverArgs(text, afterName);
+        if (args) {
+          for (const id of args) {
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            ids.push(id);
+          }
+        }
+        i = skipMatching(text, afterName);
+        continue;
+      }
+    }
+    i += 1;
+  }
+  return ids;
+}
+
+function testFnSource(text, afterTitle) {
+  let i = skipTrivia(text, afterTitle);
+  if (text[i] !== ",") return "";
+  i = skipTrivia(text, i + 1);
+  if (text[i] === "{") {
+    i = skipMatching(text, i);
+    i = skipTrivia(text, i);
+    if (text[i] !== ",") return "";
+    i = skipTrivia(text, i + 1);
+  }
+  if (text.startsWith("async", i) && !isIdentChar(text[i + 5])) {
+    i = skipTrivia(text, i + 5);
+  }
+  if (text.startsWith("function", i) && !isIdentChar(text[i + 8])) {
+    i = skipTrivia(text, i + 8);
+    if (isIdentChar(text[i])) {
+      while (isIdentChar(text[i])) i += 1;
+      i = skipTrivia(text, i);
+    }
+    if (text[i] !== "(") return "";
+    i = skipMatching(text, i);
+    i = skipTrivia(text, i);
+    if (text[i] !== "{") return "";
+    const end = skipMatching(text, i);
+    return text.slice(i, end);
+  }
+  if (text[i] === "(") {
+    i = skipMatching(text, i);
+  } else if (isIdentChar(text[i])) {
+    while (isIdentChar(text[i])) i += 1;
+  } else {
+    return "";
+  }
+  i = skipTrivia(text, i);
+  if (text[i] === ":") {
+    const arrow = text.indexOf("=>", i);
+    if (arrow < 0) return "";
+    i = arrow;
+  }
+  if (text[i] !== "=" || text[i + 1] !== ">") return "";
+  i = skipTrivia(text, i + 2);
+  if (text[i] === "{") {
+    const end = skipMatching(text, i);
+    return text.slice(i, end);
+  }
+  const end = skipExpression(text, i);
+  return text.slice(i, end);
+}
+
+function leftoverReqPrefix(fileName, title) {
+  const errors = [];
+  REQ_REF_RE.lastIndex = 0;
+  for (const match of title.matchAll(REQ_REF_RE)) {
+    errors.push(`${fileName}: req:${match[1]} is not coverage; call covers("${match[1]}") in the test`);
+  }
+  return errors;
+}
+
 function evidenceFromTests(text) {
   const masked = maskInactiveRegions(text);
   const calls = [];
+  const extraErrors = [];
   TEST_CALL_RE.lastIndex = 0;
   for (const call of masked.matchAll(TEST_CALL_RE)) {
+    extraErrors.push(...leftoverReqPrefix("", call[3]));
     if (call[1] === "skip" || call[1] === "todo") continue;
     if (followingOptionsSkip(masked, call.index + call[0].length)) continue;
-    const title = call[3];
     const reqIds = [];
     const seen = new Set();
-    REQ_REF_RE.lastIndex = 0;
-    for (const match of title.matchAll(REQ_REF_RE)) {
-      if (seen.has(match[1])) continue;
-      seen.add(match[1]);
-      reqIds.push(match[1]);
+    for (const id of coverIdsIn(testFnSource(masked, call.index + call[0].length))) {
+      if (!COVER_ID_RE.test(id)) {
+        extraErrors.push(`covers(${JSON.stringify(id)}) is not a requirement id`);
+        continue;
+      }
+      if (seen.has(id)) continue;
+      seen.add(id);
+      reqIds.push(id);
     }
     calls.push({ reqIds });
   }
-  return calls;
+  return { calls, extraErrors };
 }
 
 function yamlChildId(parent) {
@@ -753,7 +1038,11 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     const scanned = scanIds(text);
     for (const id of scanned.ids) note(id, file.name);
     for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-    for (const call of evidenceFromTests(text)) {
+    const evidence = evidenceFromTests(text);
+    for (const extra of evidence.extraErrors) {
+      errors.push(extra.startsWith(": ") ? `${file.name}${extra}` : `${file.name}: ${extra}`);
+    }
+    for (const call of evidence.calls) {
       for (const id of call.reqIds) noteDetail(id, file.name);
     }
   }
@@ -773,11 +1062,11 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     const named = detailTests.get(req.id) ?? [];
     if (req.skipCoverage) return;
     if (req.kind === "topic" || req.kind === "requirement") {
-      if (named.length > 0) errors.push(`${req.file}:${req.line}: req:${req.id} is not a detail`);
+      if (named.length > 0) errors.push(`${req.file}:${req.line}: ${req.id} is not a detail`);
       return;
     }
     if (req.kind === "removed") {
-      if (named.length > 0) errors.push(`${req.file}:${req.line}: ${req.id} is removed and is named in a test`);
+      if (named.length > 0) errors.push(`${req.file}:${req.line}: ${req.id} is removed and is covered by a test`);
       return;
     }
     if (req.kind !== "detail") return;
@@ -786,21 +1075,21 @@ function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] })
     }
     if (req.implementedFalse) {
       if (named.length > 0) {
-        errors.push(`${req.file}:${req.line}: ${req.id} is implemented: false and is named in a test`);
+        errors.push(`${req.file}:${req.line}: ${req.id} is implemented: false and is covered by a test`);
       }
       return;
     }
     if (req.manual) {
       if (named.length > 0) {
-        errors.push(`${req.file}:${req.line}: ${req.id} uses check: manual and is named in a test`);
+        errors.push(`${req.file}:${req.line}: ${req.id} uses check: manual and is covered by a test`);
       }
       return;
     }
     if (named.length === 0) {
-      errors.push(`${req.file}:${req.line}: ${req.id} (Implemented) has no test that names req:${req.id}`);
+      errors.push(`${req.file}:${req.line}: ${req.id} (Implemented) has no test that covers ${req.id}`);
     }
     if (named.length > 1) {
-      errors.push(`${req.file}:${req.line}: ${req.id} is named in more than one test`);
+      errors.push(`${req.file}:${req.line}: ${req.id} is covered by more than one test`);
     }
   }
 
@@ -944,10 +1233,29 @@ function runCanary() {
     "1.1.2",
   ]);
   pass(
-    "yaml one test can name several details",
+    "yaml one test can cover several details",
     {
       requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1.1 and req:1.1.2 read", () => {});\n' }],
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'it("read", () => {\n  covers("1.1.1", "1.1.2");\n});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  pass(
+    "yaml concise arrow covers a detail",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'it("read", () => covers("1.1.1"));\nit("title", () => covers("1.1.2"));\n',
+        },
+      ],
       scriptFiles: [],
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
@@ -965,13 +1273,13 @@ function runCanary() {
   fail(
     "yaml implemented detail needs a test",
     { requirementFiles: yamlFile(yamlImplemented), testFiles: [], scriptFiles: [] },
-    "1.1.1 (Implemented) has no test that names req:1.1.1",
+    "1.1.1 (Implemented) has no test that covers 1.1.1",
   );
   fail(
     "yaml requirement id is not a detail",
     {
       requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1 reads", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("1.1");\n});\n' }],
       scriptFiles: [],
     },
     "is not a detail",
@@ -983,7 +1291,7 @@ function runCanary() {
       testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  const id = "1.1.1";\n});\n' }],
       scriptFiles: [],
     },
-    "1.1.1 (Implemented) has no test that names req:1.1.1",
+    "1.1.1 (Implemented) has no test that covers 1.1.1",
   );
   fail(
     "yaml script mention does not cover a detail",
@@ -992,7 +1300,7 @@ function runCanary() {
       testFiles: [],
       scriptFiles: [{ name: "scripts/smoke.sh", text: "# 1.1.1\n" }],
     },
-    "1.1.1 (Implemented) has no test that names req:1.1.1",
+    "1.1.1 (Implemented) has no test that covers 1.1.1",
   );
   fail(
     "yaml implemented true still needs a test",
@@ -1001,7 +1309,7 @@ function runCanary() {
       testFiles: [],
       scriptFiles: [],
     },
-    "1.1.1 (Implemented) has no test that names req:1.1.1",
+    "1.1.1 (Implemented) has no test that covers 1.1.1",
   );
   fail(
     "yaml proposed key",
@@ -1100,6 +1408,27 @@ function runCanary() {
     "cites requirement id 2.2",
   );
   pass(
+    "two topic files, unimplemented needs no test",
+    {
+      requirementFiles: [...yamlFile(yamlProposed), { name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2", "2", "2.2", "2.2.1"],
+  );
+  fail(
+    "unimplemented detail in a later topic file is covered",
+    {
+      requirementFiles: [...yamlFile(yamlImplemented), { name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [
+        { name: "read.test.ts", text: 'it("read", () => {\n  covers("1.1.1", "1.1.2");\n});\n' },
+        { name: "ui.test.ts", text: 'it("opens", () => {\n  covers("2.2.1");\n});\n' },
+      ],
+      scriptFiles: [],
+    },
+    "implemented: false and is covered by a test",
+  );
+  pass(
     "yaml text may contain more than one period",
     {
       requirementFiles: yamlFile(
@@ -1192,10 +1521,10 @@ function runCanary() {
     "yaml removed id in a test",
     {
       requirementFiles: yamlFile(yamlGap),
-      testFiles: [{ name: "read.test.ts", text: 'it("req:1.3 stays", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("stays", () => {\n  covers("1.3");\n});\n' }],
       scriptFiles: [],
     },
-    "is removed and is named in a test",
+    "is removed and is covered by a test",
   );
   pass(
     "yaml quoted 1.10 keeps its id",
@@ -1233,10 +1562,10 @@ function runCanary() {
     "yaml implemented false already has a test",
     {
       requirementFiles: yamlFile(yamlProposed),
-      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1.1 reads", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("1.1.1");\n});\n' }],
       scriptFiles: [],
     },
-    "implemented: false and is named in a test",
+    "implemented: false and is covered by a test",
   );
   fail(
     "yaml detail named in two tests",
@@ -1245,12 +1574,12 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'it("req:1.1.1 reads", () => {});\nit("req:1.1.1 again", () => {});\nit("req:1.1.2 reads", () => {});\n',
+          text: 'it("reads", () => {\n  covers("1.1.1");\n});\nit("again", () => {\n  covers("1.1.1");\n});\nit("title", () => {\n  covers("1.1.2");\n});\n',
         },
       ],
       scriptFiles: [],
     },
-    "named in more than one test",
+    "covered by more than one test",
   );
   fail(
     "yaml bare id in a title does not count",
@@ -1259,7 +1588,7 @@ function runCanary() {
       testFiles: [{ name: "read.test.ts", text: 'it("1.1.1 and 1.1.2 read", () => {});\n' }],
       scriptFiles: [],
     },
-    "has no test that names req:1.1.1",
+    "has no test that covers 1.1.1",
   );
   fail(
     "yaml skipped test does not count",
@@ -1268,12 +1597,12 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'test.skip("req:1.1.1 reads", () => {});\nit.todo("req:1.1.2 later");\n',
+          text: 'test.skip("reads", () => {\n  covers("1.1.1");\n});\nit.todo("later");\n',
         },
       ],
       scriptFiles: [],
     },
-    "has no test that names req:1.1.1",
+    "has no test that covers 1.1.1",
   );
   fail(
     "yaml describe.skip does not count",
@@ -1282,21 +1611,72 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'describe.skip("suite", () => { it("req:1.1.1 reads", () => {}); });\n',
+          text: 'describe.skip("suite", () => { it("reads", () => { covers("1.1.1"); }); });\n',
         },
       ],
       scriptFiles: [],
     },
-    "has no test that names req:1.1.1",
+    "has no test that covers 1.1.1",
   );
   fail(
     "yaml unknown req id",
     {
       requirementFiles: yamlFile(yamlProposed),
-      testFiles: [{ name: "read.test.ts", text: 'it("req:9.9.9 missing", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("missing", () => {\n  covers("9.9.9");\n});\n' }],
       scriptFiles: [],
     },
     "unknown id 9.9.9",
+  );
+  fail(
+    "yaml req prefix is not coverage",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'it("req:1.1.1 reads", () => {\n  covers("1.1.1");\n});\nit("title", () => {\n  covers("1.1.2");\n});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "is not coverage",
+  );
+  fail(
+    "yaml covers in a comment does not count",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  // covers("1.1.1")\n});\n' }],
+      scriptFiles: [],
+    },
+    "has no test that covers 1.1.1",
+  );
+  fail(
+    "yaml it options skip does not count",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: 'it("reads", { skip: true }, () => {\n  covers("1.1.1");\n});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    "has no test that covers 1.1.1",
+  );
+  pass(
+    "yaml playwright-style callback covers details",
+    {
+      requirementFiles: yamlFile(yamlImplemented),
+      testFiles: [
+        {
+          name: "read.spec.ts",
+          text: 'test("read", async ({ page }) => {\n  covers("1.1.1");\n  covers("1.1.2");\n});\n',
+        },
+      ],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
   );
   const yamlManual = yamlProposed.replace(
     '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
@@ -1312,10 +1692,10 @@ function runCanary() {
     "yaml check manual with a test",
     {
       requirementFiles: yamlFile(yamlManual),
-      testFiles: [{ name: "read.test.ts", text: 'it("req:1.1.2 rejects the token", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("rejects the token", () => {\n  covers("1.1.2");\n});\n' }],
       scriptFiles: [],
     },
-    "uses check: manual and is named in a test",
+    "uses check: manual and is covered by a test",
   );
   fail(
     "yaml implemented false cannot use check manual",

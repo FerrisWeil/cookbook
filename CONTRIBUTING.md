@@ -55,7 +55,7 @@ Taylor confirmed this on 2026-10-31.
    - One topic per file, for example `docs/requirements/1-mcp.yaml`. The topic is `1`, a requirement is `1.2`, and a detail is `1.2.1`. Quote every ID. The shape is in [docs/requirements/README.md](docs/requirements/README.md).
    - An ID with `implemented: false` may be deleted and the following IDs renumbered. Do not leave a gap or a `removed` marker. Once a detail has a test, its ID stays. Deleting that one leaves a gap, or `removed: true` on that number.
    - A requirement states testable product behavior. It is timeless: no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later." Prefer a positive, testable statement. A negative is allowed only when it guards a real limit: permission, data safety, or security. Good: "On the recipe screen, no control overlaps the title, ingredient lines, or steps." Bad: "Recipe text is never read through a control." A requirement names no specific person. An actor value such as taylor, chef, or system may stay when it is data. Good: "A user can open the app on a desktop browser or a phone." Bad: "Taylor and his wife can open the app." A design idea, a visual style, a version name, and a scope or non-goal live in docs or an ADR.
-   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test named `req:1.2.1`. `check: manual` is only for behavior outside this repo. `see` is rare.
+   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test that calls `covers("1.2.1")`. `check: manual` is only for behavior outside this repo. `see` is rare.
    - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
    - A topic pull request changes only its own topic YAML, plus tests and code when implementing. Shared docs change only in their own pull request: this file, [docs/requirements/README.md](docs/requirements/README.md), [.cursor/skills/requirements/SKILL.md](.cursor/skills/requirements/SKILL.md), and [docs/requirements/schema.json](docs/requirements/schema.json). The requirements README does not list topics or repeat per-topic content. Taylor confirmed this on 2026-11-02.
 
@@ -72,7 +72,7 @@ pnpm check   # lint, unit tests, build, secret scan, requirement IDs
 pnpm smoke   # docker compose up --build and health checks
 ```
 
-Unit tests for functions and classes live next to the app they test (`apps/*/test`). Requirement IDs are checked by `scripts/requirements.mjs`. What else a pull request must show is in [Work types](#work-types).
+Unit tests for functions and classes live next to the app they test (`apps/*/test`). A covering test calls `covers()` from `@cookbook/test`. Requirement IDs are checked by `scripts/requirements.mjs`. What else a pull request must show is in [Work types](#work-types).
 
 ## Full stack
 

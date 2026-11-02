@@ -6,6 +6,8 @@ import {
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 
+import { covers } from "@cookbook/test";
+
 import { listen } from "../src/http.ts";
 import { TEST_TOKEN, testConfig } from "./helpers.ts";
 
@@ -54,7 +56,8 @@ describe("mcp hello over streamable HTTP", () => {
     }
   });
 
-  it("req:6.4.2 calls hello", async () => {
+  it("calls hello", async () => {
+    covers("6.4.2");
     const client = await connectClient(baseUrl);
     try {
       const result = await client.callTool({ name: "hello", arguments: {} });
