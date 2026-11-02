@@ -13,7 +13,7 @@ Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](
 3. Both themes, when the change touches color. Otherwise one theme is enough, and the pull request says which.
 4. A short screen recording only when the review is about motion or a sequence of taps.
 
-Captures are taken from the running web app. They are images on the pull request, not a screenshot package and not Playwright.
+Captures are taken from the local running app. They are images on the pull request. There is no screenshot package, no screenshot CI job, and no Playwright in the first UI pull request.
 
 ## Example data
 
@@ -24,18 +24,18 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 `/guide` is a hand-built route in `apps/web`. It uses the real `@cookbook/ui` components.
 
 - Not linked from the list, the recipe, or settings.
-- Shows every state on example data, in light and dark: colors, type scale, button, card, article, filter chips, a step check-off, load and error messages.
+- Shows every state on example data, in light and dark: colors, type scale, buttons, card, article, filter chips, a step check-off, load and error messages.
 - Theme and reduced-motion toggles live on the route.
 
 ## Tests
 
 Allowed in the UI feature pull request:
 
-- `node:test` for the contrast pairs in [tokens](tokens.md) and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
+- `node:test` for the contrast pairs in [tokens](tokens.md), the motion token values, and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
 - `node:test` that a browser-facing payload has no token, once the proxy exists. Detail is [web.md](../web.md).
 - The web package grows a `test` script, and the root `pnpm test` runs it.
 
-Not until those tokens exist: tests for spacing, radius, motion, or icon artwork.
+Not until those tokens exist: tests for spacing, radius, or icon artwork.
 
 Not allowed until the feature has been demoed and confirmed in chat:
 

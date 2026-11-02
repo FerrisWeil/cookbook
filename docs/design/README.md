@@ -6,6 +6,7 @@ UI for the household cookbook. Kitchen principles are [0016](../decisions/0016-k
 | --- | --- |
 | Screens | [information architecture](information-architecture.md) |
 | Tokens and iPhone | [tokens](tokens.md) |
+| Buttons | [buttons](buttons.md) |
 | Chrome | [chrome](chrome.md) |
 | Package | [system](system.md) |
 | Demos | [demo](demo.md) |
@@ -18,5 +19,5 @@ Not decided. Do not invent values for these in code.
 
 - List card fields
 - Theme control placement on settings
-- Spacing, radius, and motion tokens
+- Spacing and radius tokens
 - Icons and home-screen icons
