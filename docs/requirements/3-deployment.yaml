@@ -9,7 +9,7 @@ requirements:
         text: Given the production stack, the NAS runs images built elsewhere.
         implemented: false
       - id: "3.1.2"
-        text: Given the production stack, the NAS does not compile the app.
+        text: The NAS starts the app from the images it was given.
         implemented: false
       - id: "3.1.3"
         text: Production publishes no host ports.
@@ -29,7 +29,7 @@ requirements:
         text: Family devices can open the app.
         implemented: false
       - id: "3.2.3"
-        text: The bot can open the MCP server only.
+        text: The bot's grant is the MCP server.
         implemented: false
       - id: "3.2.4"
         text: There is no public ingress.
@@ -41,7 +41,7 @@ requirements:
         text: A local stack may publish ports.
         implemented: false
       - id: "3.2.7"
-        text: The production tailnet address does not have to offer install.
+        text: The production tailnet address opens the app in the browser.
         implemented: false
 
   - id: "3.3"
@@ -60,10 +60,10 @@ requirements:
     text: An update waits for a current dump.
     details:
       - id: "3.4.1"
-        text: An update does not start until a dump of the current database has been taken.
+        text: An update starts after a dump of the current database has been taken.
         implemented: false
       - id: "3.4.2"
-        text: Nothing pulls new images on its own.
+        text: An image pull runs when an operator starts it.
         implemented: false
 
   - id: "3.5"
@@ -74,5 +74,5 @@ requirements:
         text: Only the web app and the MCP server can call the API.
         implemented: false
       - id: "3.5.2"
-        text: The API is not a tailnet identity.
+        text: The API answers on the stack network.
         implemented: false
