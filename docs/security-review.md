@@ -30,6 +30,14 @@ MCP today:
 - `GET /health` is unauthenticated and returns `{ "status": "ok" }`.
 - Local Compose sets `MCP_ALLOW_DEV_TOKEN=1` and may boot with `local-dev-token-not-for-nas`. The NAS file does not set that flag. The placeholder `replace-me` is refused.
 
+Recipe HTTP (not in the tree):
+
+- Recipe routes require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not.
+- Two caller tokens, from the environment: `API_AUTH_TOKEN_MCP` (the MCP process presents it) and `API_AUTH_TOKEN_WEB` (the web app's server presents it). The API process holds both. MCP holds only the MCP caller token. The web server holds only the web token. The browser never receives a token.
+- Each token is required at API boot. Fewer than 16 characters refuses to boot. Placeholders (`replace-me`, `replace-with-a-long-random-token`) are refused. The two caller tokens must differ from each other and from `MCP_AUTH_TOKEN`. Local compose may use non-secret caller tokens that are not valid on the NAS, the same exception [0007](decisions/0007-public-repo-secrets.md) allows for MCP.
+- Compare with SHA-256 and `timingSafeEqual`. Missing or wrong token: `401` and `WWW-Authenticate: Bearer`. Rejected recipe bodies stay status-only.
+- Names and placeholders land in `.env.example` with the feature. Real values are never committed or printed.
+
 ## Network
 
 - The NAS Compose file has no `ports:` and no Tailscale Funnel.
