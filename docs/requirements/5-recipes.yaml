@@ -9,7 +9,7 @@ requirements:
         text: Amount, unit, and name may be empty.
         implemented: false
       - id: "5.1.2"
-        text: Given a line that does not state a parsed field, that field stays empty.
+        text: Given a written line, an unstated amount, unit, or name is stored empty.
         implemented: false
       - id: "5.1.3"
         text: The written ingredient line is required.
@@ -37,16 +37,16 @@ requirements:
 
   - id: "5.3"
     type: functional
-    text: A recipe may have a rating.
+    text: A recipe has one optional rating.
     details:
       - id: "5.3.1"
-        text: A rating is empty or a whole number from 1 to 5.
+        text: A rating is one score for the recipe, empty or a whole number from 1 to 5.
         implemented: false
       - id: "5.3.2"
-        text: A rating does not change the favorite.
+        text: Given a new rating, the stored favorite stays.
         implemented: false
       - id: "5.3.3"
-        text: A favorite does not require a rating.
+        text: A recipe can be a favorite while the rating is empty.
         implemented: false
 
   - id: "5.4"
@@ -60,7 +60,7 @@ requirements:
         text: The numbers are per serving.
         implemented: false
       - id: "5.4.3"
-        text: The source is chef, manual, or label.
+        text: The source is estimated, entered, or copied.
         implemented: false
       - id: "5.4.4"
         text: The divisor is the recipe's stored servings.
@@ -72,7 +72,7 @@ requirements:
         text: Given a save that omits nutrition, the stored nutrition row stays.
         implemented: false
       - id: "5.4.7"
-        text: Given a save that clears nutrition, the recipe has no nutrition row.
+        text: Given a save that clears nutrition, that nutrition row is removed.
         implemented: false
 
   - id: "5.5"
@@ -103,7 +103,7 @@ requirements:
         text: The actors shipped in git are taylor, chef, and system.
         implemented: false
       - id: "5.6.2"
-        text: An actor field has no default.
+        text: Given no actor, a save is refused.
         implemented: false
       - id: "5.6.3"
         text: Another cook is added on the NAS, outside git.
@@ -160,6 +160,9 @@ requirements:
         implemented: false
       - id: "5.10.4"
         text: The actor recorded at creation does not change.
+        implemented: false
+      - id: "5.10.5"
+        text: Given a changed title, the recipe keeps its id.
         implemented: false
 
   - id: "5.11"
