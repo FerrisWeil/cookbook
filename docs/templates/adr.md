@@ -1,10 +1,10 @@
 # NNNN. Title
 
-* Status: proposed | accepted | superseded by NNNN
+* Status: accepted | superseded by NNNN
 * Date: YYYY-MM-DD
-* Confirmed: Taylor, YYYY-MM-DD (accepted only)
+* Confirmed: Taylor, YYYY-MM-DD
 
-Status stays proposed until Taylor confirms in chat. Do not merge the pull request before that.
+Write Status: accepted from the start. Never proposed. Merging the pull request is the acceptance.
 
 ## Problem
 

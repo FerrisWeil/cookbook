@@ -12,12 +12,12 @@ Rules for the type and for the ADR axis: CONTRIBUTING.md.
 
 ## ADRs
 
-Merged means accepted (Taylor, 2026-10-26): an ADR merged to `master` is accepted. Do not mark this PR ready while a decision below is still unconfirmed.
+Merged means accepted (Taylor, 2026-10-26): an ADR merged to `master` is accepted. Write Status: accepted from the start. Never proposed. Merging this PR is the acceptance.
 
 ADR text has no versions, ports, file paths, env names, commands, or schemas. Those belong in the linked doc.
 
-- Accepted (Taylor confirmed in chat, or already merged to `master`):
-- Proposed (this PR stays draft until Taylor confirms these):
+- ADRs in this PR (Status: accepted; merge accepts them):
+- Already merged:
 
 ## Requirements
 
