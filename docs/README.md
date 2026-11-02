@@ -7,6 +7,7 @@ Current state:
 | Topic | Doc |
 | --- | --- |
 | Security checklist, database roles, MCP auth | [security-review.md](security-review.md) |
+| MCP tools and how they reach recipes | [mcp.md](mcp.md) |
 | Dependency updates and pins | [supply-chain.md](supply-chain.md) |
 | Unraid production | [unraid-production.md](unraid-production.md) |
 | Parallel agents | [parallel-agents.md](parallel-agents.md) |
