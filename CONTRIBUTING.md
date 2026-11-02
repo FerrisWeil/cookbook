@@ -17,9 +17,7 @@ In-repo skills link to this file. They do not copy it.
 
 Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type and whether it needs an ADR (`yes` or `no`). Nothing is an accepted decision until Taylor confirms it in chat. Merged means accepted.
 
-**Merged means accepted** (Taylor, 2026-10-26). Once an ADR pull request is merged to `master`, every ADR in it is accepted, including a file whose Status line still says Proposed. Record that by setting Status to accepted and Confirmed to the merge date, or to the earlier chat confirmation. That is why 0008 and 0010–0013 are accepted: foundation PR #1 merged while those files still said Proposed. A change of mind after merge is a new ADR that supersedes the old one. Do not rewrite a merged decision in place.
-
-Do not merge an ADR pull request while a decision in it is still unconfirmed. Keep that pull request draft, and leave Status as Proposed, until Taylor confirms in chat and the Status lines are updated. The feature pull request waits for those Status lines to say accepted. Merging a draft that still says Proposed would accept those ADRs under the rule above, which is why the draft stays a draft.
+**Merged means accepted** (Taylor, 2026-10-26). Once an ADR pull request is merged to `master`, every ADR in it is accepted. A new ADR uses `Status: accepted` from the start, never `proposed`. Merging the pull request is the acceptance. Good: the status line is `Status: accepted` when the pull request opens. Bad: `Status: proposed` while waiting for merge. Older files that still said Proposed were accepted by the merge: 0008 and 0010–0013 are accepted because foundation PR #1 merged while those files still said Proposed. A change of mind after merge is a new ADR that supersedes the old one. Do not rewrite a merged decision in place.
 
 Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request.
 
@@ -33,7 +31,7 @@ Every pull request is checked against the [security checklist](docs/security-rev
 | Chore | A chore or dependency update, including Dependabot | A lighter review. |
 | Security fix | A bug with priority | Handle it before other bugs. |
 
-**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)). What an ADR may contain is [Docs](#docs).
+**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. The status line is `Status: accepted` ([template](docs/templates/adr.md)). What an ADR may contain is [Docs](#docs).
 
 Taylor confirmed the same day when to ask, and when a plan is committed.
 
