@@ -58,7 +58,7 @@ requirements:
     text: A local stack may boot with a documented token.
     details:
       - id: "4.5.1"
-        text: That token is not a secret.
+        text: That token is a documented placeholder.
         implemented: false
       - id: "4.5.2"
         text: Given that documented token, the server starts only when the local flag is set.
