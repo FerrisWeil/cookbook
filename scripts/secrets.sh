@@ -116,4 +116,12 @@ if ! grep -q 'aws-access-token' "$report"; then
 fi
 rm -f "$report"
 
-"$bin" detect --source . --config .gitleaks.toml --no-banner --redact --exit-code 1
+# Scan commits reachable from HEAD. A fetch of every remote branch would
+# fail this check for a secret that exists only on another open PR.
+"$bin" detect \
+  --source . \
+  --config .gitleaks.toml \
+  --no-banner \
+  --redact \
+  --exit-code 1 \
+  --log-opts="HEAD"
