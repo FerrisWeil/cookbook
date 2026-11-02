@@ -17,7 +17,6 @@ The screens and the package are not in the tree. Wireframes use invented example
 
 Not decided. Do not invent values for these in code.
 
-- List card fields
 - Theme control placement on settings
 - Spacing and radius tokens
 - Icons and home-screen icons

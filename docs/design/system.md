@@ -22,7 +22,7 @@ React stays the React `apps/web` already has. The UI package does not install a 
 
 The pieces the screens share: the page shell, a recipe card, the article (ingredients and steps), buttons, filter chips, a step check-off, and the load and error message. `/guide` ([demo](demo.md)) renders the same pieces with example data.
 
-List card fields, theme control placement, icons, and the pending tokens above wait for a later design pass. The package still exports structure those can drop into: semantic token names, a document theme hint, and Radix-backed controls.
+Theme control placement, icons, and the pending tokens above wait for a later design pass. List cards are [information architecture](information-architecture.md). The package still exports structure those can drop into: semantic token names, a document theme hint, and Radix-backed controls.
 
 ## Supply chain
 

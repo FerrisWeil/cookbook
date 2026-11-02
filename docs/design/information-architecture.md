@@ -22,11 +22,25 @@ Wireframes use invented example recipes. They are not household data. They do no
 
 The title "Recipes" is the first line of the content. A favorites toggle narrows the list to favorites. Tag filter chips narrow it to recipes that have the chosen tags. Both can be on at once. No chip chosen means every tag. Free-text search is not offered.
 
-Card fields besides the title are pending. Empty library: "No recipes yet." No rows after a filter: "No recipes match." Failure, after the page has loaded: "Could not load recipes." and a way to try again. The last line stays clear of the safe area. There is no theme control on this screen.
+Cards are a single column on the phone and a grid from the wide breakpoint up. Empty library: "No recipes yet." No rows after a filter: "No recipes match." Failure, after the page has loaded: "Could not load recipes." and a way to try again. The last line stays clear of the safe area. There is no theme control on this screen.
 
 ![Phone wireframe of the recipe list](wireframes/browse-phone.svg)
 
 ![Wide wireframe of the recipe list](wireframes/browse-desktop.svg)
+
+### Cards
+
+The whole card is one link to the recipe. The title is serif, at most two lines, then an ellipsis.
+
+Every card has a favorite star toggle, top-right, with a 44px hit area. It is a sibling button, not nested inside the link. Accessible name `Favorite` plus the title. `aria-pressed` reflects the state. It updates optimistically, with rollback and a worded error, per [buttons](buttons.md).
+
+The rating is read-only on the list: compact stars plus a number, only when the recipe is rated. No empty stars. The accessible name is the score, for example `4/5`. The rating is set on the recipe screen.
+
+The meta line shows up to two tags as plain text joined by ` · `, then `+N` for the rest. Tags on cards are not tappable. Filtering is the chips above the list.
+
+Cards do not show nutrition, author, ingredients, dates, or photos.
+
+Every card is the same height. Reserve the meta line even when there are no tags. Skeleton cards match that size.
 
 ### Recipe
 
@@ -36,7 +50,7 @@ While this screen is open, the app asks the OS to keep the display awake. If the
 
 Favorite and rating are the phone writes. They are offered on this screen. Back returns to the list. It uses an opaque fill and does not cover the title, the ingredient lines, or the steps. The last line stays clear of Back and of the safe area.
 
-Nutrition, when present, is shown. List card fields are pending; this screen still shows the title, ingredient lines, steps, nutrition when present, favorite, and rating.
+Nutrition, when present, is shown. This screen shows the title, ingredient lines, steps, nutrition when present, favorite, and rating. The rating is set here, not on the list.
 
 ![Phone wireframe of one example recipe](wireframes/recipe-phone.svg)
 
@@ -50,13 +64,13 @@ Title: Settings. The only choice is Theme. The default is the system setting. Pl
 
 ## Example cards
 
-Titles start with `Example:`. Ids are explicit. The body is placeholder text and does not name schema fields. The same data can show the list, one recipe, an empty list, a filtered-empty list, and a failed load. That failed load is after the page has loaded. A document that never arrives is the browser error page ([0016](../decisions/0016-kitchen-ui.md)).
+Titles start with `Example:`. Ids are explicit. The same data can show the list, one recipe, an empty list, a filtered-empty list, and a failed load. That failed load is after the page has loaded. A document that never arrives is the browser error page ([0016](../decisions/0016-kitchen-ui.md)).
 
-| Id | Title | Placeholder meta |
-| --- | --- | --- |
-| `example-tomato-lentils` | Example: Tomato lentils | Placeholder meta · fields undecided |
-| `example-weeknight-oats` | Example: Weeknight oats | Placeholder meta · fields undecided |
-| `example-citrus-chicken` | Example: Citrus chicken | Placeholder meta · fields undecided |
+| Id | Title | Tags | Rating | Favorite |
+| --- | --- | --- | --- | --- |
+| `example-tomato-lentils` | Example: Tomato lentils | vegetarian, pantry, weeknight | 4/5 | on |
+| `example-weeknight-oats` | Example: Weeknight oats | breakfast, vegetarian | | |
+| `example-citrus-chicken` | Example: Citrus chicken | dinner | 5/5 | |
 
 ## Tags
 

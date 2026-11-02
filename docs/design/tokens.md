@@ -140,7 +140,6 @@ Not decided.
 
 - Spacing tokens (page padding, gaps, the space scale)
 - Radius tokens
-- List card fields
 - Theme control placement on settings
 - Icons and home-screen icons
 

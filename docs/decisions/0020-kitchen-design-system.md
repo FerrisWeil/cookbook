@@ -25,9 +25,9 @@ One shared UI package, as [0017](0017-ui-package.md). This amends 0017: the prim
 
 The recipe screen is for reading and for cooking. Ingredients and steps sit side by side on the wide layout and stack on the phone. A step can be checked off. That state stays on the device. It is not written through the API. While the recipe is open, the app asks the OS to keep the screen awake.
 
-The list has a favorites toggle and tag filter chips. This amends [0016](0016-kitchen-ui.md): those filters are allowed. Free-text search is still out. A meal plan, fullscreen, a Chef panel, and live updates stay out.
+The list has a favorites toggle and tag filter chips. This amends [0016](0016-kitchen-ui.md): those filters are allowed. Free-text search is still out. A meal plan, fullscreen, a Chef panel, and live updates stay out. List cards are in the design docs: one link, a sibling favorite, a rating when present, and up to two tags.
 
-Not decided here: list card fields, where the theme control sits on settings, spacing and radius tokens, icons, and home-screen icons.
+Not decided here: where the theme control sits on settings, spacing and radius tokens, icons, and home-screen icons.
 
 ## Consequences
 

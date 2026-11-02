@@ -24,7 +24,7 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 `/guide` is a hand-built route in `apps/web`. It uses the real `@cookbook/ui` components.
 
 - Not linked from the list, the recipe, or settings.
-- Shows every state on example data, in light and dark: colors, type scale, buttons, card, article, filter chips, a step check-off, load and error messages.
+- Shows every state on example data, in light and dark: colors, type scale, buttons, cards (favorite on and off, rated and unrated, extra tags), article, filter chips, a step check-off, load and error messages.
 - Theme and reduced-motion toggles live on the route.
 
 ## Tests
