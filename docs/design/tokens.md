@@ -90,7 +90,7 @@ Floor is WCAG 2.2 level AA on the screens this design system ships.
 * Name and role come from the element. The theme control's accessible name includes the current choice. It is on the settings screen.
 * `prefers-reduced-transparency: reduce` uses the same opaque control fill. Floating controls do not switch to a translucent fill.
 * Headings stay in order on each screen. One `h1`.
-* Motion uses the duration and easing tokens. `prefers-reduced-motion: reduce` drops transform scale. No information depends on animation.
+* Motion uses the duration and easing tokens. `prefers-reduced-motion: reduce` disables transitions and drops transform scale. No information depends on animation.
 * State is a word as well as a color. "Could not load" is text, not a red card alone.
 * `lang="en"` stays on `html`.
 
