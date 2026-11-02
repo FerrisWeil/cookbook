@@ -120,7 +120,7 @@ The page rules a home-screen install needs. No service worker. Icon artwork and 
 
 ## Theme
 
-The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. How it is stored, and how the document exposes light or dark before paint, is the web implementation.
+The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. Storage, the first-paint script, and the document hint are in [web.md](../web.md).
 
 ## Pending
 

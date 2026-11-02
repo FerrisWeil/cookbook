@@ -32,6 +32,7 @@ The UI feature adds `/guide`.
 Allowed in the UI feature pull request:
 
 - `node:test` for the contrast pairs in [tokens](tokens.md) and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
+- `node:test` that a browser-facing payload has no token, once the proxy exists. Detail is [web.md](../web.md).
 - The web package grows a `test` script, and the root `pnpm test` runs it.
 
 Not until those tokens exist: tests for spacing, radius, motion, or icon artwork.
