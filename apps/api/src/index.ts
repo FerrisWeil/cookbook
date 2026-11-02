@@ -9,6 +9,7 @@ import {
   type ReleasableClient,
   type SqlClient,
 } from "./migrate.js";
+import { createPgRecipeStore } from "./recipes/index.js";
 
 const { Pool } = pg;
 
@@ -68,8 +69,20 @@ console.log("migrations and seed applied");
 const pool = new Pool({ connectionString: config.databaseUrl });
 const db: SqlClient = clientFrom(pool);
 
+async function appCheckout(): Promise<ReleasableClient> {
+  const connection = await pool.connect();
+  return {
+    ...clientFrom(connection),
+    release() {
+      connection.release();
+    },
+  };
+}
+
 const { server, url } = await listen(config.bindHost, config.port, {
   getReady: () => getReadyStatus(db),
+  recipes: createPgRecipeStore(appCheckout),
+  callerTokens: [config.apiAuthTokenMcp, config.apiAuthTokenWeb],
 });
 
 console.log(`cookbook-api listening on ${config.bindHost}:${config.port} (${url})`);

@@ -46,6 +46,10 @@ services:
       PORT: "3000"
       MIGRATIONS_DIR: /app/db/migrations
       SEED_FILE: /app/db/seed.sql
+      API_AUTH_TOKEN_MCP: ${API_AUTH_TOKEN_MCP:-local-dev-api-mcp-token-not-for-nas}
+      API_AUTH_TOKEN_WEB: ${API_AUTH_TOKEN_WEB:-local-dev-api-web-token-not-for-nas}
+      API_ALLOW_DEV_TOKEN: "1"
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-local-dev-token-not-for-nas}
     depends_on:
       db:
         condition: service_healthy
@@ -59,12 +63,20 @@ services:
     build:
       context: .
       dockerfile: docker/mcp.Dockerfile
+    extra_hosts:
+      - "api:host-gateway"
     environment:
       MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-local-dev-token-not-for-nas}
       MCP_ALLOW_DEV_TOKEN: "1"
       MCP_HOSTNAME: cookbook-mcp
       BIND_HOST: "0.0.0.0"
       PORT: "8787"
+      API_BASE_URL: http://api:3000
+      API_AUTH_TOKEN_MCP: ${API_AUTH_TOKEN_MCP:-local-dev-api-mcp-token-not-for-nas}
+      API_ALLOW_DEV_TOKEN: "1"
+    depends_on:
+      api:
+        condition: service_healthy
     ports:
       - "8787:8787"
     networks:
@@ -76,6 +88,9 @@ services:
       dockerfile: docker/web.Dockerfile
     extra_hosts:
       - "api:host-gateway"
+    environment:
+      API_AUTH_TOKEN_WEB: ${API_AUTH_TOKEN_WEB:-local-dev-api-web-token-not-for-nas}
+      NGINX_ENVSUBST_FILTER: API_AUTH_TOKEN_WEB
     depends_on:
       api:
         condition: service_healthy
