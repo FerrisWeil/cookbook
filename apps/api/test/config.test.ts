@@ -139,7 +139,7 @@ describe("local supply-chain files", () => {
     assert.doesNotMatch(script, /:-cookbook/);
   });
 
-  it("does not publish Postgres or fall back to the old password", () => {
+  it("req:4.2.1 does not publish Postgres or fall back to the old password", () => {
     const compose = readFileSync(join(repoRoot, "docker-compose.yml"), "utf8");
     assert.doesNotMatch(compose, /5432:5432/);
     assert.doesNotMatch(compose, /:-cookbook/);
