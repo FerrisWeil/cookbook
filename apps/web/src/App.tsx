@@ -1,7 +1,7 @@
 import { isStackReady, type ReadyStatus } from "@cookbook/shared";
 import { useEffect, useState } from "react";
 
-type LoadState =
+export type LoadState =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "ready"; status: ReadyStatus };
@@ -38,7 +38,7 @@ export function App() {
   );
 }
 
-function StatusCard({ state }: { state: LoadState }) {
+export function StatusCard({ state }: { state: LoadState }) {
   if (state.kind === "loading") {
     return <p className="status">Checking the stack…</p>;
   }
