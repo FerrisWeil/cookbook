@@ -14,7 +14,7 @@ Run this list before a pull request is marked ready. Add a Security section only
 ## Secrets and env
 
 - No new secret, token, recipe, or note in git. `.env` is gitignored. `.env.example` holds placeholders only.
-- No default password or token in a Compose file. The local MCP token below is the exception [0007](decisions/0007-public-repo-secrets.md) allows.
+- No default password or token in a Compose file. The local MCP token below is the exception [0007](decisions/0007-public-repo-secrets.md) allows. gitleaks allowlists documented `local-…-not-for-nas` placeholders.
 
 ## Auth and tokens
 

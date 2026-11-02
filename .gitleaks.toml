@@ -6,9 +6,9 @@ title = "cookbook"
 useDefault = true
 
 [allowlist]
-description = "Local-only Compose defaults, never used on the NAS"
+description = "Documented local-only placeholders, never used on the NAS"
 regexes = [
-  '''local-dev-token-not-for-nas''',
+  '''local-[A-Za-z0-9-]+-not-for-nas''',
 ]
 paths = [
   '''^\.gitleaks\.toml$''',
