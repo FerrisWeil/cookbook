@@ -1,6 +1,6 @@
 # Security review
 
-Checklist for [0013](decisions/0013-security-review.md). Supply-chain pins are [supply-chain.md](supply-chain.md).
+Checklist for [0013](decisions/0013-security-review.md). Database network membership is [0025](decisions/0025-database-network-membership.md). Supply-chain pins are [supply-chain.md](supply-chain.md).
 
 Run this list before a pull request is marked ready. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. A clean change leaves the section out. gitleaks and `pnpm audit --audit-level=high` block a clean pull request. There is no second review bot.
 
@@ -13,7 +13,7 @@ Run this list before a pull request is marked ready. Add a Security section only
 
 ## Secrets and env
 
-- No new secret, token, recipe, or note in git. `.env.example` holds placeholders only.
+- No new secret, token, recipe, or note in git. `.env` is gitignored. `.env.example` holds placeholders only.
 - No default password or token in a Compose file. The local MCP token below is the exception [0007](decisions/0007-public-repo-secrets.md) allows.
 
 ## Auth and tokens
@@ -53,6 +53,7 @@ Local Compose publishes `3000` (API), `8787` (MCP), and `8080` (web). It does no
 ## Data and logging
 
 - Logs, errors, fixtures, and screenshots contain no recipes, notes, or tokens.
+- Stand-in recipe titles start with `Example:`. That prefix is the documented example convention.
 
 ## Postgres
 
