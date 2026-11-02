@@ -80,7 +80,7 @@ function memoryClient(): SqlClient & { statements: string[] } {
 }
 
 describe("applyMigrations", () => {
-  it("applies each file on one connection and skips ones already recorded", async () => {
+  it("req:6.5.1 applies each file on one connection and skips ones already recorded", async () => {
     const db = memoryDb();
     const files = {
       async list() {
@@ -145,7 +145,7 @@ describe("applyMigrations", () => {
 });
 
 describe("applySeed", () => {
-  it("runs the seed file", async () => {
+  it("req:6.5.2 runs the seed file", async () => {
     const client = memoryClient();
     await applySeed(client, "/db/seed.sql", {
       async list() {

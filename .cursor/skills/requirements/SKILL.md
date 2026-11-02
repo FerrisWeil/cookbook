@@ -11,7 +11,11 @@ An ADR never cites a requirement ID.
 
 ## IDs
 
-Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`. Never renumber. Never reuse a number. Deleting a requirement or detail leaves a gap, or:
+Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`.
+
+An ID with `implemented: false` may be deleted. Renumber what follows so the numbers stay contiguous. Do not leave a gap. Do not write `removed: true`.
+
+Once a detail has a test, its ID stays. Do not renumber it. Deleting that one leaves a gap, or:
 
 ```yaml
 - id: "1.2.2"
@@ -20,9 +24,15 @@ Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`. Never renumber. Never reuse a number.
 
 Batch wording in one pull request. Split the pull request when the behavior change is risky.
 
-## Details
+## What belongs
 
-One behavior. Condition, then outcome. No error code, status code, or response body.
+A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body.
+
+A design idea, a visual style, and a scope or non-goal live in docs or an ADR. They are not requirements.
+
+A negative detail is allowed only when it guards a real limit: permission, data safety, or security.
+
+## Details
 
 `implemented` defaults to true. Write `implemented: false` until the behavior exists. Remove that field in the same commit that adds the one test. A detail has one test. The title contains `req:1.1.1`.
 
@@ -52,6 +62,30 @@ Good test, in the commit that deletes `implemented: false`:
 it("req:1.1.1 returns that recipe", () => {});
 ```
 
+Bad. Visual style. It belongs in the design doc:
+
+```yaml
+- id: "9.1.1"
+  text: Controls use an opaque fill.
+  implemented: false
+```
+
+Bad. A list of what v1 lacks. The same limit, as behavior, is the search example above:
+
+```yaml
+- id: "9.1.2"
+  text: v1 has no search.
+  implemented: false
+```
+
+Good. A negative that guards a real limit:
+
+```yaml
+- id: "2.6.3"
+  text: A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged.
+  implemented: false
+```
+
 Bad. Two behaviors, and an error code:
 
 ```yaml
@@ -62,7 +96,9 @@ Bad. Two behaviors, and an error code:
 
 Bad. The flag is still set after a test exists, or a second test names the same detail. `pnpm check` fails both.
 
-Bad. Renumbering the next detail onto a deleted number. Keep `"1.2.2"` as `removed: true`, or leave the gap.
+Bad. Renumbering an ID that already has a test. That number stays. Delete it with a gap or `removed: true`.
+
+Good. Nothing in the requirement has a test, a detail is deleted, and the next detail takes its number.
 
 ## Commands
 
