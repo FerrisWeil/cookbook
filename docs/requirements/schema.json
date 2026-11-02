@@ -17,6 +17,7 @@
     "requirement": {
       "oneOf": [
         {
+          "description": "Only after this requirement has a test. An ID with implemented: false is deleted and the rest are renumbered.",
           "type": "object",
           "additionalProperties": false,
           "required": ["id", "removed"],
@@ -46,6 +47,7 @@
     "detail": {
       "oneOf": [
         {
+          "description": "Only after this detail has a test. An ID with implemented: false is deleted and the rest are renumbered.",
           "type": "object",
           "additionalProperties": false,
           "required": ["id", "removed"],

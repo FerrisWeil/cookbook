@@ -11,7 +11,11 @@ An ADR never cites a requirement ID.
 
 ## IDs
 
-Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`. Never renumber. Never reuse a number. Deleting a requirement or detail leaves a gap, or:
+Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`.
+
+An ID with `implemented: false` may be deleted. Renumber what follows so the numbers stay contiguous. Do not leave a gap. Do not write `removed: true`.
+
+Once a detail has a test, its ID stays. Do not renumber it. Deleting that one leaves a gap, or:
 
 ```yaml
 - id: "1.2.2"
@@ -77,7 +81,7 @@ Bad. A list of what v1 lacks. The same limit, as behavior, is the search example
 Good. A negative that guards a real limit:
 
 ```yaml
-- id: "2.7.3"
+- id: "2.6.3"
   text: A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged.
   implemented: false
 ```
@@ -92,7 +96,9 @@ Bad. Two behaviors, and an error code:
 
 Bad. The flag is still set after a test exists, or a second test names the same detail. `pnpm check` fails both.
 
-Bad. Renumbering the next detail onto a deleted number. Keep `"1.2.2"` as `removed: true`, or leave the gap.
+Bad. Renumbering an ID that already has a test. That number stays. Delete it with a gap or `removed: true`.
+
+Good. Nothing in the requirement has a test, a detail is deleted, and the next detail takes its number.
 
 ## Commands
 
