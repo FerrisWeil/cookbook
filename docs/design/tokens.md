@@ -90,7 +90,7 @@ Floor is WCAG 2.2 level AA on the screens this design system ships.
 * Name and role come from the element. The theme control's accessible name includes the current choice. It is on the settings screen.
 * `prefers-reduced-transparency: reduce` uses the same opaque control fill. Floating controls do not switch to a translucent fill.
 * Headings stay in order on each screen. One `h1`.
-* Motion uses the duration and easing tokens. `prefers-reduced-motion: reduce` disables transitions and drops transform scale. No information depends on animation.
+* `prefers-reduced-motion: reduce` keeps only short opacity fades at `--duration-fast`. No transform, scale or slide. No information depends on animation.
 * State is a word as well as a color. "Could not load" is text, not a red card alone.
 * `lang="en"` stays on `html`.
 
@@ -130,9 +130,11 @@ Tokens live in `@cookbook/ui`. Components use them and never a raw duration.
 | `--ease-out` | `cubic-bezier(0.2, 0, 0, 1)` | Enter, press |
 | `--ease-in-out` | `cubic-bezier(0.4, 0, 0.2, 1)` | Theme, layout |
 
+Page changes use the View Transitions API where supported; elsewhere the page swaps without animation. Under reduced motion the transition is a short opacity fade.
+
 ## Theme
 
-The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. Storage, the first-paint script, and the document hint are in [web.md](../web.md).
+The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. Storage, the first-paint script, and the document hint are in [web.md](../web.md). First paint uses the resolved theme before any transition runs; theme transitions apply only to a change made in settings.
 
 ## Pending
 
