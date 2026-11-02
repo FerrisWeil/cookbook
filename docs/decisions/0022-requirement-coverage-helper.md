@@ -1,4 +1,4 @@
-# 0020. Requirement coverage helper
+# 0022. Requirement coverage helper
 
 * Status: proposed
 * Date: 2026-11-02
