@@ -41,10 +41,6 @@ requirements:
         text: A local stack may publish ports.
         implemented: false
       - id: "3.2.7"
-        removed: true
-      - id: "3.2.8"
-        removed: true
-      - id: "3.2.9"
         text: The production tailnet address does not have to offer install.
         implemented: false
 
@@ -71,15 +67,12 @@ requirements:
         implemented: false
 
   - id: "3.5"
-    removed: true
-
-  - id: "3.6"
     type: system
     text: The API stays inside the stack.
     details:
-      - id: "3.6.1"
+      - id: "3.5.1"
         text: Only the web app and the MCP server can call the API.
         implemented: false
-      - id: "3.6.2"
+      - id: "3.5.2"
         text: The API is not a tailnet identity.
         implemented: false
