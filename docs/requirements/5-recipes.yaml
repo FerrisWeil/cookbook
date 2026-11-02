@@ -86,7 +86,7 @@ requirements:
         text: The recipe stays stored.
         implemented: false
       - id: "5.5.3"
-        text: A later save does not make a deleted recipe visible again.
+        text: A save does not make a deleted recipe visible again.
         implemented: false
       - id: "5.5.4"
         text: The hidden recipe records when it was hidden.
@@ -156,7 +156,7 @@ requirements:
         text: Given an id from the caller, the saved recipe uses that id.
         implemented: false
       - id: "5.10.3"
-        text: Given the id of a visible recipe, a later save updates that recipe.
+        text: Given the id of a visible recipe, a save updates that recipe.
         implemented: false
       - id: "5.10.4"
         text: The actor recorded at creation does not change.

@@ -26,7 +26,7 @@ Batch wording in one pull request. Split the pull request when the behavior chan
 
 ## What belongs
 
-A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body. Do not name a version. State the behavior that is true now.
+A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body. A requirement is timeless. It names no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). State the behavior that is true. Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later."
 
 A design idea, a visual style, a version name, and a scope or non-goal live in docs or an ADR. They are not requirements.
 
@@ -70,11 +70,11 @@ Bad. Visual style. It belongs in the design doc:
   implemented: false
 ```
 
-Bad. A version name. The same limit, as behavior, is the search example above:
+Bad. A version or a point in time. The same limit, as behavior, is the search example above:
 
 ```yaml
 - id: "9.1.2"
-  text: v1 has no search.
+  text: Search comes later.
   implemented: false
 ```
 
