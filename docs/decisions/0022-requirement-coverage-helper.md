@@ -1,9 +1,8 @@
 # 0022. Requirement coverage helper
 
-* Status: proposed
+* Status: accepted
 * Date: 2026-11-02
-
-Status stays proposed until Taylor confirms in chat. Do not merge the pull request before that.
+* Confirmed: Taylor, 2026-11-02
 
 ## Problem
 
