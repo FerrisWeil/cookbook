@@ -59,7 +59,12 @@ describe("loadRequirementCatalog", () => {
     assert.equal(loaded.get("6.3.1")?.kind, "detail");
     assert.equal(loaded.get("6")?.kind, "topic");
     assert.equal(loaded.get("6.3")?.kind, "requirement");
+    assert.equal(loaded.get("2")?.kind, "topic");
+    assert.equal(loaded.get("2.1.1")?.kind, "detail");
+    assert.equal(loaded.get("7")?.kind, "topic");
+    assert.equal(loaded.get("7.1.1")?.kind, "detail");
     assert.equal(loaded.has("9.9.9"), false);
+    assertCoverIds(loaded, ["2.1.1", "7.1.1"]);
   });
 });
 

@@ -1408,6 +1408,27 @@ function runCanary() {
     "cites requirement id 2.2",
   );
   pass(
+    "two topic files, unimplemented needs no test",
+    {
+      requirementFiles: [...yamlFile(yamlProposed), { name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2", "2", "2.2", "2.2.1"],
+  );
+  fail(
+    "unimplemented detail in a later topic file is covered",
+    {
+      requirementFiles: [...yamlFile(yamlImplemented), { name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [
+        { name: "read.test.ts", text: 'it("read", () => {\n  covers("1.1.1", "1.1.2");\n});\n' },
+        { name: "ui.test.ts", text: 'it("opens", () => {\n  covers("2.2.1");\n});\n' },
+      ],
+      scriptFiles: [],
+    },
+    "implemented: false and is covered by a test",
+  );
+  pass(
     "yaml text may contain more than one period",
     {
       requirementFiles: yamlFile(
