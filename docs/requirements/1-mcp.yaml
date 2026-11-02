@@ -92,7 +92,7 @@ requirements:
 
   - id: "1.5"
     type: functional
-    text: v1 limits recipe operations to read, list, and save.
+    text: The MCP offers only the read, list, and save tools.
     details:
       - id: "1.5.1"
         text: Given a journal request, the agent is told that operation is not available.

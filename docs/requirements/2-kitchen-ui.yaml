@@ -34,13 +34,13 @@ requirements:
 
   - id: "2.3"
     type: functional
-    text: v1 has three screens.
+    text: The app has three screens.
     details:
       - id: "2.3.1"
         text: The screens are the recipe list, one recipe, and settings.
         implemented: false
       - id: "2.3.2"
-        text: Settings changes the theme and nothing else.
+        text: The settings screen is where a theme is chosen.
         implemented: false
       - id: "2.3.3"
         text: The list shows each recipe's title.
