@@ -61,5 +61,5 @@ requirements:
         text: Given CI, it runs pnpm check and pnpm smoke.
         implemented: false
       - id: "6.6.4"
-        text: CI does not repeat the steps inside those commands.
+        text: The CI workflow invokes pnpm check and pnpm smoke.
         implemented: false

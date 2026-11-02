@@ -293,7 +293,10 @@ function decisionNumericIdErrors(name, text, knownIds) {
   const errors = [];
   NUMERIC_ID_RE.lastIndex = 0;
   for (const match of normalized.matchAll(NUMERIC_ID_RE)) {
-    if (knownIds.has(match[0])) errors.push(`${name}: cites requirement id ${match[0]}`);
+    if (!knownIds.has(match[0])) continue;
+    const before = normalized.slice(Math.max(0, match.index - 5), match.index);
+    if (before === "WCAG ") continue;
+    errors.push(`${name}: cites requirement id ${match[0]}`);
   }
   return errors;
 }
@@ -392,6 +395,14 @@ function validateAgainstSchema(value, name) {
   }
 
   return check(SCHEMA, value, name);
+}
+
+// Whole words only, so ordinary words such as "yesterday" and "lateral" stay.
+const TIMED_WORD_RE = /\b(?:v\d+|version|release|phase|for now|yet|initially|currently|later)\b/i;
+
+function timedTextError(name, field, idText) {
+  if (!field || !TIMED_WORD_RE.test(field.text)) return null;
+  return `${name}:${field.line}: ${idText} names a version or a time`;
 }
 
 function parseYamlCategory(name, text) {
@@ -605,6 +616,8 @@ function parseYamlCategory(name, text) {
         );
       }
       const reqText = takeString(item, "text");
+      const timedReq = timedTextError(name, reqText, reqId ? reqId.text : "text");
+      if (timedReq) errors.push(timedReq);
       const reqSee = takeSee(item);
       const reqOk = reqId && yamlChildId(categoryId).test(reqId.text);
       if (reqId && !reqOk) {
@@ -649,6 +662,8 @@ function parseYamlCategory(name, text) {
         rejectUnknown(detail, new Set(["id", "text", "implemented", "check", "see"]));
         const detailId = takeId(detail, "id");
         const detailText = takeString(detail, "text");
+        const timedDetail = timedTextError(name, detailText, detailId ? detailId.text : "text");
+        if (timedDetail) errors.push(timedDetail);
         const detailSee = takeSee(detail);
         const manual = takeManual(detail);
         const implementedPair = yamlPair(detail, "implemented");
@@ -1051,6 +1066,39 @@ function runCanary() {
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
   );
+  const yamlWcag = [
+    'id: "2"',
+    "title: UI",
+    "requirements:",
+    '  - id: "2.2"',
+    "    type: non-functional",
+    "    text: The app installs.",
+    "    details:",
+    '      - id: "2.2.1"',
+    "        text: Given a secure context, the app installs.",
+    "        implemented: false",
+    "",
+  ].join("\n");
+  pass(
+    "wcag 2.2 does not cite requirement 2.2",
+    {
+      requirementFiles: [{ name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
+    },
+    ["2", "2.2", "2.2.1"],
+  );
+  fail(
+    "a decision cites requirement 2.2",
+    {
+      requirementFiles: [{ name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See 2.2.\n" }],
+    },
+    "cites requirement id 2.2",
+  );
   pass(
     "yaml text may contain more than one period",
     {
@@ -1062,6 +1110,52 @@ function runCanary() {
       ),
       testFiles: [],
       scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  fail(
+    "yaml names a version",
+    {
+      requirementFiles: yamlFile(yamlProposed.replace("Agents can read a recipe.", "v1 can read a recipe.")),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "names a version",
+  );
+  fail(
+    "yaml names a time",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace("Given a deleted recipe, the agent does not receive it.", "Search comes later."),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    "names a version",
+  );
+  pass(
+    "yaml ordinary words are not a time",
+    {
+      requirementFiles: yamlFile(
+        yamlProposed.replace("Agents can read a recipe.", "Yesterday a lateral read returns the title."),
+      ),
+      testFiles: [],
+      scriptFiles: [],
+    },
+    ["1", "1.1", "1.1.1", "1.1.2"],
+  );
+  pass(
+    "a decision may name a time",
+    {
+      requirementFiles: yamlFile(yamlProposed),
+      testFiles: [],
+      scriptFiles: [],
+      decisionFiles: [
+        {
+          name: "docs/decisions/0001-choice.md",
+          text: "Search comes later. The v1 release is a phase for now.\n",
+        },
+      ],
     },
     ["1", "1.1", "1.1.1", "1.1.2"],
   );

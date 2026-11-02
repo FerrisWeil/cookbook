@@ -21,7 +21,7 @@ requirements:
         text: Given any combination of fields, the agent receives only those fields.
         implemented: false
       - id: "1.1.6"
-        text: Given a field that doesn't exist, the agent is told which field is invalid.
+        text: Given an unknown field, the agent is told which field is invalid.
         implemented: false
       - id: "1.1.7"
         text: Without fields, the agent receives the title, steps in saved order, servings, and nutrition when present.
@@ -92,7 +92,7 @@ requirements:
 
   - id: "1.5"
     type: functional
-    text: v1 limits recipe operations to read, list, and save.
+    text: The MCP offers only the read, list, and save tools.
     details:
       - id: "1.5.1"
         text: Given a journal request, the agent is told that operation is not available.

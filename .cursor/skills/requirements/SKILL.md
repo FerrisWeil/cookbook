@@ -26,11 +26,13 @@ Batch wording in one pull request. Split the pull request when the behavior chan
 
 ## What belongs
 
-A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body.
+A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body. A requirement is timeless. It names no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). State the behavior that is true. Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later."
 
-A design idea, a visual style, and a scope or non-goal live in docs or an ADR. They are not requirements.
+Prefer a positive, testable statement. A negative is allowed only when it guards a real limit: permission, data safety, or security. Good: "On the recipe screen, no control overlaps the title, ingredient lines, or steps." Bad: "Recipe text is never read through a control."
 
-A negative detail is allowed only when it guards a real limit: permission, data safety, or security.
+A requirement names no specific person. An actor value such as taylor, chef, or system may stay when it is data. Good: "A user can open the app on a desktop browser or a phone." Bad: "Taylor and his wife can open the app."
+
+A design idea, a visual style, a version name, and a scope or non-goal live in docs or an ADR. They are not requirements.
 
 ## Details
 
@@ -70,11 +72,11 @@ Bad. Visual style. It belongs in the design doc:
   implemented: false
 ```
 
-Bad. A list of what v1 lacks. The same limit, as behavior, is the search example above:
+Bad. A version or a point in time. The same limit, as behavior, is the search example above:
 
 ```yaml
 - id: "9.1.2"
-  text: v1 has no search.
+  text: Search comes later.
   implemented: false
 ```
 
