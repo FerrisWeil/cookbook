@@ -1,7 +1,8 @@
 # 0023. Kitchen web implementation
 
-* Status: proposed
+* Status: accepted
 * Date: 2026-11-02
+* Confirmed: Taylor, 2026-11-02
 
 ## Problem
 
