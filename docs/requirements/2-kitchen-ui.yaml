@@ -3,13 +3,13 @@ title: Kitchen UI
 requirements:
   - id: "2.1"
     type: functional
-    text: Taylor and his wife can open the app.
+    text: A user can open the app on a desktop browser or a phone.
     details:
       - id: "2.1.1"
-        text: Given a desktop browser, the app opens.
+        text: Given a desktop browser, the user can open the app.
         implemented: false
       - id: "2.1.2"
-        text: Given an iPhone, the app opens.
+        text: Given a phone, the user can open the app.
         implemented: false
 
   - id: "2.2"
@@ -23,13 +23,13 @@ requirements:
         text: Given a secure context, the app can be installed to the home screen.
         implemented: false
       - id: "2.2.3"
-        text: Given a document that never loads, the browser shows its own error.
+        text: Given a document that fails to load, the browser shows its own error.
         implemented: false
       - id: "2.2.4"
         text: Given a loaded app, a failed read is told in words.
         implemented: false
       - id: "2.2.5"
-        text: Install is not required from the production tailnet address.
+        text: The production tailnet address opens the app in the browser.
         implemented: false
 
   - id: "2.3"
@@ -64,10 +64,10 @@ requirements:
         text: Given a rating, the recipe screen shows it.
         implemented: false
       - id: "2.3.10"
-        text: The recipe screen does not show amount, unit, or name.
+        text: The recipe screen shows each ingredient as one written line.
         implemented: false
       - id: "2.3.11"
-        text: The list includes recipes that are not favorites.
+        text: The list includes a recipe whose favorite is off.
         implemented: false
 
   - id: "2.4"
@@ -81,13 +81,13 @@ requirements:
         text: A primary action target is at least 44 by 44 CSS pixels.
         implemented: false
       - id: "2.4.3"
-        text: Hover is never the only way to reach an action.
+        text: Every action is reachable by a click or a tap.
         implemented: false
       - id: "2.4.4"
-        text: Zoom is not disabled.
+        text: The user can zoom the page.
         implemented: false
       - id: "2.4.5"
-        text: Recipe text is never read through a control.
+        text: On the recipe screen, no control overlaps the title, ingredient lines, or steps.
         implemented: false
 
   - id: "2.5"
@@ -115,5 +115,5 @@ requirements:
         text: A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged.
         implemented: false
       - id: "2.6.4"
-        text: The phone does not ask who is writing.
+        text: The phone write screen offers the favorite and the rating.
         implemented: false
