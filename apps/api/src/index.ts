@@ -79,19 +79,19 @@ async function appCheckout(): Promise<ReleasableClient> {
   };
 }
 
-const { server, url } = await listen(config.bindHost, config.port, {
+const api = await listen(config.bindHost, config.port, {
   getReady: () => getReadyStatus(db),
   recipes: createPgRecipeStore(appCheckout),
   callerTokens: [config.apiAuthTokenMcp, config.apiAuthTokenWeb],
 });
 
-console.log(`cookbook-api listening on ${config.bindHost}:${config.port} (${url})`);
+console.log(
+  `cookbook-api listening on ${config.bindHost}:${config.port} (${api.url})`,
+);
 
 async function shutdown(signal: string): Promise<void> {
   console.log(`received ${signal}, shutting down`);
-  await new Promise<void>((resolve) => {
-    server.close(() => resolve());
-  });
+  await api.close();
   await pool.end();
   process.exit(0);
 }

@@ -58,16 +58,13 @@ describe("http health", () => {
   let ready: ReadyStatus = { status: "ok", database: "up", seed: true };
 
   before(async () => {
-    const { server, url } = await listen("127.0.0.1", 0, {
+    const api = await listen("127.0.0.1", 0, {
       getReady: async () => ready,
       recipes: createMemoryRecipeStore(),
       callerTokens: CALLER_TOKENS,
     });
-    baseUrl = url;
-    close = () =>
-      new Promise((resolve, reject) => {
-        server.close((error) => (error ? reject(error) : resolve()));
-      });
+    baseUrl = api.url;
+    close = () => api.close();
   });
 
   after(async () => {

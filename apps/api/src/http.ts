@@ -1,9 +1,7 @@
-import {
-  createServer,
-  type IncomingMessage,
-  type Server,
-  type ServerResponse,
-} from "node:http";
+import Fastify, {
+  type FastifyReply,
+  type FastifyRequest,
+} from "fastify";
 
 import { MESSAGES, type ReadyStatus } from "@cookbook/shared";
 
@@ -17,43 +15,44 @@ export type ApiDeps = {
   callerTokens: readonly string[];
 };
 
+export type ApiListener = {
+  url: string;
+  close(): Promise<void>;
+};
+
+// Fastify requires a numeric limit; the previous Node reader was unbounded.
+const BODY_LIMIT = Number.MAX_SAFE_INTEGER;
+// Opaque recipe ids are unbounded; Fastify's default param cap is 100.
+const MAX_PARAM_LENGTH = 32 * 1024;
+const INVALID_JSON = Symbol("invalid-json");
+
 function sendJson(
-  res: ServerResponse,
+  reply: FastifyReply,
   status: number,
   body: unknown,
   extraHeaders: Record<string, string> = {},
-): void {
-  const payload = JSON.stringify(body);
-  res.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-    ...extraHeaders,
-  });
-  res.end(payload);
+): FastifyReply {
+  for (const [name, value] of Object.entries(extraHeaders)) {
+    reply.header(name, value);
+  }
+  return reply
+    .code(status)
+    .header("content-type", "application/json; charset=utf-8")
+    .header("cache-control", "no-store")
+    .send(body);
 }
 
-function requestUrl(req: IncomingMessage): URL {
+function requestUrl(request: FastifyRequest): URL {
   try {
-    return new URL(req.url ?? "/", "http://127.0.0.1");
+    return new URL(request.raw.url ?? "/", "http://127.0.0.1");
   } catch {
     return new URL("http://127.0.0.1/");
   }
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on("data", (chunk) => {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
-}
-
-function unauthorized(res: ServerResponse): void {
-  sendJson(
-    res,
+function unauthorized(reply: FastifyReply): FastifyReply {
+  return sendJson(
+    reply,
     401,
     { error: "unauthorized" },
     { "www-authenticate": 'Bearer realm="cookbook-api"' },
@@ -82,156 +81,231 @@ function stepsError(body: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
-function sendStoreError(res: ServerResponse, error: unknown): void {
+function sendStoreError(reply: FastifyReply, error: unknown): FastifyReply {
   if (isRecipeError(error)) {
     const notFound = error.code === "not_found";
-    sendJson(res, notFound ? 404 : 400, {
+    return sendJson(reply, notFound ? 404 : 400, {
       error: notFound ? "not_found" : "invalid",
       message: error.message,
     });
-    return;
   }
-  sendJson(res, 503, { error: "unavailable" });
+  return sendJson(reply, 503, { error: "unavailable" });
 }
 
-export function createRequestListener(
-  deps: ApiDeps,
-): (req: IncomingMessage, res: ServerResponse) => void {
-  return (req, res) => {
-    const url = requestUrl(req);
-    const path = url.pathname;
+function parseJsonBody(raw: string | Buffer): unknown {
+  const text = typeof raw === "string" ? raw : raw.toString("utf8");
+  if (text.trim() === "") {
+    return {};
+  }
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return INVALID_JSON;
+  }
+}
 
-    if (req.method === "GET" && path === "/health") {
-      sendJson(res, 200, { status: "ok" });
-      return;
-    }
+function isHealthGet(method: string, pathname: string): boolean {
+  return method === "GET" && (pathname === "/health" || pathname === "/health/ready");
+}
 
-    if (req.method === "GET" && path === "/health/ready") {
-      void deps
-        .getReady()
-        .then((body) => {
-          sendJson(res, body.status === "ok" ? 200 : 503, body);
-        })
-        .catch(() => {
-          sendJson(res, 503, {
-            status: "degraded",
-            database: "down",
-            seed: false,
-          });
-        });
-      return;
-    }
+function hasUsableContentType(value: string | string[] | undefined): boolean {
+  const header = Array.isArray(value) ? value[0] : value;
+  if (!header) {
+    return false;
+  }
+  const media = header.split(";", 1)[0] ?? "";
+  const slash = media.indexOf("/");
+  return slash > 0 && slash < media.length - 1;
+}
 
-    if (!requestHasValidBearer(req, deps.callerTokens)) {
-      unauthorized(res);
-      return;
-    }
-
-    if (req.method === "GET" && path === "/recipes") {
-      void deps.recipes
-        .list()
-        .then((recipes) => {
-          sendJson(res, 200, { recipes });
-        })
-        .catch((error) => {
-          sendStoreError(res, error);
-        });
-      return;
-    }
-
-    const one = /^\/recipes\/([^/]+)$/.exec(path);
-    if (req.method === "GET" && one) {
-      const id = recipeIdFromPath(one[1] ?? "");
-      if (!id) {
-        sendJson(res, 404, { error: "not_found", message: MESSAGES.notFound });
+function createApp(deps: ApiDeps) {
+  const app = Fastify({
+    logger: false,
+    exposeHeadRoutes: false,
+    bodyLimit: BODY_LIMIT,
+    requestTimeout: 300_000,
+    keepAliveTimeout: 5_000,
+    return503OnClosing: false,
+    forceCloseConnections: "idle",
+    routerOptions: {
+      maxParamLength: MAX_PARAM_LENGTH,
+      ignoreTrailingSlash: false,
+      ignoreDuplicateSlashes: false,
+      caseSensitive: true,
+    },
+    frameworkErrors(error, request, reply) {
+      const pathname = requestUrl(request).pathname;
+      if (
+        !isHealthGet(request.method, pathname) &&
+        !requestHasValidBearer(request.raw, deps.callerTokens)
+      ) {
+        unauthorized(reply);
         return;
       }
-      void deps.recipes
-        .read(id)
-        .then((recipe) => {
-          const fields = parseFieldList(
-            url.searchParams.has("fields")
-              ? url.searchParams.getAll("fields")
-              : undefined,
-          );
-          const projected = projectRecipe(recipe, fields);
-          if (!projected.ok) {
-            sendJson(res, 400, { error: "invalid", message: projected.message });
-            return;
-          }
-          sendJson(res, 200, { recipe: projected.value });
-        })
-        .catch((error) => {
-          sendStoreError(res, error);
-        });
-      return;
-    }
-
-    if (req.method === "PUT" && path === "/recipes") {
-      void readBody(req)
-        .then((raw) => {
-          let body: unknown = {};
-          if (raw.trim() !== "") {
-            try {
-              body = JSON.parse(raw) as unknown;
-            } catch {
-              sendJson(res, 400, { error: "invalid", message: MESSAGES.titleRequired });
-              return;
-            }
-          }
-          if (body === null || typeof body !== "object" || Array.isArray(body)) {
-            sendJson(res, 400, { error: "invalid", message: MESSAGES.titleRequired });
-            return;
-          }
-          const record = body as Record<string, unknown>;
-          const steps = stepsError(record);
-          if (steps) {
-            sendJson(res, 400, { error: "invalid", message: steps });
-            return;
-          }
-          return deps.recipes.save(record).then((saved) => {
-            sendJson(res, 200, { recipe: saved });
+      if (
+        error.code === "FST_ERR_BAD_URL" ||
+        error.code === "FST_ERR_MAX_PARAM_LENGTH"
+      ) {
+        const one = /^\/recipes\/([^/]+)$/.exec(pathname);
+        if (one) {
+          sendJson(reply, 404, {
+            error: "not_found",
+            message: MESSAGES.notFound,
           });
-        })
-        .catch((error) => {
-          sendStoreError(res, error);
-        });
-      return;
-    }
-
-    sendJson(res, 404, { error: "not_found" });
-  };
-}
-
-export function createHttpServer(deps: ApiDeps): Server {
-  return createServer(createRequestListener(deps));
-}
-
-export async function listen(
-  bindHost: string,
-  port: number,
-  deps: ApiDeps,
-): Promise<{ server: Server; url: string }> {
-  const server = createHttpServer(deps);
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(port, bindHost, () => {
-      server.off("error", reject);
-      resolve();
-    });
+          return;
+        }
+        sendJson(reply, 404, { error: "not_found" });
+        return;
+      }
+      sendJson(reply, 503, { error: "unavailable" });
+    },
   });
 
-  const address = server.address();
+  app.removeAllContentTypeParsers();
+  app.addContentTypeParser(
+    "*",
+    { parseAs: "string", bodyLimit: BODY_LIMIT },
+    (_request, body, done) => {
+      done(null, parseJsonBody(body));
+    },
+  );
+
+  app.addHook("onRequest", async (request, reply) => {
+    if (!hasUsableContentType(request.headers["content-type"])) {
+      delete request.headers["content-type"];
+    }
+    const pathname = requestUrl(request).pathname;
+    if (isHealthGet(request.method, pathname)) {
+      return;
+    }
+    if (!requestHasValidBearer(request.raw, deps.callerTokens)) {
+      return unauthorized(reply);
+    }
+  });
+
+  app.get("/health", async (_request, reply) => {
+    return sendJson(reply, 200, { status: "ok" });
+  });
+
+  app.get("/health/ready", async (_request, reply) => {
+    try {
+      const body = await deps.getReady();
+      return sendJson(reply, body.status === "ok" ? 200 : 503, body);
+    } catch {
+      return sendJson(reply, 503, {
+        status: "degraded",
+        database: "down",
+        seed: false,
+      });
+    }
+  });
+
+  app.get("/recipes", async (_request, reply) => {
+    try {
+      const recipes = await deps.recipes.list();
+      return sendJson(reply, 200, { recipes });
+    } catch (error) {
+      return sendStoreError(reply, error);
+    }
+  });
+
+  app.get("/recipes/:id", async (request, reply) => {
+    const pathname = requestUrl(request).pathname;
+    const one = /^\/recipes\/([^/]+)$/.exec(pathname);
+    if (!one) {
+      return sendJson(reply, 404, { error: "not_found" });
+    }
+    const id = recipeIdFromPath(one[1] ?? "");
+    if (!id) {
+      return sendJson(reply, 404, {
+        error: "not_found",
+        message: MESSAGES.notFound,
+      });
+    }
+    try {
+      const recipe = await deps.recipes.read(id);
+      const url = requestUrl(request);
+      const fields = parseFieldList(
+        url.searchParams.has("fields")
+          ? url.searchParams.getAll("fields")
+          : undefined,
+      );
+      const projected = projectRecipe(recipe, fields);
+      if (!projected.ok) {
+        return sendJson(reply, 400, {
+          error: "invalid",
+          message: projected.message,
+        });
+      }
+      return sendJson(reply, 200, { recipe: projected.value });
+    } catch (error) {
+      return sendStoreError(reply, error);
+    }
+  });
+
+  app.put("/recipes", async (request, reply) => {
+    try {
+      const parsed = request.body;
+      if (parsed === INVALID_JSON) {
+        return sendJson(reply, 400, {
+          error: "invalid",
+          message: MESSAGES.titleRequired,
+        });
+      }
+      const body: unknown = parsed === undefined ? {} : parsed;
+      if (body === null || typeof body !== "object" || Array.isArray(body)) {
+        return sendJson(reply, 400, {
+          error: "invalid",
+          message: MESSAGES.titleRequired,
+        });
+      }
+      const record = body as Record<string, unknown>;
+      const steps = stepsError(record);
+      if (steps) {
+        return sendJson(reply, 400, { error: "invalid", message: steps });
+      }
+      const saved = await deps.recipes.save(record);
+      return sendJson(reply, 200, { recipe: saved });
+    } catch (error) {
+      return sendStoreError(reply, error);
+    }
+  });
+
+  app.setNotFoundHandler((_request, reply) => {
+    return sendJson(reply, 404, { error: "not_found" });
+  });
+
+  app.setErrorHandler((_error, _request, reply) => {
+    return sendJson(reply, 503, { error: "unavailable" });
+  });
+
+  return app;
+}
+
+function listenerUrl(
+  address: string | { address: string; port: number } | null,
+): string {
   if (!address || typeof address === "string") {
     throw new Error("failed to determine listen address");
   }
-
   const host =
     address.address === "::" || address.address === "0.0.0.0"
       ? "127.0.0.1"
       : address.address.includes(":")
         ? `[${address.address}]`
         : address.address;
+  return `http://${host}:${address.port}`;
+}
 
-  return { server, url: `http://${host}:${address.port}` };
+export async function listen(
+  bindHost: string,
+  port: number,
+  deps: ApiDeps,
+): Promise<ApiListener> {
+  const app = createApp(deps);
+  await app.listen({ host: bindHost, port });
+  return {
+    url: listenerUrl(app.server.address()),
+    close: () => app.close(),
+  };
 }
