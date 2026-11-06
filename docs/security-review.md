@@ -36,6 +36,12 @@ Recipe HTTP:
 - Each token is required at API boot. Fewer than 16 characters refuses to boot. Placeholders (`replace-me`, `replace-with-a-long-random-token`) are refused. The two caller tokens must differ from each other and from `MCP_AUTH_TOKEN`. Local compose may use `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas` with `API_ALLOW_DEV_TOKEN=1`, the same exception [0007](decisions/0007-public-repo-secrets.md) allows for MCP. The NAS file does not set that flag.
 - Compare with SHA-256 and `timingSafeEqual`. Missing or wrong token: `401` and `WWW-Authenticate: Bearer`. Rejected recipe bodies stay status-only.
 
+Kitchen web proxy (not in the tree):
+
+- The web process holds `API_AUTH_TOKEN_WEB` only. The reverse proxy attaches it to recipe requests. The browser never receives a token.
+- Forwarded: list, read, and a favorite-and-rating write. Not forwarded: a full recipe save from the browser. Liveness stays unauthenticated.
+- A response to the browser stays free of the token. Logs and client bundles stay free of the token.
+
 ## Network
 
 - The NAS Compose file has no `ports:` and no Tailscale Funnel.
