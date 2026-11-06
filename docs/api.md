@@ -1,6 +1,8 @@
 # API
 
-Contract for [0021](decisions/0021-mcp-recipe-tools.md). Recipe routes are not in the tree. Token comparison, headers, and the health body are in [security-review.md](security-review.md). MCP tools are in [mcp.md](mcp.md).
+Contract for [0021](decisions/0021-mcp-recipe-tools.md). Tables and domain rules are in [recipes.md](recipes.md). Token comparison, headers, and the health body are in [security-review.md](security-review.md). MCP tools are in [mcp.md](mcp.md).
+
+Env names: `API_AUTH_TOKEN_MCP` and `API_AUTH_TOKEN_WEB`. Local compose may boot with `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas` when `API_ALLOW_DEV_TOKEN=1`. The NAS file does not set that flag.
 
 ## Liveness
 

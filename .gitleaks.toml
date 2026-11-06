@@ -9,6 +9,8 @@ useDefault = true
 description = "Local-only Compose defaults, never used on the NAS"
 regexes = [
   '''local-dev-token-not-for-nas''',
+  '''local-dev-api-mcp-token-not-for-nas''',
+  '''local-dev-api-web-token-not-for-nas''',
 ]
 paths = [
   '''^\.gitleaks\.toml$''',

@@ -9,6 +9,7 @@ Current state:
 | Security checklist, database roles, MCP and API auth | [security-review.md](security-review.md) |
 | MCP tools and how they reach recipes | [mcp.md](mcp.md) |
 | Household API recipe routes and caller tokens | [api.md](api.md) |
+| Recipe tables and domain rules | [recipes.md](recipes.md) |
 | Kitchen web rendering, proxy, theme, install | [web.md](web.md) |
 | Dependency updates and pins | [supply-chain.md](supply-chain.md) |
 | Unraid production | [unraid-production.md](unraid-production.md) |
