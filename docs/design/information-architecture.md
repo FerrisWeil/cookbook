@@ -1,6 +1,6 @@
 # Information architecture
 
-Screens for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). Not in the tree.
+Screens for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). The list and recipe screens are in the tree. Settings is not.
 
 Three screens: a list of recipes, one recipe opened to read and cook, and settings. Chrome is [chrome](chrome.md).
 

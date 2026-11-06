@@ -113,21 +113,21 @@ requirements:
     text: "A user can open and install the app on a desktop or phone, use three accessible screens, choose a theme, and on a phone write favorite and rating."
     children:
       - id: "35"
-        status: accepted
+        status: implemented
         text: "A user can open the app on a desktop browser or a phone."
         children:
           - id: "33"
-            status: accepted
+            status: implemented
             text: "Given a desktop browser, the user can open the app."
           - id: "34"
-            status: accepted
+            status: implemented
             text: "Given a phone, the user can open the app."
       - id: "40"
         status: accepted
         text: "The app is an installable responsive web app."
         children:
           - id: "36"
-            status: accepted
+            status: verified
             text: "The layout responds to the screen size."
           - id: "37"
             status: accepted
@@ -136,7 +136,7 @@ requirements:
             status: accepted
             text: "Given a document that fails to load, the browser shows its own error."
           - id: "39"
-            status: accepted
+            status: verified
             text: "Given a loaded app, a failed read is told in words."
       - id: "52"
         status: accepted
@@ -149,19 +149,19 @@ requirements:
             status: accepted
             text: "The settings screen is where a theme is chosen."
           - id: "43"
-            status: accepted
+            status: verified
             text: "The list shows each recipe's title."
           - id: "44"
             status: accepted
             text: "The list shows each recipe's favorite."
           - id: "45"
-            status: accepted
+            status: verified
             text: "The recipe screen shows the title."
           - id: "46"
-            status: accepted
+            status: verified
             text: "The recipe screen shows the ingredient lines."
           - id: "47"
-            status: accepted
+            status: verified
             text: "The recipe screen shows the steps in saved order."
           - id: "48"
             status: accepted
@@ -170,10 +170,10 @@ requirements:
             status: accepted
             text: "Given a rating, the recipe screen shows it."
           - id: "50"
-            status: accepted
+            status: verified
             text: "The recipe screen shows each ingredient as one written line."
           - id: "51"
-            status: accepted
+            status: implemented
             text: "The list includes a recipe whose favorite is off."
       - id: "58"
         status: accepted
@@ -183,23 +183,23 @@ requirements:
             status: accepted
             text: "The three screens meet WCAG 2.2 AA."
           - id: "54"
-            status: accepted
+            status: verified
             text: "A primary action target is at least 44 by 44 CSS pixels."
           - id: "55"
-            status: accepted
+            status: verified
             text: "Every action is reachable by a click or a tap."
           - id: "56"
-            status: accepted
+            status: verified
             text: "The user can zoom the page."
           - id: "57"
-            status: accepted
+            status: verified
             text: "On the recipe screen, no control overlaps the title, ingredient lines, or steps."
       - id: "61"
         status: accepted
         text: "The user can select a theme."
         children:
           - id: "59"
-            status: accepted
+            status: verified
             text: "The first paint follows the system."
           - id: "60"
             status: accepted
@@ -440,21 +440,21 @@ requirements:
             status: verified
             text: "Given a changed title, the recipe keeps its id."
   - id: "147"
-    status: implemented
+    status: accepted
     text: "A local compose stack runs the apps, the home page reports readiness, health needs no secret, MCP requires the bearer, and Postgres applies the schema."
     children:
       - id: "136"
         status: implemented
         text: "Given docker compose up --build, web, the API, Postgres, and MCP are running."
       - id: "139"
-        status: implemented
+        status: accepted
         text: "The home page reports the stack."
         children:
           - id: "137"
-            status: implemented
+            status: verified
             text: "Given the home page, it loads."
           - id: "138"
-            status: implemented
+            status: accepted
             text: "Given the home page, it shows whether the API and the database are ready."
       - id: "141"
         status: verified
@@ -487,14 +487,14 @@ requirements:
     text: "A theme stays readable, and screens use shared components in that theme."
     children:
       - id: "150"
-        status: accepted
+        status: verified
         text: "A theme's colors stay readable."
         children:
           - id: "148"
-            status: accepted
+            status: verified
             text: "Given a theme, its text on its background meets WCAG 2.2 AA contrast."
           - id: "149"
-            status: accepted
+            status: verified
             text: "Given a theme, a control's boundary on its background meets WCAG 2.2 AA contrast."
       - id: "153"
         status: accepted

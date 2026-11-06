@@ -2,7 +2,7 @@
 
 Detail for [0020](../decisions/0020-kitchen-design-system.md). Hit size and the focus ring are [tokens](tokens.md). Motion is the duration and easing tokens.
 
-The UI package is not in the tree.
+Button lives in `@cookbook/ui`. Favorite, rating, and filter chips are not in this slice. The Back control is the label only; icon artwork is pending.
 
 ## Variants
 

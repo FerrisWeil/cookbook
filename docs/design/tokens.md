@@ -1,6 +1,6 @@
 # Tokens, accessibility, breakpoints, iPhone
 
-Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). The UI package is not in the tree. A unit test locks the color pairs when that package lands.
+Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). Tokens live in `@cookbook/ui`. A unit test locks the color pairs.
 
 Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot.
 

@@ -20,4 +20,4 @@ Current state:
 
 Requirements YAML catalogs portable application behavior. It is not acceptance. Hosting stays in the Unraid doc.
 
-The production Compose file is not in the tree. The skeleton is [deploy/nas/docker-compose.yml](../deploy/nas/docker-compose.yml). The UI package is not in the tree. The sequence check is not in the tree.
+The production Compose file is not in the tree. The skeleton is [deploy/nas/docker-compose.yml](../deploy/nas/docker-compose.yml). Settings, `/guide`, and the sequence check are not in the tree.

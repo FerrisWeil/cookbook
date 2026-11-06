@@ -7,8 +7,10 @@ COPY apps/mcp/package.json apps/mcp/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 COPY packages/test/package.json packages/test/
+COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
+COPY packages/ui packages/ui
 COPY apps/web apps/web
 RUN pnpm --filter @cookbook/web build
 

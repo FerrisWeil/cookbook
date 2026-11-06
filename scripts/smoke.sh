@@ -124,6 +124,22 @@ grep -q '"recipes":' /tmp/cookbook-api-recipes.json
 curl -fsS http://127.0.0.1:8080/api/recipes | tee /tmp/cookbook-web-recipes.json
 grep -q '"recipes":' /tmp/cookbook-web-recipes.json
 
+code=$(curl -sS -o /tmp/cookbook-web-put.json -w '%{http_code}' \
+  -X PUT http://127.0.0.1:8080/api/recipes \
+  -H 'content-type: application/json' \
+  -d '{"title":"Example: Should not save","steps":["no"],"servings":1,"actor":"chef"}')
+if [[ "$code" != "405" ]]; then
+  echo "web proxy forwarded a recipe write: ${code}" >&2
+  cat /tmp/cookbook-web-put.json >&2
+  exit 1
+fi
+
+web_token="${API_AUTH_TOKEN_WEB:-local-dev-api-web-token-not-for-nas}"
+if grep -Fq "$web_token" /tmp/cookbook-web-recipes.json; then
+  echo "web token leaked in a browser-facing payload" >&2
+  exit 1
+fi
+
 # Same client the unit tests use. Requires `pnpm install` (CI does this).
 (
   cd apps/mcp
@@ -163,6 +179,7 @@ try {
     name: "save",
     arguments: {
       title: "Example: Smoke",
+      ingredients: [{ line: "1 cup water" }],
       steps: ["check"],
       servings: 1,
       actor: "chef",
@@ -184,6 +201,34 @@ grep -q "Cookbook MCP is up." /tmp/cookbook-mcp-hello.json
 
 curl -fsS http://127.0.0.1:8080 | tee /tmp/cookbook-web.html
 grep -q "Cookbook" /tmp/cookbook-web.html
+
+web_token="${API_AUTH_TOKEN_WEB:-local-dev-api-web-token-not-for-nas}"
+if grep -Fq "$web_token" /tmp/cookbook-web.html; then
+  echo "web token leaked in HTML" >&2
+  exit 1
+fi
+js_paths="$(printf '%s' "$(cat /tmp/cookbook-web.html)" | grep -oE '(src|href)="[^"]+\.js"' | grep -oE '/[^"]+\.js' || true)"
+for src in $js_paths; do
+  curl -fsS "http://127.0.0.1:8080${src}" | tee "/tmp/cookbook-web-asset.out" >/dev/null
+  if grep -Fq "$web_token" /tmp/cookbook-web-asset.out; then
+    echo "web token leaked in ${src}" >&2
+    exit 1
+  fi
+done
+
+curl -fsS http://127.0.0.1:8080/api/recipes | tee /tmp/cookbook-web-recipes-after.json
+grep -q '"recipes":' /tmp/cookbook-web-recipes-after.json
+grep -q "Example:" /tmp/cookbook-web-recipes-after.json
+recipe_id="$(node -e 'const fs=require("fs"); const body=JSON.parse(fs.readFileSync("/tmp/cookbook-web-recipes-after.json","utf8")); const row=body.recipes.find((item)=>item.title.startsWith("Example:")); if(!row) process.exit(1); process.stdout.write(row.id)')"
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,ingredients,steps" \
+  | tee /tmp/cookbook-web-recipe.json
+grep -q '"title"' /tmp/cookbook-web-recipe.json
+grep -q '"steps"' /tmp/cookbook-web-recipe.json
+grep -q "1 cup water" /tmp/cookbook-web-recipe.json
+if grep -Fq "$web_token" /tmp/cookbook-web-recipes-after.json /tmp/cookbook-web-recipe.json; then
+  echo "web token leaked in a recipe payload" >&2
+  exit 1
+fi
 
 curl -fsS http://127.0.0.1:8080/api/health/ready | tee /tmp/cookbook-web-api.json
 grep -q '"database":"up"' /tmp/cookbook-web-api.json
