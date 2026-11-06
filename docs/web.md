@@ -2,61 +2,55 @@
 
 Current state for [0023](decisions/0023-kitchen-web-implementation.md). Design is [0020](decisions/0020-kitchen-design-system.md). Recipe HTTP is [api.md](api.md). Token comparison is [security-review.md](security-review.md).
 
-The kitchen screens and the UI package are not in the tree. The web image still serves the foundation page.
+`/` is the recipe list. `/recipes/:id` is one recipe. Settings and `/guide` are not in this slice. `@cookbook/ui` holds the tokens, Button, Card, and read/error copy used by those screens. Controls are native elements styled with the semantic variables. Radix is still the allowed primitive kit; this slice does not install it.
+
+List cards are title only. The list API returns `id` and `title`. The kitchen does not fetch each card's detail.
 
 ## Rendering
 
-Client-rendered React. The web image serves static files. The reverse proxy's `/` location already falls back to `index.html`, so new screens are client routes.
+Client-rendered React. The web image serves static files. `/` falls back to `index.html`.
 
-Screens import `@cookbook/ui`. That package holds Radix primitives and semantic CSS variables ([system](design/system.md)). The API and MCP do not import it. `/guide` is a hand-built route that uses those real components. It shows every state in light and dark, with theme and reduced-motion toggles.
+The recipe screen requests `fields=title,ingredients,steps`. Default read omits ingredients. Empty ingredient or step lists omit that section. Back pops when the recipe was opened from the list, and replaces the current entry with `/` when the recipe was opened directly.
 
 | Route | Screen |
 | --- | --- |
 | `/` | Recipe list |
 | `/recipes/:id` | One recipe |
-| `/settings` | Theme |
-| `/guide` | Design review. Not linked from the three screens. |
+| `/settings` | Not built |
+| `/guide` | Not built |
 
 ## Proxy
 
-The kitchen web proxy is not in the tree.
+Nginx (Compose and the NAS skeleton) and the Vite dev server attach `Authorization: Bearer` for `GET`/`HEAD` `/api/recipes` and `/api/recipes/:id` only. Other methods on those paths return 405. Health stays unauthenticated. The proxy target is the API origin from config, not a URL the browser supplies.
 
-The web process holds `API_AUTH_TOKEN_WEB`. The reverse proxy attaches `Authorization: Bearer` when it forwards recipe requests to the API. The token is not in the JavaScript bundle, not in a cookie, and not in a browser response body.
-
-The browser calls same-origin `/api/…` only. It does not call the API origin.
+The web token is not in the JavaScript bundle, not in a cookie, and not in a browser response body. Incoming `Authorization` from the browser is stripped. Vite refuses to start the dev server if the token is missing, short, or a placeholder. Nginx substitutes `API_AUTH_TOKEN_WEB` at container start.
 
 | Browser request | Forwarded | Notes |
 | --- | --- | --- |
 | `GET /api/health`, `GET /api/health/ready` | yes | Unauthenticated. |
 | `GET /api/recipes` | yes | List. |
 | `GET /api/recipes/:id` | yes | Read. |
-| Favorite and rating write | yes | Path is not in the tree. The documented API save is a full `PUT /recipes`. |
-| Full recipe save | no | The proxy must not forward it from the browser. |
+| Favorite and rating write | no | Path is not in the tree. |
+| Full recipe save | no | `PUT /api/recipes` is 405. |
 | Step check-off | no | Device only. Not an API call. |
-
-Local development uses the same rule: the dev server attaches the web token on recipe proxy requests and never exposes it to client code.
-
-A missing or short web token refuses to boot, same bar as the other caller token. Placeholders are refused. Local compose may use a non-secret web token that is not valid on the NAS.
 
 ## What the list and recipe need
 
-The documented list item is `id` and `title`. The kitchen list also needs `favorite` (the toggle), `tags` (the chips), and `rating` (read-only on cards). The documented read field list has no `tags`. Those fields are an API gap. Filters apply to the loaded list until the API offers a filtered list.
-
-The documented save replaces the recipe. A phone write may set favorite and rating only, and records the actor as `system`. That write is not in the tree.
+The documented list item is `id` and `title`. Favorite, tags, and rating on cards wait on the list payload. The documented read field list has no `tags`.
 
 ## Theme
 
 Storage key `cookbook-theme`: `light`, `dark`, or `system`. Missing, junk, or a throwing store means `system`.
 
-An inline script in the document runs before paint. It reads the key, then `prefers-color-scheme` when the choice is `system`. It sets `data-theme` to `light` or `dark` and `color-scheme` to match. Semantic variables in `@cookbook/ui` key off that hint. Settings writes the key and updates the document. Not synced.
+An inline script in the document runs before paint. Semantic variables also follow `prefers-color-scheme` until a stored `light` or `dark` sets `data-theme`. Settings is not built, so a stored choice is only honored if it already exists.
 
 ## Install
 
-The manifest and Apple home-screen tags already exist. No service worker. Viewport, safe area, and `theme-color` are [tokens](design/tokens.md). Icon artwork is pending.
+The manifest and Apple home-screen tags already exist. No service worker. Viewport includes `viewport-fit=cover`. `theme-color` follows `--bg`. Icon artwork is pending.
 
 ## Tests
 
-The designer reviews each UI pull request by running the app locally. [demo](design/demo.md) is that bar. No CI screenshot job and no per-pull-request preview. In addition, when the proxy lands:
+The designer reviews each UI pull request by running the app locally. [demo](design/demo.md) is that bar. No CI screenshot job and no per-pull-request preview. Proxy checks:
 
 - The web token is not present in a document or a client bundle.
 - A proxied recipe request leaves the server with the web `Authorization` header.
