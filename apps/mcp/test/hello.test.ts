@@ -41,16 +41,17 @@ describe("mcp hello over streamable HTTP", () => {
     await close();
   });
 
-  it("exposes only the hello tool", async () => {
+  it("exposes hello plus the recipe tools", async () => {
     const client = await connectClient(baseUrl);
     try {
       const listed = await client.listTools();
       assert.deepEqual(
         listed.tools.map((tool) => tool.name),
-        ["hello"],
+        ["hello", "read", "list", "save"],
       );
-      assert.equal(listed.tools[0]?.annotations?.readOnlyHint, true);
-      assert.equal(listed.tools[0]?.annotations?.destructiveHint, false);
+      const hello = listed.tools.find((tool) => tool.name === "hello");
+      assert.equal(hello?.annotations?.readOnlyHint, true);
+      assert.equal(hello?.annotations?.destructiveHint, false);
     } finally {
       await client.close();
     }

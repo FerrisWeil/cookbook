@@ -17,7 +17,7 @@ In-repo skills link to this file. They do not copy it.
 
 Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type. Do not merge without Taylor.
 
-Taylor owns outcomes, priority, product tradeoffs, and merge. The Engineer does discovery and research with Taylor in this chat, gets ahead of product and engineering issues, and asks him directly when his judgment matters, with a recommendation. The Designer owns UX.
+Taylor owns outcomes, priority, product tradeoffs, and merge. The Designer owns UX. The Engineer does discovery and research with Taylor in this chat, gets ahead of product and engineering issues, and asks him directly when his judgment matters, with a recommendation. The Engineer verifies both that new requirements faithfully reflect Taylor's design asks and that a pull request delivers those requirements, with observed evidence and explicit gaps. Green CI and `covers()` mapping are not acceptance.
 
 Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request. Consequential behavior also gets the independent review in cookbook-review. Reversible wording does not get a second reviewer.
 
@@ -69,7 +69,7 @@ Unit tests use Node's built-in runner. They live next to the app they test (`app
 
 ## Full stack
 
-Run commands are in the [README](README.md). Cloud agents use the local command. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md)).
+Run commands are in the [README](README.md). Cloud agents use the local command. NAS deploy does not publish host ports. The accepted production file is not in the tree ([0015](docs/decisions/0015-production.md), [0024](docs/decisions/0024-production-images-and-operator-deploy.md)).
 
 ## Secrets
 

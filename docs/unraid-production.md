@@ -1,6 +1,6 @@
 # Unraid production
 
-Detail for [0015](decisions/0015-production.md). Database roles are in [security-review.md](security-review.md).
+Current state for [0015](decisions/0015-production.md) and [0024](decisions/0024-production-images-and-operator-deploy.md). Database roles are in [security-review.md](security-review.md). Caller tokens are in [security-review.md](security-review.md) and [api.md](api.md).
 
 The accepted production file is not in the tree. The file that is in the tree is `deploy/nas/docker-compose.yml`. It builds on the NAS, publishes no host ports, uses one superuser password, advertises `tag:cookbook-web`, and mounts a Tailscale Serve config. In that skeleton, nginx listens on `127.0.0.1:80` and MCP binds `127.0.0.1`. The target below replaces that skeleton. When the production file is added, delete the skeleton so only one NAS Compose file remains.
 
@@ -8,7 +8,7 @@ The accepted production file is not in the tree. The file that is in the tree is
 
 One Compose Manager stack. Two paths, from a checkout that is not an SMB or NFS share:
 
-- Compose file: `docker-compose.unraid.yml` at the repo root. Nginx and Tailscale config stay in `deploy/nas/`.
+- Compose file: `docker-compose.unraid.yml` at the repo root. Nginx config stays in `deploy/nas/`. Serve JSON stays there unmounted.
 - Env file: `.env` beside that file. Every secret for every service. No second env file.
 
 The stack name and UI label are whatever Taylor types in the Compose Manager screen. The repo does not store them. There is no `unraid/*.xml`.
@@ -21,13 +21,15 @@ There is no `up --build` on this path.
 
 ## Images
 
+App images are not signed. The pin is the `sha-<short>` tag. Third-party images in the production file are `name:tag@sha256:…`, the same form as local compose.
+
 | Image | Who builds it |
 | --- | --- |
 | `ghcr.io/ferrisweil/cookbook-api` | This repo, on `master` |
 | `ghcr.io/ferrisweil/cookbook-web` | This repo, on `master` |
 | `ghcr.io/ferrisweil/cookbook-mcp` | This repo, on `master` |
-| `postgres:16-alpine` | Upstream. Not `latest`. |
-| `tailscale/tailscale:stable` | Upstream. |
+| `postgres` | Upstream. Digest-pinned. Not `latest`. |
+| `tailscale/tailscale` | Upstream. Digest-pinned. Not a floating channel tag. |
 
 `.github/workflows/docker.yml` is not in the tree. The target is separate from CI:
 
@@ -41,7 +43,7 @@ GitHub creates each package private on first push. `GITHUB_TOKEN` cannot change 
 - [cookbook-web](https://github.com/FerrisWeil/cookbook/pkgs/container/cookbook-web)
 - [cookbook-mcp](https://github.com/FerrisWeil/cookbook/pkgs/container/cookbook-mcp)
 
-The NAS is a PC running Unraid. Publish `linux/amd64` only. The images contain no secrets and no recipes.
+The NAS is a PC running Unraid. Publish `linux/amd64` only. The images contain no secrets and no recipes. There is no pull token on the NAS once the packages are public.
 
 ## Compose target
 
@@ -49,16 +51,18 @@ The NAS is a PC running Unraid. Publish `linux/amd64` only. The images contain n
 
 | Service | Image | Network |
 | --- | --- | --- |
-| `db` | `postgres:16-alpine` | `db` only (`internal: true`) |
+| `db` | postgres, digest-pinned | `db` only (`internal: true`) |
 | `api` | cookbook-api | `db` and `app` |
-| `web-tailscale` | `tailscale/tailscale:stable` | `app` |
+| `web-tailscale` | tailscale, digest-pinned | `app` |
 | `web` | cookbook-web | `network_mode: service:web-tailscale` |
-| `mcp-tailscale` | `tailscale/tailscale:stable` | `app` |
+| `mcp-tailscale` | tailscale, digest-pinned | `app` |
 | `mcp` | cookbook-mcp | `network_mode: service:mcp-tailscale` |
 
 Postgres passwords and roles are the three values in the security doc. No dev password in this file. The `db` healthcheck is `pg_isready -U postgres -d cookbook`.
 
-Nginx and Tailscale config mounts are `./deploy/nas/nginx.conf` and `./deploy/nas/tailscale`. On this target, nginx listens on `0.0.0.0:80` and MCP `BIND_HOST` is `0.0.0.0`. The skeleton's loopback bind was only for Serve. Init runs only on an empty data directory. If `postgres/` already exists from the skeleton, stop the stack and rename that directory before the first boot.
+Nginx config is `./deploy/nas/nginx.conf`. The Serve JSON files stay in `deploy/nas/tailscale/` and are not mounted. Sidecars do not set `TS_SERVE_CONFIG`. On this target, nginx listens on `0.0.0.0:80` and MCP `BIND_HOST` is `0.0.0.0`. The skeleton's loopback bind was only for Serve. Init runs only on an empty data directory. If `postgres/` already exists from the skeleton, stop the stack and rename that directory before the first boot.
+
+Web and MCP reach the API as `api` on the `app` network. MCP is not on the `db` network. The API is not a tailnet node.
 
 ## Tailscale
 
@@ -99,11 +103,11 @@ Two auth keys, reusable, not ephemeral, and pre-authorized if the tailnet requir
 
 Health on the tailnet: `http://cookbook/` and `http://cookbook-mcp:8787/health`. MCP calls still need the bearer token.
 
-`http://cookbook/` is not a secure context. The installable app does not install from that URL until a later ADR turns Serve on.
+`http://cookbook/` is not a secure context. Serve stays off ([0024](decisions/0024-production-images-and-operator-deploy.md)). The installable app does not install from that URL.
 
 ## Data and backups
 
-`COOKBOOK_DATA_DIR` defaults to `/mnt/user/appdata/cookbook`. The directory is not an SMB or NFS share. `.env` next to the compose file is mode `0600` and is not mounted into a container.
+`COOKBOOK_DATA_DIR` defaults to `/mnt/user/appdata/cookbook`. The directory is not an SMB or NFS share. `.env` next to the compose file is mode `0600` and is not mounted into a container. That file holds every secret: the three Postgres passwords, `MCP_AUTH_TOKEN`, the two API caller tokens, the two Tailscale auth keys, and `COOKBOOK_IMAGE_TAG`. No second env file. No scheduled dump job in this repo.
 
 | Path | Contents |
 | --- | --- |
@@ -140,4 +144,4 @@ Steady state pins `COOKBOOK_IMAGE_TAG` to a `sha-` tag. `.env.example` may conta
 
 Rollback is steps 2–5 with the previous sha. If the old API will not boot because a migration ran, restore the dump into an empty `postgres/` directory. There is no down migration.
 
-No Watchtower. Naming `api`, `web`, and `mcp` keeps a sha bump from also moving `postgres:16-alpine` or `tailscale/tailscale:stable`. Changing those two images is an edit to the compose file, and it gets a dump first.
+No Watchtower. Naming `api`, `web`, and `mcp` keeps a sha bump from also moving the digest-pinned Postgres or Tailscale image. Changing those two images is an edit to the compose file, and it gets a dump first.
