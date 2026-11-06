@@ -10,7 +10,7 @@ One forest. Several roots. Arbitrary depth. Parent and leaf are properties of th
 
 - `id` is a stable positive integer, written as a double-quoted string (`"12"`). YAML `12` and `"12"` would be the same identity if both were accepted; unquoted numbers are rejected so YAML does not coerce `12` / `012` / `1e2`. IDs do not encode position. Do not renumber because a node moved.
 - `status` is `accepted`, `implemented`, or `verified`. New leaves start `accepted`.
-- `text` is one line of testable behavior.
+- `text` is one line of testable behavior, including on parents and roots. Not a category, topic, or heading (`MCP.`, `Security.`). A parent names the behavior its children decompose.
 - `children`, when present, has at least two entries. No empty or single-child list. Collapse a single remaining child into the parent.
 - A child is a nested node or `{ ref: "12" }`. A ref is not a node: it has no id, status, text, or children.
 - Roots may set `kind: shared`. Omit `kind` (or `kind: normal`) for a normal root. `kind` is only valid on a root.
@@ -38,12 +38,9 @@ Exactly one test case per leaf. Parent nodes are not bound. Split a leaf rather 
 ```js
 import { verifies } from "@cookbook/test";
 
-it(
-  "returns that recipe",
-  verifies("6", "c4b8cb4c3b9ed214", () => {
-    // assertions
-  }),
-);
+it("returns that recipe", verifies("6", "c4b8cb4c3b9ed214", () => {
+  // assertions
+}));
 ```
 
 The fingerprint is `fp-v1`: the first 16 hex characters of SHA-256 over `cookbook.req.fp.v1\n` plus `JSON.stringify({ v: 1, id, text })`. Put the literal in the test source. Do not compute the expected value from the YAML at test time. Editing that leaf's id or text breaks the binding. Editing a parent does not change a child's fingerprint; review still checks the parent text against its children.

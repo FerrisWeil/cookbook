@@ -779,7 +779,7 @@ function check({ requirementFiles, testFiles, decisionFiles = [], evidence = [] 
   const yamlFiles = files.filter((file) => file.name.endsWith(".yaml"));
 
   for (const file of files) {
-    if (file.name === "README.md" || file.name === "migration.md") continue;
+    if (file.name === "README.md") continue;
     if (file.name.endsWith(".md")) {
       errors.push(`${file.name}: the catalog is ${CATALOG_NAME}`);
     }

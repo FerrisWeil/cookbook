@@ -9,6 +9,8 @@ Read [CONTRIBUTING.md](../../../CONTRIBUTING.md#docs) and [docs/requirements/REA
 
 The catalog is `docs/requirements/requirements.yaml`. The shape is `docs/requirements/schema.json`. `pnpm check` enforces it. Do not add a web view. YAML catalogs portable application behavior. `verifies(id, fingerprint, fn)` binds one test to one leaf; it is not acceptance. An ADR never cites a requirement ID.
 
+`text` is a requirement: one line of testable behavior, including on parents and roots. Do not write a category, topic, or heading (`MCP.`, `Security.`, `Kitchen UI.`, `Recipes.`). A parent names the behavior its children decompose. Do not invent scope to make a label sound like a requirement.
+
 ## IDs
 
 Quote every ID: `"12"`. IDs are stable integers. Do not renumber because a node moved. Do not reuse a deleted id.

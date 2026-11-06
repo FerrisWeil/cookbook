@@ -4,7 +4,7 @@ requirements:
   - id: "5"
     kind: shared
     status: verified
-    text: "MCP authentication and unauthenticated liveness."
+    text: "The MCP refuses recipe calls without the shared secret and answers liveness without a secret or recipe data."
     children:
       - id: "1"
         status: verified
@@ -20,7 +20,7 @@ requirements:
         text: "Given a liveness check, the agent is not given recipe data."
   - id: "32"
     status: verified
-    text: "MCP."
+    text: "Agents can read, list, and save recipes through MCP with the shared secret, and those are the only recipe tools."
     children:
       - id: "13"
         status: verified
@@ -110,7 +110,7 @@ requirements:
             text: "Given a search request, the agent is told that operation is not available."
   - id: "67"
     status: accepted
-    text: "Kitchen UI."
+    text: "A user can open and install the app on a desktop or phone, use three accessible screens, choose a theme, and on a phone write favorite and rating."
     children:
       - id: "35"
         status: accepted
@@ -140,7 +140,7 @@ requirements:
             text: "Given a loaded app, a failed read is told in words."
       - id: "52"
         status: accepted
-        text: "The app has three screens."
+        text: "The user reaches the recipe list, one recipe, and settings."
         children:
           - id: "41"
             status: accepted
@@ -177,7 +177,7 @@ requirements:
             text: "The list includes a recipe whose favorite is off."
       - id: "58"
         status: accepted
-        text: "The three screens have an accessibility floor."
+        text: "The three screens meet WCAG 2.2 AA, with large primary targets, click or tap, zoom, and no overlap on the recipe."
         children:
           - id: "53"
             status: accepted
@@ -222,7 +222,7 @@ requirements:
             text: "The phone write screen offers the favorite and the rating."
   - id: "84"
     status: accepted
-    text: "Security."
+    text: "The public tree holds no secret, the database is unpublished with separate roles, a local documented token may boot, only web and MCP call the API, and an API call does not ask for a shared secret."
     children:
       - id: "73"
         status: accepted
@@ -277,7 +277,7 @@ requirements:
         text: "Given an API call, the caller is not asked for a shared secret."
   - id: "135"
     status: accepted
-    text: "Recipes."
+    text: "A recipe stores ingredient lines, favorite, rating, optional nutrition, title, steps, servings, and a stable id, and delete hides it."
     children:
       - id: "90"
         status: verified
@@ -441,7 +441,7 @@ requirements:
             text: "Given a changed title, the recipe keeps its id."
   - id: "147"
     status: implemented
-    text: "Foundation."
+    text: "A local compose stack runs the apps, the home page reports readiness, health needs no secret, MCP requires the bearer, and Postgres applies the schema."
     children:
       - id: "136"
         status: implemented
@@ -484,7 +484,7 @@ requirements:
             text: "Given the seed, app_meta receives the seed row."
   - id: "154"
     status: accepted
-    text: "Design system."
+    text: "A theme stays readable, and screens use shared components in that theme."
     children:
       - id: "150"
         status: accepted
