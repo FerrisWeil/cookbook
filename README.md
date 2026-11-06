@@ -29,7 +29,7 @@ Postgres is not published on the host. `docker compose exec db psql -U postgres`
 
 The web home page shows Cookbook and `database up`.
 
-Local MCP token (not for the NAS): `local-dev-token-not-for-nas`. Local compose sets `MCP_ALLOW_DEV_TOKEN=1` so that token can boot. The NAS file does not.
+Local MCP token (not for the NAS): `local-dev-token-not-for-nas`. Local compose sets `MCP_ALLOW_DEV_TOKEN=1` so that token can boot. Local API caller tokens: `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas`, with `API_ALLOW_DEV_TOKEN=1`. The NAS file sets none of those flags.
 
 ```bash
 curl -sS http://localhost:8787/health
@@ -60,7 +60,7 @@ The Docker / Tailscale / bearer-token pattern follows [nas-mcp](https://github.c
 ```
 apps/web            Responsive PWA skeleton (Vite + React)
 apps/api            HTTP API, migrations, seed
-apps/mcp            Cookbook MCP (hello + bearer auth)
+apps/mcp            Cookbook MCP (read, list, save, hello + bearer auth)
 packages/shared     Shared TypeScript types
 packages/test       `covers()` helper for requirement IDs in tests
 db/migrations/      Numbered SQL. The API applies it on startup.

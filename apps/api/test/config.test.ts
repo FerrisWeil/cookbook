@@ -8,12 +8,17 @@ import { covers } from "@cookbook/test";
 
 import { loadConfig } from "../src/config.ts";
 
+const CALLER_TOKENS = {
+  API_AUTH_TOKEN_MCP: "test-api-mcp-token-xx",
+  API_AUTH_TOKEN_WEB: "test-api-web-token-xx",
+};
+
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 describe("api config", () => {
   it("refuses to start without app and migrator credentials", () => {
     assert.throws(
-      () => loadConfig({ PORT: "3000" }),
+      () => loadConfig({ PORT: "3000", ...CALLER_TOKENS }),
       /DATABASE_URL and MIGRATOR_DATABASE_URL, or POSTGRES_APP_USER, POSTGRES_APP_PASSWORD, POSTGRES_MIGRATOR_USER, and POSTGRES_MIGRATOR_PASSWORD, are required/,
     );
   });
@@ -23,6 +28,7 @@ describe("api config", () => {
       () =>
         loadConfig({
           DATABASE_URL: "postgres://cookbook_app:secret@db:5432/cookbook",
+          ...CALLER_TOKENS,
         }),
       /DATABASE_URL and MIGRATOR_DATABASE_URL must both be set/,
     );
@@ -35,6 +41,7 @@ describe("api config", () => {
         loadConfig({
           DATABASE_URL: url,
           MIGRATOR_DATABASE_URL: url,
+          ...CALLER_TOKENS,
         }),
       /migrator and app database urls must be different/,
     );
@@ -47,6 +54,7 @@ describe("api config", () => {
     const config = loadConfig({
       DATABASE_URL: databaseUrl,
       MIGRATOR_DATABASE_URL: migratorDatabaseUrl,
+      ...CALLER_TOKENS,
     });
     assert.equal(config.databaseUrl, databaseUrl);
     assert.equal(config.migratorDatabaseUrl, migratorDatabaseUrl);
@@ -61,6 +69,7 @@ describe("api config", () => {
       POSTGRES_HOST: "db",
       POSTGRES_PORT: "5432",
       POSTGRES_DB: "cookbook",
+      ...CALLER_TOKENS,
     });
     const app = new URL(config.databaseUrl);
     const migrator = new URL(config.migratorDatabaseUrl);
@@ -80,6 +89,7 @@ describe("api config", () => {
           DATABASE_URL: "postgres://cookbook_app:@db:5432/cookbook",
           MIGRATOR_DATABASE_URL:
             "postgres://cookbook_migrator:other-secret@db:5432/cookbook",
+          ...CALLER_TOKENS,
         }),
       /DATABASE_URL is required/,
     );
@@ -92,6 +102,7 @@ describe("api config", () => {
           DATABASE_URL: "postgres://cookbook_app:cookbook@db:5432/cookbook",
           MIGRATOR_DATABASE_URL:
             "postgres://cookbook_migrator:other-secret@db:5432/cookbook",
+          ...CALLER_TOKENS,
         }),
       /DATABASE_URL is a placeholder or the old shared dev password/,
     );
@@ -106,10 +117,75 @@ describe("api config", () => {
             POSTGRES_APP_PASSWORD: password,
             POSTGRES_MIGRATOR_USER: "cookbook_migrator",
             POSTGRES_MIGRATOR_PASSWORD: "a-real-migrator-secret",
+            ...CALLER_TOKENS,
           }),
         /POSTGRES_APP_PASSWORD is a placeholder or the old shared dev password/,
       );
     }
+  });
+
+  it("refuses to start without API caller tokens", () => {
+    const database = {
+      DATABASE_URL: "postgres://cookbook_app:secret@db:5432/cookbook",
+      MIGRATOR_DATABASE_URL:
+        "postgres://cookbook_migrator:other@db:5432/cookbook",
+    };
+    assert.throws(() => loadConfig(database), /API_AUTH_TOKEN_MCP is required/);
+    assert.throws(
+      () => loadConfig({ ...database, API_AUTH_TOKEN_MCP: "test-api-mcp-token-xx" }),
+      /API_AUTH_TOKEN_WEB is required/,
+    );
+  });
+
+  it("refuses identical caller tokens and tokens that match MCP_AUTH_TOKEN", () => {
+    const database = {
+      DATABASE_URL: "postgres://cookbook_app:secret@db:5432/cookbook",
+      MIGRATOR_DATABASE_URL:
+        "postgres://cookbook_migrator:other@db:5432/cookbook",
+    };
+    assert.throws(
+      () =>
+        loadConfig({
+          ...database,
+          API_AUTH_TOKEN_MCP: "test-api-mcp-token-xx",
+          API_AUTH_TOKEN_WEB: "test-api-mcp-token-xx",
+        }),
+      /API_AUTH_TOKEN_MCP and API_AUTH_TOKEN_WEB must differ/,
+    );
+    assert.throws(
+      () =>
+        loadConfig({
+          ...database,
+          ...CALLER_TOKENS,
+          MCP_AUTH_TOKEN: "test-api-mcp-token-xx",
+        }),
+      /API caller tokens must differ from MCP_AUTH_TOKEN/,
+    );
+  });
+
+  it("allows local caller tokens only when API_ALLOW_DEV_TOKEN=1", () => {
+    const database = {
+      DATABASE_URL: "postgres://cookbook_app:secret@db:5432/cookbook",
+      MIGRATOR_DATABASE_URL:
+        "postgres://cookbook_migrator:other@db:5432/cookbook",
+    };
+    assert.throws(
+      () =>
+        loadConfig({
+          ...database,
+          API_AUTH_TOKEN_MCP: "local-dev-api-mcp-token-not-for-nas",
+          API_AUTH_TOKEN_WEB: "local-dev-api-web-token-not-for-nas",
+        }),
+      /API_ALLOW_DEV_TOKEN=1/,
+    );
+    const config = loadConfig({
+      ...database,
+      API_AUTH_TOKEN_MCP: "local-dev-api-mcp-token-not-for-nas",
+      API_AUTH_TOKEN_WEB: "local-dev-api-web-token-not-for-nas",
+      API_ALLOW_DEV_TOKEN: "1",
+    });
+    assert.equal(config.apiAuthTokenMcp, "local-dev-api-mcp-token-not-for-nas");
+    assert.equal(config.apiAuthTokenWeb, "local-dev-api-web-token-not-for-nas");
   });
 
   it("reads bind address, port, and migration paths", () => {
@@ -121,6 +197,7 @@ describe("api config", () => {
       PORT: "3000",
       MIGRATIONS_DIR: "/app/db/migrations",
       SEED_FILE: "/app/db/seed.sql",
+      ...CALLER_TOKENS,
     });
     assert.equal(config.bindHost, "0.0.0.0");
     assert.equal(config.port, 3000);

@@ -11,6 +11,8 @@ trap cleanup EXIT
 # Render the NAS file with dummy values. Do not start that stack.
 POSTGRES_PASSWORD=dummy-password \
   MCP_AUTH_TOKEN=dummy-mcp-token-not-a-secret \
+  API_AUTH_TOKEN_MCP=dummy-api-mcp-token-not-a-secret \
+  API_AUTH_TOKEN_WEB=dummy-api-web-token-not-a-secret \
   TS_WEB_AUTHKEY=dummy-web-authkey \
   TS_MCP_AUTHKEY=dummy-mcp-authkey \
   docker compose -f deploy/nas/docker-compose.yml config \
@@ -23,6 +25,10 @@ grep -q 'dummy-mcp-authkey' /tmp/cookbook-nas-config.yml
 grep -q 'BIND_HOST: 127.0.0.1' /tmp/cookbook-nas-config.yml
 if grep -q 'MCP_ALLOW_DEV_TOKEN' /tmp/cookbook-nas-config.yml; then
   echo "NAS compose must not set MCP_ALLOW_DEV_TOKEN" >&2
+  exit 1
+fi
+if grep -q 'API_ALLOW_DEV_TOKEN' /tmp/cookbook-nas-config.yml; then
+  echo "NAS compose must not set API_ALLOW_DEV_TOKEN" >&2
   exit 1
 fi
 if grep -q '\.\./\.\./data' /tmp/cookbook-nas-config.yml; then
@@ -107,11 +113,22 @@ grep -q '"status":"ok"' /tmp/cookbook-mcp-health.json
 code=$(curl -sS -o /tmp/cookbook-mcp-unauth.json -w '%{http_code}' http://127.0.0.1:8787/mcp)
 test "$code" = "401"
 
+code=$(curl -sS -o /tmp/cookbook-api-unauth.json -w '%{http_code}' http://127.0.0.1:3000/recipes)
+test "$code" = "401"
+
+api_mcp_token="${API_AUTH_TOKEN_MCP:-local-dev-api-mcp-token-not-for-nas}"
+curl -fsS -H "Authorization: Bearer ${api_mcp_token}" \
+  http://127.0.0.1:3000/recipes | tee /tmp/cookbook-api-recipes.json
+grep -q '"recipes":' /tmp/cookbook-api-recipes.json
+
+curl -fsS http://127.0.0.1:8080/api/recipes | tee /tmp/cookbook-web-recipes.json
+grep -q '"recipes":' /tmp/cookbook-web-recipes.json
+
 # Same client the unit tests use. Requires `pnpm install` (CI does this).
 (
   cd apps/mcp
   MCP_URL=http://127.0.0.1:8787/mcp \
-    MCP_SMOKE_TOKEN=local-dev-token-not-for-nas \
+    MCP_SMOKE_TOKEN="${MCP_AUTH_TOKEN:-local-dev-token-not-for-nas}" \
     node --input-type=module <<'EOF'
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
@@ -129,13 +146,35 @@ const transport = new StreamableHTTPClientTransport(new URL(url), {
 });
 await client.connect(transport);
 try {
-  const result = await client.callTool({ name: "hello", arguments: {} });
-  const body = JSON.stringify(result);
-  if (result.isError || !body.includes("Cookbook MCP is up.")) {
-    console.error(body);
+  const hello = await client.callTool({ name: "hello", arguments: {} });
+  const helloBody = JSON.stringify(hello);
+  if (hello.isError || !helloBody.includes("Cookbook MCP is up.")) {
+    console.error(helloBody);
     process.exit(1);
   }
-  process.stdout.write(`${body}\n`);
+  process.stdout.write(`${helloBody}\n`);
+  const listed = await client.listTools();
+  const names = listed.tools.map((tool) => tool.name).sort().join(",");
+  if (names !== "hello,list,read,save") {
+    console.error(names);
+    process.exit(1);
+  }
+  const saved = await client.callTool({
+    name: "save",
+    arguments: {
+      title: "Example: Smoke",
+      steps: ["check"],
+      servings: 1,
+      actor: "chef",
+    },
+  });
+  if (saved.isError) {
+    process.exit(1);
+  }
+  const listedRecipes = await client.callTool({ name: "list", arguments: {} });
+  if (listedRecipes.isError) {
+    process.exit(1);
+  }
 } finally {
   await client.close();
 }

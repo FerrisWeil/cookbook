@@ -7,6 +7,9 @@ import { covers } from "@cookbook/test";
 import { getReadyStatus } from "../src/health.ts";
 import { listen } from "../src/http.ts";
 import type { SqlClient } from "../src/migrate.ts";
+import { createMemoryRecipeStore } from "../src/recipes/index.ts";
+
+const CALLER_TOKENS = ["test-api-mcp-token-xx", "test-api-web-token-xx"];
 
 describe("getReadyStatus", () => {
   it("reports database up and seed true when app_meta is present", async () => {
@@ -57,6 +60,8 @@ describe("http health", () => {
   before(async () => {
     const { server, url } = await listen("127.0.0.1", 0, {
       getReady: async () => ready,
+      recipes: createMemoryRecipeStore(),
+      callerTokens: CALLER_TOKENS,
     });
     baseUrl = url;
     close = () =>
