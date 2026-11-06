@@ -8,18 +8,18 @@ Button lives in `@cookbook/ui`. Favorite, rating, and filter chips are not in th
 
 | Kind | Fill |
 | --- | --- |
-| Primary | Herb (`--accent` with `--accent-contrast` text) |
+| Primary | Ocean (`--accent` with `--accent-contrast` text) |
 | Tonal | `--bg-elevated` |
 | Quiet | No fill |
 | Destructive | `--danger` / `--danger-bg` |
 | Floating icon button | Opaque fill from a contrast-tested pair |
 | Favorite toggle | Quiet until on |
 | Rating toggle | Quiet until on |
-| Tag filter chips | Pill-shaped. Tonal when off, herb when on |
+| Tag filter chips | Pill-shaped. Tonal when off, ocean when on |
 
 ## Size
 
-Default height 48px. Minimum 44px (`--hit`). The hit area may extend past the visual. Buttons use 8px radius. Chips are pill-shaped.
+Default height 48px. Minimum 44px (`--hit`). The hit area may extend past the visual. Buttons use `--radius-control` (0.75rem). Chips are pill-shaped. The recipe Back control is Primary.
 
 ## Labels
 

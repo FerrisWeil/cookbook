@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img">
   <title>Phone wireframe: recipe list, one card fill, favorite sibling, no theme control</title>
-  <rect width="390" height="844" fill="#f6f1e9"/>
-  <text x="16" y="36" fill="#5c5348" font-family="system-ui, sans-serif" font-size="12">safe area</text>
-  <text x="16" y="88" fill="#2b241c" font-family="Georgia, serif" font-size="32">Recipes</text>
-  <rect x="16" y="116" width="358" height="112" rx="12" fill="#efe6d6" stroke="#7d7264"/>
-  <text x="32" y="152" fill="#2b241c" font-family="Georgia, serif" font-size="22">Example: Tomato lentils</text>
-  <text x="342" y="152" text-anchor="middle" fill="#3d5a40" font-family="system-ui, sans-serif" font-size="20">&#9733;</text>
-  <text x="32" y="180" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">&#9733;&#9733;&#9733;&#9733; 4/5</text>
-  <text x="32" y="204" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">vegetarian &#183; pantry +1</text>
-  <rect x="16" y="244" width="358" height="112" rx="12" fill="#efe6d6" stroke="#7d7264"/>
-  <text x="32" y="280" fill="#2b241c" font-family="Georgia, serif" font-size="22">Example: Weeknight oats</text>
-  <text x="342" y="280" text-anchor="middle" fill="#5c5348" font-family="system-ui, sans-serif" font-size="20">&#9734;</text>
-  <text x="32" y="332" fill="#5c5348" font-family="system-ui, sans-serif" font-size="14">breakfast &#183; vegetarian</text>
-  <text x="16" y="392" fill="#5c5348" font-family="system-ui, sans-serif" font-size="13">Example data. One card fill. No theme control.</text>
-  <text x="16" y="800" fill="#5c5348" font-family="system-ui, sans-serif" font-size="12">last line stays above the safe area</text>
+  <rect width="390" height="844" fill="#f5f9fc"/>
+  <text x="16" y="36" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="12">safe area</text>
+  <text x="16" y="88" fill="#0b2b51" font-family="system-ui, sans-serif" font-size="32">Recipes</text>
+  <rect x="16" y="116" width="358" height="112" rx="16" fill="#d7e6f5" stroke="#5a7390"/>
+  <text x="32" y="152" fill="#0b2b51" font-family="system-ui, sans-serif" font-size="22">Example: Tomato lentils</text>
+  <text x="342" y="152" text-anchor="middle" fill="#134175" font-family="system-ui, sans-serif" font-size="20">&#9733;</text>
+  <text x="32" y="180" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="14">&#9733;&#9733;&#9733;&#9733; 4/5</text>
+  <text x="32" y="204" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="14">vegetarian &#183; pantry +1</text>
+  <rect x="16" y="244" width="358" height="112" rx="16" fill="#d7e6f5" stroke="#5a7390"/>
+  <text x="32" y="280" fill="#0b2b51" font-family="system-ui, sans-serif" font-size="22">Example: Weeknight oats</text>
+  <text x="342" y="280" text-anchor="middle" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="20">&#9734;</text>
+  <text x="32" y="332" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="14">breakfast &#183; vegetarian</text>
+  <text x="16" y="392" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="13">Example data. One card fill. No theme control.</text>
+  <text x="16" y="800" fill="#3a5a78" font-family="system-ui, sans-serif" font-size="12">last line stays above the safe area</text>
 </svg>
