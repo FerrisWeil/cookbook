@@ -110,7 +110,7 @@ requirements:
             text: "Given a search request, the agent is told that operation is not available."
   - id: "67"
     status: accepted
-    text: "A user can open and install the app on a desktop or phone, use three accessible screens, choose a theme, and on a phone write favorite and rating."
+    text: "A user can open and install the app on a desktop or phone, use three accessible screens, choose a theme, on a phone write favorite and rating, check off steps on the recipe, keep the screen awake while a recipe is open, and show only favorites on the list."
     children:
       - id: "35"
         status: implemented
@@ -220,6 +220,25 @@ requirements:
           - id: "65"
             status: accepted
             text: "The phone write screen offers the favorite and the rating."
+      - id: "155"
+        status: accepted
+        text: "On the recipe screen, steps can be checked off."
+        children:
+          - id: "160"
+            status: accepted
+            text: "On the recipe screen, steps can be checked off."
+          - id: "156"
+            status: accepted
+            text: "A checked step is stored on the device."
+          - id: "157"
+            status: accepted
+            text: "A checked step is not sent to the API."
+      - id: "158"
+        status: accepted
+        text: "While a recipe is open, the screen stays awake where the browser supports it."
+      - id: "159"
+        status: accepted
+        text: "On the recipe list, a user can show only favorites."
   - id: "84"
     status: accepted
     text: "The public tree holds no secret, the database is unpublished with separate roles, a local documented token may boot, only web and MCP call the API, and an API call does not ask for a shared secret."
