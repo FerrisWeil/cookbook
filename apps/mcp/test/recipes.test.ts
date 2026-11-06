@@ -95,9 +95,7 @@ describe("mcp recipe tools", () => {
       await new Promise<void>((resolve, reject) => {
         mcp.server.close((error) => (error ? reject(error) : resolve()));
       });
-      await new Promise<void>((resolve, reject) => {
-        api.server.close((error) => (error ? reject(error) : resolve()));
-      });
+      await api.close();
     };
   });
 

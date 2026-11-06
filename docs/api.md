@@ -2,6 +2,8 @@
 
 Contract for [0021](decisions/0021-mcp-recipe-tools.md). Tables and domain rules are in [recipes.md](recipes.md). Token comparison, headers, and the health body are in [security-review.md](security-review.md). MCP tools are in [mcp.md](mcp.md).
 
+Fastify is the HTTP adapter. `listen` / `close` is the process boundary. Handlers depend on `ApiDeps` (`getReady`, `RecipeStore`, caller tokens). Fastify request, reply, and plugin types stay in that adapter. Domain validation stays in the recipe parsers; this layer does not add JSON Schema. A later transport should reuse those seams.
+
 Env names: `API_AUTH_TOKEN_MCP` and `API_AUTH_TOKEN_WEB`. Local compose may boot with `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas` when `API_ALLOW_DEV_TOKEN=1`. The NAS file does not set that flag.
 
 ## Liveness

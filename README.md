@@ -69,7 +69,7 @@ docs/decisions/     ADRs
 deploy/nas/         Unraid skeleton (no host ports)
 ```
 
-Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Web is Vite + React. The API is a Node HTTP server. MCP uses the TypeScript MCP SDK. Local Postgres roles are in [security review](docs/security-review.md). Supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). See [docs](docs/README.md).
+Workspace tooling is pnpm ([0009](docs/decisions/0009-repo-layout.md)). Web is Vite + React. The API uses Fastify as its HTTP adapter. MCP uses the TypeScript MCP SDK. Local Postgres roles are in [security review](docs/security-review.md). Supply-chain pins are [0014](docs/decisions/0014-supply-chain.md). See [docs](docs/README.md).
 
 ## Development without Docker
 

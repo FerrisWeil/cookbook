@@ -15,6 +15,7 @@
   ],
   "dependencies": {
     "@cookbook/shared": "workspace:*",
+    "fastify": "^5.12.8",
     "pg": "^8.16.3"
   },
   "devDependencies": {
