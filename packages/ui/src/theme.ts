@@ -4,8 +4,8 @@ export type ThemeChoice = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
 
 export const THEME_COLORS: Record<ResolvedTheme, string> = {
-  light: "#f6f1e9",
-  dark: "#1c1915",
+  light: "#f5f9fc",
+  dark: "#0b1a2c",
 };
 
 export function readThemeChoice(storage: Pick<Storage, "getItem"> | null): ThemeChoice {

@@ -177,7 +177,7 @@ requirements:
             text: "The list includes a recipe whose favorite is off."
       - id: "58"
         status: accepted
-        text: "The three screens meet WCAG 2.2 AA, with large primary targets, click or tap, zoom, and no overlap on the recipe."
+        text: "The three screens meet WCAG 2.2 AA, with large primary targets, click or tap, keyboard, visible focus, press feedback, reduced motion, zoom, and no overlap on the recipe."
         children:
           - id: "53"
             status: accepted
@@ -188,6 +188,18 @@ requirements:
           - id: "55"
             status: verified
             text: "Every action is reachable by a click or a tap."
+          - id: "161"
+            status: implemented
+            text: "Every action is reachable from the keyboard."
+          - id: "162"
+            status: implemented
+            text: "A focused control shows a visible focus indication."
+          - id: "163"
+            status: implemented
+            text: "A pressed control shows immediate feedback."
+          - id: "164"
+            status: implemented
+            text: "Given a request for less motion, a press does not scale or slide."
           - id: "56"
             status: verified
             text: "The user can zoom the page."

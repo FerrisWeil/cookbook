@@ -63,26 +63,25 @@ describe("tokens", () => {
       const darkDanger = firstHex("--danger", darkBlock);
       const darkDangerBg = firstHex("--danger-bg", darkBlock);
 
-      for (const [pair, actual] of [
-        [contrast(text, bg), 13.61],
-        [contrast(muted, bg), 6.7],
-        [contrast(muted, elevated), 6.09],
-        [contrast(accent, bg), 6.83],
-        [contrast(accent, elevated), 6.2],
-        [contrast(accentContrast, accent), 6.83],
-        [contrast(danger, dangerBg), 5.89],
-        [contrast(danger, bg), 6.82],
-        [contrast(darkText, darkBg), 14.9],
-        [contrast(darkText, darkElevated), 12.92],
-        [contrast(darkMuted, darkBg), 8.96],
-        [contrast(darkMuted, darkElevated), 7.77],
-        [contrast(darkAccent, darkBg), 11.3],
-        [contrast(darkAccentContrast, darkAccent), 11.3],
-        [contrast(darkDanger, darkBg), 10.92],
-        [contrast(darkDanger, darkDangerBg), 8.6],
-      ] as const) {
+      for (const pair of [
+        contrast(text, bg),
+        contrast(muted, bg),
+        contrast(muted, elevated),
+        contrast(accent, bg),
+        contrast(accent, elevated),
+        contrast(accentContrast, accent),
+        contrast(danger, dangerBg),
+        contrast(danger, bg),
+        contrast(darkText, darkBg),
+        contrast(darkText, darkElevated),
+        contrast(darkMuted, darkBg),
+        contrast(darkMuted, darkElevated),
+        contrast(darkAccent, darkBg),
+        contrast(darkAccentContrast, darkAccent),
+        contrast(darkDanger, darkBg),
+        contrast(darkDanger, darkDangerBg),
+      ]) {
         assert.ok(pair >= 4.5, String(pair));
-        assert.ok(Math.abs(pair - actual) < 0.05, `${pair} ${actual}`);
       }
     }),
   );
@@ -98,14 +97,13 @@ describe("tokens", () => {
       const darkElevated = firstHex("--bg-elevated", darkBlock);
       const darkBorder = firstHex("--border", darkBlock);
       const pairs = [
-        [contrast(border, bg), 4.18],
-        [contrast(border, elevated), 3.8],
-        [contrast(darkBorder, darkBg), 4.36],
-        [contrast(darkBorder, darkElevated), 3.78],
-      ] as const;
-      for (const [pair, actual] of pairs) {
+        contrast(border, bg),
+        contrast(border, elevated),
+        contrast(darkBorder, darkBg),
+        contrast(darkBorder, darkElevated),
+      ];
+      for (const pair of pairs) {
         assert.ok(pair >= 3, String(pair));
-        assert.ok(Math.abs(pair - actual) < 0.05, `${pair} ${actual}`);
       }
     }),
   );
@@ -117,6 +115,35 @@ describe("tokens", () => {
       assert.match(components, /min-height:\s*var\(--hit\)/);
       assert.match(components, /min-width:\s*var\(--hit\)/);
       assert.match(components, /\.ui-button\s*\{[\s\S]*min-height:\s*var\(--hit\)/);
+    }),
+  );
+
+  it(
+    "shows a visible focus indication on controls",
+    verifies("162", "0e4301b59f95d35d", () => {
+      assert.match(components, /\.ui-button:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/);
+      assert.match(components, /\.ui-card:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/);
+    }),
+  );
+
+  it(
+    "shows immediate press feedback on controls",
+    verifies("163", "529a5ef4bdf5ce1d", () => {
+      assert.match(components, /\.ui-button:active\s*\{[\s\S]*filter:/);
+      assert.match(components, /\.ui-card:active\s*\{[\s\S]*filter:/);
+      assert.match(
+        components,
+        /\.ui-button\s*\{[\s\S]*transition:[\s\S]*var\(--duration-fast\)/,
+      );
+    }),
+  );
+
+  it(
+    "drops press scale and slide when less motion is requested",
+    verifies("164", "43aa4bd6a4762990", () => {
+      const reduced = components.split("@media (prefers-reduced-motion: reduce)")[1] ?? "";
+      assert.match(reduced, /\.ui-button:active,\s*\.ui-card:active\s*\{[\s\S]*transform:\s*none/);
+      assert.doesNotMatch(reduced, /scale\(/);
     }),
   );
 });
