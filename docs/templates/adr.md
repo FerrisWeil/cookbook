@@ -1,10 +1,10 @@
 # NNNN. Title
 
-* Status: proposed | accepted | superseded by NNNN
+* Status: accepted | superseded by NNNN
 * Date: YYYY-MM-DD
-* Confirmed: Taylor, YYYY-MM-DD (accepted only)
+* Confirmed: Taylor, YYYY-MM-DD
 
-Status stays proposed until Taylor confirms in chat. Do not merge the pull request before that.
+Do not add new files from this template. Existing ADRs keep this shape. Status is accepted, never proposed.
 
 ## Problem
 

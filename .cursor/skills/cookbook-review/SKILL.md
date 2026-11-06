@@ -19,7 +19,7 @@ Diff against `master`.
 
 One readonly `generalPurpose` subagent. Model `grok-4.7-high`. The parent does the lead judgment.
 
-A second `grok-4.7-high` reviewer runs only if Taylor already said yes for that diff.
+A second `grok-4.7-high` reviewer runs only if Taylor already said yes for that diff. Do not add a review panel. Reversible wording does not get a second reviewer.
 
 `composer-2.5` does not review. Follow [Agents](../../../CONTRIBUTING.md#agents) for every other model rule. A fast variant is never a slug.
 
@@ -37,7 +37,7 @@ Use the ones that fit the diff.
 - Verification. Tests, or a demo, as Work types requires.
 - Complexity that the change does not need.
 - Security. Read [docs/security-review.md](../../../docs/security-review.md). Work types says when to fill it. Do not paste the checklist here.
-- Docs. An ADR holds the decision. Versions, ports, paths, env names, commands, and schemas belong in the current-state doc. Docs stay brief and readable: understandable over detail. The rules, including requirements, are in [Docs](../../../CONTRIBUTING.md#docs).
+- Docs. Do not add an ADR. New durable rationale lives in the living topic doc. Versions, ports, paths, env names, commands, and schemas belong there too. Docs stay brief and readable: understandable over detail. The rules, including requirements, are in [Docs](../../../CONTRIBUTING.md#docs).
 
 ## Lead judgment
 

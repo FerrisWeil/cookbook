@@ -15,17 +15,15 @@ In-repo skills link to this file. They do not copy it.
 
 ## Work types
 
-Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type and whether it needs an ADR (`yes` or `no`). Nothing is an accepted decision until Taylor confirms it in chat. Merged means accepted.
+Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type. Do not merge without Taylor.
 
-**Merged means accepted** (Taylor, 2026-10-26). Once an ADR pull request is merged to `master`, every ADR in it is accepted, including a file whose Status line still says Proposed. Record that by setting Status to accepted and Confirmed to the merge date, or to the earlier chat confirmation. That is why 0008 and 0010–0013 are accepted: foundation PR #1 merged while those files still said Proposed. A change of mind after merge is a new ADR that supersedes the old one. Do not rewrite a merged decision in place.
+Taylor owns outcomes, priority, product tradeoffs, and merge. The Engineer does discovery and research with Taylor in this chat, gets ahead of product and engineering issues, and asks him directly when his judgment matters, with a recommendation. The Designer owns UX.
 
-Do not merge an ADR pull request while a decision in it is still unconfirmed. Keep that pull request draft, and leave Status as Proposed, until Taylor confirms in chat and the Status lines are updated. The feature pull request waits for those Status lines to say accepted. Merging a draft that still says Proposed would accept those ADRs under the rule above, which is why the draft stays a draft.
-
-Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request.
+Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request. Consequential behavior also gets the independent review in cookbook-review. Reversible wording does not get a second reviewer.
 
 | Type | Meaning | Required with the pull request |
 | --- | --- | --- |
-| Feature | New user-facing behavior | Requirements in `docs/requirements/`, and a demo (screenshots or a recording) in the pull request before Taylor confirms. Functional Playwright tests only after he confirms it works. |
+| Feature | New user-facing behavior | In chat and the pull request body: outcome, scope, YAML IDs, the scenario, and open questions. Requirements YAML catalogs the behavior. A demo (screenshots or a recording) before Taylor confirms. `covers()` traces a test to an ID; it is not acceptance. Functional Playwright tests only after he confirms it works. |
 | Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. |
 | Docs | Documentation and workflow rules only | The doc change. |
 | Bug | A fix for broken behavior | A regression test that proves the fix, in this pull request. |
@@ -33,34 +31,30 @@ Every pull request is checked against the [security checklist](docs/security-rev
 | Chore | A chore or dependency update, including Dependabot | A lighter review. |
 | Security fix | A bug with priority | Handle it before other bugs. |
 
-**Decision** is a separate axis. Any type needs an ADR pull request first when the change makes a hard-to-reverse call or has real alternatives. ADRs hold only decisions that rarely change. A change of mind is a new ADR that supersedes the old one. Unconfirmed ADR text stays **Proposed** ([template](docs/templates/adr.md)). What an ADR may contain is [Docs](#docs).
+Do not add new ADR files. Put new durable rationale in the living topic doc ([map](docs/README.md)). Existing ADRs stay as historical records until retired. Merged means accepted: a decision on `master` is accepted. A change of mind updates the living doc and, when an existing ADR disagrees, retires or amends that file. Do not rewrite a merged decision in silence.
 
-Taylor confirmed the same day when to ask, and when a plan is committed.
-
-Ask in chat, and do not edit, only for an architecture decision or a feature decision Taylor has not already confirmed. Architecture means the Decision axis above: hard to reverse, or real alternatives (an ADR). A feature decision is user-facing behavior that was not already named. When the agent wants feedback, word each item as a question. Put every question in one chat message. Each question includes the reasoning, and a recommendation when a reasonable one exists. Taylor answers the ones he wants.
+Ask in chat, and do not edit, only for an architecture decision or a feature decision Taylor has not already confirmed. Architecture means a consequential or hard-to-reverse call: data safety, security boundaries, framework lock-in, or a meaningful user time commitment. A feature decision is user-facing behavior that was not already named. When the agent wants feedback, word each item as a question. Put every question in one chat message. Each question includes the reasoning, and a recommendation when a reasonable one exists. Taylor answers the ones he wants.
 
 Design updates and fixes do not wait for approval. Do them, then prove them. Do not expand scope.
 
-A plan stays in the chat and, when there is a pull request, in the pull request description. Do not commit a plan file. Commit writing only when the change is an ADR, or the documentation itself is the work.
+A plan stays in the chat and, when there is a pull request, in the pull request description. Do not commit a plan file, an OpenSpec tree, or a second spec artifact. Commit writing when the documentation itself is the work, including the living topic doc.
 
 ## Docs
 
 Taylor confirmed this on 2026-10-31.
 
-1. An ADR records a stable, high-level decision that rarely changes. It has no versions, ports, file paths, env names, commands, or schemas.
+1. Do not add new ADR files. Existing ADRs are historical. New durable rationale goes in the living topic doc. An existing ADR has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
 3. Docs are brief and readable: less verbose, understandable over detail.
-4. Requirements are `functional`, `non-functional`, or `system`. The type is a field. IDs have no type letter. The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
+4. Requirements YAML is the behavior catalog. `covers()` is traceability, not acceptance. Requirements are `functional`, `non-functional`, or `system`. The type is a field. IDs have no type letter. The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
 
    - One topic per file, for example `docs/requirements/1-mcp.yaml`. The topic is `1`, a requirement is `1.2`, and a detail is `1.2.1`. Quote every ID. The shape is in [docs/requirements/README.md](docs/requirements/README.md).
    - An ID with `implemented: false` may be deleted and the following IDs renumbered. Do not leave a gap or a `removed` marker. Once a detail has a test, its ID stays. Deleting that one leaves a gap, or `removed: true` on that number.
-   - A requirement states testable product behavior. It is timeless: no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later." Prefer a positive, testable statement. A negative is allowed only when it guards a real limit: permission, data safety, or security. Good: "On the recipe screen, no control overlaps the title, ingredient lines, or steps." Bad: "Recipe text is never read through a control." A requirement names no specific person. An actor value such as taylor, chef, or system may stay when it is data. Good: "A user can open the app on a desktop browser or a phone." Bad: "Taylor and his wife can open the app." A design idea, a visual style, a version name, and a scope or non-goal live in docs or an ADR.
-   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test that calls `covers("1.2.1")`. `check: manual` is only for behavior outside this repo. `see` is rare.
+   - A requirement states testable product behavior. It is timeless: no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later." Prefer a positive, testable statement. A negative is allowed only when it guards a real limit: permission, data safety, or security. Good: "On the recipe screen, no control overlaps the title, ingredient lines, or steps." Bad: "Recipe text is never read through a control." A requirement names no specific person. An actor value such as taylor, chef, or system may stay when it is data. Good: "A user can open the app on a desktop browser or a phone." Bad: "Taylor and his wife can open the app." A design idea, a visual style, a version name, and a scope or non-goal live in the living topic doc or an existing ADR.
+   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test that calls `covers("1.2.1")`. That call maps the test to the ID. It does not prove Taylor accepted the behavior. `check: manual` is only for behavior outside this repo. `see` is rare.
    - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
 
-The map is [docs/README.md](docs/README.md). Merged means accepted is in [Work types](#work-types). Do not copy it into an ADR.
-
-ADR numbers are contiguous. A merged ADR keeps its number. Taylor allowed one rewrite on 2026-10-31 that renumbered the set to `0001`–`0018`. Do not renumber again. The next ADR is `0020`.
+The map is [docs/README.md](docs/README.md). Existing ADR files keep their numbers. Retired ADRs are deleted; git history keeps the text. Do not reuse a retired number, and do not renumber to close a gap.
 
 ## Checks
 
@@ -71,7 +65,7 @@ pnpm check   # lint, unit tests, build, secret scan, requirement IDs
 pnpm smoke   # docker compose up --build and health checks
 ```
 
-Unit tests for functions and classes live next to the app they test (`apps/*/test`). A covering test calls `covers()` from `@cookbook/test`. Requirement IDs are checked by `scripts/requirements.mjs`. What else a pull request must show is in [Work types](#work-types).
+Unit tests use Node's built-in runner. They live next to the app they test (`apps/*/test`). A covering test calls `covers()` from `@cookbook/test`. That maps the test to an ID; it is not acceptance. Requirement IDs are checked by `scripts/requirements.mjs`. Say what is proven, what is only mapped, and what is unproven. What else a pull request must show is in [Work types](#work-types).
 
 ## Full stack
 
@@ -83,4 +77,4 @@ This repo is public. Never commit `.env`, tokens, Tailscale keys, or real recipe
 
 ## Templates
 
-* [ADR](docs/templates/adr.md) — problem, options considered, decision, consequences, status
+Existing ADRs use [this shape](docs/templates/adr.md). Do not add new ADR files from it.

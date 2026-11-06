@@ -20,6 +20,6 @@ pnpm is the only JavaScript package manager. Workspaces. No task-runner layer.
 
 ## Consequences
 
-* A package-manager change is a new ADR.
+* A package-manager change amends this file and the README.
 * The directory tree is in the README and stays current as packages are added.
 * Check entry points are in [CONTRIBUTING.md](../../CONTRIBUTING.md).

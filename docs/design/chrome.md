@@ -2,7 +2,7 @@
 
 Detail for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md).
 
-The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar. The app does not cache the library and does not serve it offline. Free-text search, a meal plan, fullscreen reading, a Chef panel, and live updates stay out. A favorites toggle and tag filter chips are allowed on the list ([0020](../decisions/0020-kitchen-design-system.md)).
+The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar. The app does not cache the library and does not serve it offline. Free-text search, a meal plan, fullscreen reading, a Chef panel, and live updates stay out. A favorites toggle and tag filter chips are allowed on the list ([0016](../decisions/0016-kitchen-ui.md)).
 
 ## Controls
 

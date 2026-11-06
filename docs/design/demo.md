@@ -1,10 +1,10 @@
 # UI demos
 
-Detail for [0018](../decisions/0018-ui-demos.md) and [0020](../decisions/0020-kitchen-design-system.md).
+Detail for [0020](../decisions/0020-kitchen-design-system.md).
 
-The designer reviews each UI pull request by running the app locally. Not a CI screenshot job. Not a per-pull-request preview. Not a Figma file. Desktop and phone captures still attach to the pull request ([0018](../decisions/0018-ui-demos.md)).
+The designer reviews each UI pull request by running the app locally. Not a CI screenshot job. Not a per-pull-request preview. Not a Figma file. Desktop and phone captures still attach to the pull request.
 
-Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The unit runner is [0011](../decisions/0011-test-tooling.md).
+Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). Unit tests use Node's built-in runner.
 
 ## What a UI pull request attaches
 

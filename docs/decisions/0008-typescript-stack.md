@@ -20,6 +20,6 @@ TypeScript for the web app, the API, and MCP. React for the UI. Types that cross
 
 ## Consequences
 
-* A language change is a new ADR.
+* A language change amends this file and the README.
 * Toolchain names are in the README.
 * The package manager is [0009](0009-repo-layout.md).

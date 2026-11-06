@@ -1,6 +1,6 @@
 # Design
 
-UI for the household cookbook. Kitchen principles are [0016](../decisions/0016-kitchen-ui.md). The package is [0017](../decisions/0017-ui-package.md), amended by [0020](../decisions/0020-kitchen-design-system.md). Demos are [0018](../decisions/0018-ui-demos.md).
+UI for the household cookbook. Kitchen principles are [0016](../decisions/0016-kitchen-ui.md). The package is [0020](../decisions/0020-kitchen-design-system.md). Demos are [demo](demo.md).
 
 | Topic | Detail |
 | --- | --- |

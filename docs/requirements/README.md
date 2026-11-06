@@ -1,8 +1,8 @@
 # Requirements
 
-Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). An ADR does not cite a requirement ID.
+Taylor confirmed this format on 2026-10-31. The rules are in [CONTRIBUTING.md](../../CONTRIBUTING.md#docs). YAML catalogs behavior. `covers()` traces an ID; it is not acceptance. An ADR does not cite a requirement ID.
 
-Topic files are YAML: `docs/requirements/1-mcp.yaml`, `docs/requirements/2-kitchen-ui.yaml`, `docs/requirements/3-deployment.yaml`, `docs/requirements/6-foundation.yaml`, and `docs/requirements/7-design-system.yaml`. This README is not a topic file. The check skips it, so the examples below are not requirements.
+Topic files are the YAML files in this directory. This README is not a topic file. The check skips it, so the examples below are not requirements. Do not list topics here.
 
 ## File
 
@@ -11,9 +11,9 @@ The shape is [schema.json](schema.json). IDs are double-quoted strings with no t
 - `id` is the topic number (`"1"`) and matches the file name. `title` is a short heading.
 - Each requirement has `id` (`"1.2"`), `type` (`functional`, `non-functional`, or `system`), `text`, and `details`.
 - Each detail has `id` (`"1.2.1"`) and `text` (one behavior: the condition and the outcome). Do not put an error code or a response body in the text.
-- A requirement states testable product behavior. It is timeless: no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). Prefer a positive, testable statement. A negative is allowed only when it guards a real limit: permission, data safety, or security. A requirement names no specific person. An actor value such as taylor, chef, or system may stay when it is data. A design idea, a visual style, a version name, and a scope or non-goal live in docs or an ADR.
+- What a requirement may say is [CONTRIBUTING.md](../../CONTRIBUTING.md#docs).
 - `implemented: false` means the behavior is not built. Omit `implemented` once it is built. The same commit adds the test. A detail marked `implemented: false` must not already have a test.
-- An implemented detail is named by exactly one test, which calls `covers("1.2.1")`. One test may cover several details: `covers("1.2.1", "1.2.2")`. Import `covers` from `@cookbook/test`. A skipped or to-do test does not count. A mention in the title or a string in the body does not count.
+- An implemented detail is named by exactly one test, which calls `covers("1.2.1")`. That maps the test to the ID. It is not acceptance. One test may cover several details: `covers("1.2.1", "1.2.2")`. Import `covers` from `@cookbook/test`. A skipped or to-do test does not count. A mention in the title or a string in the body does not count.
 - `check: manual` replaces that test when the behavior is outside this repo. It is not for a function or a file in this repo.
 - `see` is an optional list of other IDs. Use it rarely.
 - An ID with `implemented: false` may be deleted and the following IDs renumbered. Do not leave a gap or a `removed` marker. Once a detail has a test, its ID stays. Deleting that one leaves a gap, or `removed: true` on that number.

@@ -16,11 +16,11 @@ Parallel agents collide on a shared list, one Compose project, and sequential nu
 
 ## Decision
 
-A feature is a folder. Presence registers it. Migration and ADR numbers are contiguous and checked. Concurrent local stacks are isolated. No timestamps. No claim file.
+A feature is a folder. Presence registers it. Migration numbers are contiguous and checked. Concurrent local stacks are isolated. No timestamps. No claim file. Do not add new ADR files.
 
 ## Consequences
 
-* A merged number stays. Taylor allowed one rewrite on 2026-10-31 that renumbered this set. Another renumber is a new decision.
-* The sequence check is not in the tree yet. Ports and path templates are in the parallel-agents doc.
+* A merged ADR number stays. Retired ADRs are deleted and that number is not reused.
+* Ports and path templates are in the parallel-agents doc.
 * The NAS stack stays the single production project ([0015](0015-production.md)).
 * Postgres is not a published port ([0013](0013-security-review.md)).

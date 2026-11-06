@@ -1,6 +1,6 @@
 # Design system
 
-Detail for [0017](../decisions/0017-ui-package.md) and [0020](../decisions/0020-kitchen-design-system.md).
+Detail for [0020](../decisions/0020-kitchen-design-system.md).
 
 `@cookbook/ui` (`packages/ui`) is not in the tree. Screens import that package. The API and MCP do not.
 
@@ -14,7 +14,7 @@ The package applies the tokens. It does not invent a second palette.
 
 Radix primitives supply accessible behavior (name, role, keyboard). Styling is plain CSS on those primitives, using the custom properties.
 
-Not Tailwind. Not shadcn. A later swap of Radix is a new decision; 0020 amended [0017](../decisions/0017-ui-package.md) on that point.
+Not Tailwind. Not shadcn. A later swap of Radix is recorded here, not a new ADR.
 
 React stays the React `apps/web` already has. The UI package does not install a second copy.
 

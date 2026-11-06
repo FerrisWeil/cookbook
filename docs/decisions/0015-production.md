@@ -23,4 +23,4 @@ One Compose Manager stack and one env file. Not per-container templates. The NAS
 * The production Compose file is not in the tree yet. The skeleton still builds on the NAS. Facts are in the Unraid doc.
 * Tailnet HTTPS stays deferred ([0002](0002-tailscale-only.md)).
 * Database roles stay [0013](0013-security-review.md).
-* A new container on the NAS is still an ADR ([0012](0012-parallel-agents.md)).
+* A new container on the NAS is recorded in the Unraid doc, not a new ADR.
