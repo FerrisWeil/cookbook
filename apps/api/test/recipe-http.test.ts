@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 
 import { MESSAGES } from "@cookbook/shared";
+import { verifies } from "@cookbook/test";
 
 import { listen } from "../src/http.ts";
 import { createMemoryRecipeStore } from "../src/recipes/index.ts";
@@ -63,7 +64,7 @@ describe("recipe HTTP", () => {
     assert.deepEqual(await response.json(), { error: "unauthorized" });
   });
 
-  it("accepts either caller token and omits hidden recipes", async () => {
+  it("accepts either caller token and omits hidden recipes", verifies("82", "45088ea5d955657a", async () => {
     const mcp = await fetch(`${baseUrl}/recipes`, {
       headers: { authorization: `Bearer ${MCP_TOKEN}` },
     });
@@ -75,7 +76,7 @@ describe("recipe HTTP", () => {
     assert.deepEqual(await mcp.json(), {
       recipes: [{ id: "alpha", title: "Example: Alpha" }],
     });
-  });
+  }));
 
   it("reads a visible recipe and treats a hidden id as not found", async () => {
     const visible = await fetch(`${baseUrl}/recipes/alpha`, {

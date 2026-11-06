@@ -2,7 +2,7 @@
 
 Checklist for [0013](decisions/0013-security-review.md). Supply-chain pins are [supply-chain.md](supply-chain.md).
 
-Run this list before a pull request is marked ready. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. A clean change leaves the section out. gitleaks and `pnpm audit --audit-level=high` block a clean pull request. There is no second review bot.
+This checklist is contributor process, not an application-catalog requirement. Run this list before a pull request is marked ready. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. A clean change leaves the section out. gitleaks and `pnpm audit --audit-level=high` block a clean pull request. There is no second review bot.
 
 ## Dependencies
 

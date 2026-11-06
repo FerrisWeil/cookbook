@@ -1,25 +1,37 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
-export type CatalogKind = "topic" | "requirement" | "detail" | "removed";
+import { requirementFingerprint } from "./fingerprint.js";
 
-export type CatalogEntry = {
-  kind: CatalogKind;
+export type RequirementStatus = "accepted" | "implemented" | "verified";
+
+export type CatalogNode = {
+  id: string;
+  text: string;
+  status: RequirementStatus;
+  parentId: string | null;
+  childIds: string[];
+  refIds: string[];
+  inSharedTree: boolean;
+  isRoot: boolean;
 };
 
-export type Catalog = Map<string, CatalogEntry>;
+export type Catalog = {
+  nodes: Map<string, CatalogNode>;
+  roots: string[];
+};
 
-function findRepoRoot(): string {
+export function findRepoRoot(): string {
   const starts = [process.cwd(), dirname(fileURLToPath(import.meta.url))];
   for (const start of starts) {
     let dir = start;
     for (;;) {
       if (
         existsSync(join(dir, "pnpm-workspace.yaml")) &&
-        existsSync(join(dir, "docs", "requirements"))
+        existsSync(join(dir, "docs", "requirements", "requirements.yaml"))
       ) {
         return dir;
       }
@@ -28,76 +40,86 @@ function findRepoRoot(): string {
       dir = parent;
     }
   }
-  throw new Error("covers() cannot find docs/requirements from the repo root");
+  throw new Error("cannot find docs/requirements/requirements.yaml from the repo root");
 }
 
-function add(catalog: Catalog, id: unknown, kind: CatalogKind): void {
-  if (typeof id !== "string" || id.length === 0) return;
-  catalog.set(id, { kind });
+function asId(value: unknown): string | null {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return String(value);
+  }
+  if (typeof value === "string" && /^[1-9][0-9]*$/.test(value)) return value;
+  return null;
 }
 
 export function loadRequirementCatalog(root = findRepoRoot()): Catalog {
-  const catalog: Catalog = new Map();
-  const dir = join(root, "docs", "requirements");
-  const names = readdirSync(dir)
-    .filter((name) => name.endsWith(".yaml"))
-    .sort();
-  for (const name of names) {
-    const doc = parse(readFileSync(join(dir, name), "utf8")) as {
+  const file = join(root, "docs", "requirements", "requirements.yaml");
+  const doc = parse(readFileSync(file, "utf8")) as {
+    requirements?: unknown;
+  } | null;
+  if (!doc || typeof doc !== "object" || !Array.isArray(doc.requirements)) {
+    throw new Error("requirements catalog must be a mapping with a requirements list");
+  }
+  const nodes = new Map<string, CatalogNode>();
+  const roots: string[] = [];
+
+  function add(
+    raw: unknown,
+    parentId: string | null,
+    inSharedTree: boolean,
+    isRoot: boolean,
+  ): string | null {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const item = raw as {
       id?: unknown;
-      requirements?: unknown;
-    } | null;
-    if (!doc || typeof doc !== "object") {
-      throw new Error(`covers() could not parse ${name}`);
-    }
-    add(catalog, doc.id, "topic");
-    if (!Array.isArray(doc.requirements)) continue;
-    for (const req of doc.requirements) {
-      if (!req || typeof req !== "object") continue;
-      const requirement = req as {
-        id?: unknown;
-        removed?: unknown;
-        details?: unknown;
-      };
-      if (requirement.removed === true) {
-        add(catalog, requirement.id, "removed");
+      ref?: unknown;
+      text?: unknown;
+      status?: unknown;
+      kind?: unknown;
+      children?: unknown;
+    };
+    if (item.ref !== undefined) return null;
+    const id = asId(item.id);
+    if (!id || typeof item.text !== "string") return null;
+    const shared = isRoot ? item.kind === "shared" : inSharedTree;
+    const childIds: string[] = [];
+    const refIds: string[] = [];
+    const node: CatalogNode = {
+      id,
+      text: item.text,
+      status: item.status as RequirementStatus,
+      parentId,
+      childIds,
+      refIds,
+      inSharedTree: shared,
+      isRoot,
+    };
+    nodes.set(id, node);
+    if (isRoot) roots.push(id);
+    if (!Array.isArray(item.children)) return id;
+    for (const child of item.children) {
+      if (!child || typeof child !== "object" || Array.isArray(child)) continue;
+      const childItem = child as { ref?: unknown; id?: unknown };
+      const refId = asId(childItem.ref);
+      if (refId) {
+        refIds.push(refId);
         continue;
       }
-      add(catalog, requirement.id, "requirement");
-      if (!Array.isArray(requirement.details)) continue;
-      for (const detail of requirement.details) {
-        if (!detail || typeof detail !== "object") continue;
-        const item = detail as { id?: unknown; removed?: unknown };
-        if (item.removed === true) {
-          add(catalog, item.id, "removed");
-          continue;
-        }
-        add(catalog, item.id, "detail");
-      }
+      const childId = add(child, id, shared, false);
+      if (childId) childIds.push(childId);
     }
+    return id;
   }
-  return catalog;
+
+  for (const rootNode of doc.requirements) add(rootNode, null, false, true);
+  return { nodes, roots };
 }
 
-export function assertCoverIds(catalog: Catalog, ids: readonly string[]): void {
-  if (ids.length === 0) {
-    throw new Error("covers() needs a requirement detail id");
-  }
-  for (const id of ids) {
-    if (typeof id !== "string" || id.length === 0) {
-      throw new Error("covers() ids must be non-empty strings");
-    }
-    const entry = catalog.get(id);
-    if (!entry) {
-      throw new Error(`unknown requirement id ${id}`);
-    }
-    if (entry.kind === "removed") {
-      throw new Error(`requirement id ${id} is removed`);
-    }
-    if (entry.kind !== "detail") {
-      throw new Error(`requirement id ${id} is not a detail`);
-    }
-  }
+export function isLeaf(node: CatalogNode): boolean {
+  return node.childIds.length === 0 && node.refIds.length === 0;
+}
+
+export function nodeFingerprint(node: CatalogNode): string {
+  return requirementFingerprint(node.id, node.text);
 }
 
 let cached: Catalog | undefined;
@@ -105,4 +127,8 @@ let cached: Catalog | undefined;
 export function repoCatalog(): Catalog {
   cached ??= loadRequirementCatalog();
   return cached;
+}
+
+export function evidenceDir(root = findRepoRoot()): string {
+  return join(root, ".requirements-evidence");
 }

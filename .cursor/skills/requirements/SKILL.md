@@ -7,78 +7,31 @@ description: Use when writing or editing a requirements YAML file, a requirement
 
 Read [CONTRIBUTING.md](../../../CONTRIBUTING.md#docs) and [docs/requirements/README.md](../../../docs/requirements/README.md). Do not restate them.
 
-The shape is `docs/requirements/schema.json`. `pnpm check` enforces it. Do not add a web view. YAML catalogs behavior. `covers()` traces an ID; it is not acceptance. An ADR never cites a requirement ID.
+The catalog is `docs/requirements/requirements.yaml`. The shape is `docs/requirements/schema.json`. `pnpm check` enforces it. Do not add a web view. YAML catalogs portable application behavior. `verifies(id, fingerprint, fn)` binds one test to one leaf; it is not acceptance. An ADR never cites a requirement ID.
+
+`text` is a requirement: one line of testable behavior, including on parents and roots. Do not write a category, topic, or heading (`MCP.`, `Security.`, `Kitchen UI.`, `Recipes.`). A parent names the behavior its children decompose. Do not invent scope to make a label sound like a requirement.
 
 ## IDs
 
-Quote every ID: `"1"`, `"1.2"`, `"1.2.1"`.
+Quote every ID: `"12"`. IDs are stable integers. Do not renumber because a node moved. Do not reuse a deleted id.
 
-An ID with `implemented: false` may be deleted. Renumber what follows so the numbers stay contiguous. Do not leave a gap. Do not write `removed: true`.
+New leaves start `status: accepted`. `children`, when present, has at least two entries.
 
-Once a detail has a test, its ID stays. Do not renumber it. Deleting that one leaves a gap, or:
+## Tests
 
-```yaml
-- id: "1.2.2"
-  removed: true
-```
-
-Batch wording in one pull request. Split the pull request when the behavior change is risky.
-
-## Details
-
-`implemented` defaults to true. Write `implemented: false` until the behavior exists. Remove that field in the same commit that adds the one test. A detail has one test. That test calls `covers("1.1.1")` from `@cookbook/test`. The title is the behavior, not the ID.
+A leaf has at most one test. That test wraps `verifies("12", "<fp-v1 hex>", fn)` from `@cookbook/test` at the `it()` call. The title is the behavior, not the ID. `pnpm requirements --fingerprints` prints current hashes. Put the literal in the test. Parent edits do not change a child's fingerprint.
 
 ```js
-import { covers } from "@cookbook/test";
+import { verifies } from "@cookbook/test";
 
-it("returns that recipe", () => {
-  covers("1.1.1");
-});
+it("returns that recipe", verifies("6", "c4b8cb4c3b9ed214", () => {
+  // assertions
+}));
 ```
 
-One test may cover several details:
+Do not call `verifies()` inside the test body. Do not use `covers()`.
 
-```js
-covers("1.1.2", "1.1.3");
-```
-
-The helper fails on an unknown or removed ID. `pnpm check` fails if the ID is not a detail, if `implemented: false` still remains, or if a second test covers the same detail. Do not put `req:` in the title.
-
-`check: manual` is only for behavior outside this repo. `see` is rare.
-
-## Examples
-
-Good, from the pilot. Not built yet, so the flag stays:
-
-```yaml
-- id: "1.1.3"
-  text: Given an ID that matches no recipe, the agent is told the recipe was not found.
-  implemented: false
-```
-
-Bad. Visual style. It belongs in the design doc:
-
-```yaml
-- id: "9.1.1"
-  text: Controls use an opaque fill.
-  implemented: false
-```
-
-Bad. A version or a point in time:
-
-```yaml
-- id: "9.1.2"
-  text: Search comes later.
-  implemented: false
-```
-
-Bad. Two behaviors, and an error code:
-
-```yaml
-- id: "1.1.4"
-  text: Given a deleted recipe, the agent receives 404 and the list omits it.
-  implemented: false
-```
+`verified` needs that binding plus an executed passing run. `accepted` may lack a test. Hosting and operator steps are not catalog entries.
 
 ## Commands
 

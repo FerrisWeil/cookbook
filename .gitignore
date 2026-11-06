@@ -13,3 +13,4 @@ apps/web/dist
 apps/*/.vite
 .idea/
 .vscode/
+.requirements-evidence/
