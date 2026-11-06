@@ -21,13 +21,13 @@ Postgres is not published on the host. `docker compose exec db psql -U postgres`
 
 | Service | URL |
 | --- | --- |
-| Web (PWA skeleton) | http://localhost:8080 |
+| Web (recipe list) | http://localhost:8080 |
 | API health | http://localhost:3000/health |
 | API ready (Postgres + seed) | http://localhost:3000/health/ready |
 | MCP health | http://localhost:8787/health |
 | MCP (bearer token required) | http://localhost:8787/mcp |
 
-The web home page shows Cookbook and `database up`.
+The web home page is the recipe list. An empty library says "No recipes yet."
 
 Local MCP token (not for the NAS): `local-dev-token-not-for-nas`. Local compose sets `MCP_ALLOW_DEV_TOKEN=1` so that token can boot. Local API caller tokens: `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas`, with `API_ALLOW_DEV_TOKEN=1`. The NAS file sets none of those flags.
 
@@ -58,10 +58,11 @@ The Docker / Tailscale / bearer-token pattern follows [nas-mcp](https://github.c
 ## Layout
 
 ```
-apps/web            Responsive PWA skeleton (Vite + React)
+apps/web            Kitchen list and recipe screens (Vite + React)
 apps/api            HTTP API, migrations, seed
 apps/mcp            Cookbook MCP (read, list, save, hello + bearer auth)
 packages/shared     Shared TypeScript types
+packages/ui         Kitchen tokens, Button, Card
 packages/test       `verifies()` helper for requirement IDs in tests
 db/migrations/      Numbered SQL. The API applies it on startup.
 docs/decisions/     ADRs
