@@ -17,13 +17,13 @@ In-repo skills link to this file. They do not copy it.
 
 Confirmed by Taylor, 2026-10-26, in agent chat. This section is the source of truth. Each pull request declares its type. Do not merge without Taylor.
 
-Taylor owns outcomes, priority, product tradeoffs, and merge. The Designer owns UX. The Engineer does discovery and research with Taylor in this chat, gets ahead of product and engineering issues, and asks him directly when his judgment matters, with a recommendation. The Engineer verifies both that new requirements faithfully reflect Taylor's design asks and that a pull request delivers those requirements, with observed evidence and explicit gaps. Green CI and `covers()` mapping are not acceptance.
+Taylor owns outcomes, priority, product tradeoffs, and merge. The Designer owns UX. The Engineer does discovery and research with Taylor in this chat, gets ahead of product and engineering issues, and asks him directly when his judgment matters, with a recommendation. The Engineer verifies both that new requirements faithfully reflect Taylor's design asks and that a pull request delivers those requirements, with observed evidence and explicit gaps. Green CI and `verifies()` mapping are not acceptance.
 
 Every pull request is checked against the [security checklist](docs/security-review.md) before it is marked ready. [0013](docs/decisions/0013-security-review.md) is accepted. That checklist says when a finding is written into the pull request. Consequential behavior also gets the independent review in cookbook-review. Reversible wording does not get a second reviewer.
 
 | Type | Meaning | Required with the pull request |
 | --- | --- | --- |
-| Feature | New user-facing behavior | In chat and the pull request body: outcome, scope, YAML IDs, the scenario, and open questions. Requirements YAML catalogs the behavior. A demo (screenshots or a recording) before Taylor confirms. `covers()` traces a test to an ID; it is not acceptance. Functional Playwright tests only after he confirms it works. |
+| Feature | New user-facing behavior | In chat and the pull request body: outcome, scope, YAML IDs, the scenario, and open questions. Requirements YAML catalogs the behavior. A demo (screenshots or a recording) before Taylor confirms. `verifies()` binds a test to a leaf; it is not acceptance. Functional Playwright tests only after he confirms it works. |
 | Task | Infrastructure or engineering work with no user-visible behavior. Supply-chain pins and Postgres roles are tasks. | CI verifies it. No demo. A short note in the pull request. |
 | Docs | Documentation and workflow rules only | The doc change. |
 | Bug | A fix for broken behavior | A regression test that proves the fix, in this pull request. |
@@ -46,12 +46,11 @@ Taylor confirmed this on 2026-10-31.
 1. Do not add new ADR files. Existing ADRs are historical. New durable rationale goes in the living topic doc. An existing ADR has no versions, ports, file paths, env names, commands, or schemas.
 2. Current state lives in docs and READMEs, and changes with the code.
 3. Docs are brief and readable: less verbose, understandable over detail.
-4. Requirements YAML is the behavior catalog. `covers()` is traceability, not acceptance. Requirements are `functional`, `non-functional`, or `system`. The type is a field. IDs have no type letter. The index is [docs/requirements/](docs/requirements/). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs.
+4. Requirements YAML is the portable application catalog: [docs/requirements/requirements.yaml](docs/requirements/requirements.yaml). `verifies()` binds one test to one leaf; it is not acceptance. Hosting, tailnet, NAS, and operator backup live in [unraid-production.md](docs/unraid-production.md). Do not put requirements in an ADR. An ADR never cites a requirement ID. Only tests and docs/requirements reference IDs. The shape is [docs/requirements/README.md](docs/requirements/README.md).
 
-   - One topic per file, for example `docs/requirements/1-mcp.yaml`. The topic is `1`, a requirement is `1.2`, and a detail is `1.2.1`. Quote every ID. The shape is in [docs/requirements/README.md](docs/requirements/README.md).
-   - An ID with `implemented: false` may be deleted and the following IDs renumbered. Do not leave a gap or a `removed` marker. Once a detail has a test, its ID stays. Deleting that one leaves a gap, or `removed: true` on that number.
+   - One forest, several roots, arbitrary depth. Nodes have `id`, `status`, `text`, and optional `children`. Parent and leaf are tree properties, not type fields. Quote every id (`"12"`). IDs are stable integers; do not renumber on move. New leaves start `status: accepted`. `implemented` means built. `verified` means one executed passing binding plus assertion review. Parent status rolls up over children and shared refs.
    - A requirement states testable product behavior. It is timeless: no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later." Prefer a positive, testable statement. A negative is allowed only when it guards a real limit: permission, data safety, or security. Good: "On the recipe screen, no control overlaps the title, ingredient lines, or steps." Bad: "Recipe text is never read through a control." A requirement names no specific person. An actor value such as taylor, chef, or system may stay when it is data. Good: "A user can open the app on a desktop browser or a phone." Bad: "Taylor and his wife can open the app." A design idea, a visual style, a version name, and a scope or non-goal live in the living topic doc or an existing ADR.
-   - `implemented: false` marks a detail that is not built. Remove it in the same commit that adds the one test that calls `covers("1.2.1")`. That call maps the test to the ID. It does not prove Taylor accepted the behavior. `check: manual` is only for behavior outside this repo. `see` is rare.
+   - At most one `verifies(id, fingerprint, fn)` per leaf, wrapped around the test function. Verified leaves need that binding plus an executed passing run. Parents are not bound. Shared reuse is `{ ref: "12" }`, not a copied definition.
    - Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky.
 
 The map is [docs/README.md](docs/README.md). Existing ADR files keep their numbers. Retired ADRs are deleted; git history keeps the text. Do not reuse a retired number, and do not renumber to close a gap.
@@ -61,11 +60,11 @@ The map is [docs/README.md](docs/README.md). Existing ADR files keep their numbe
 `pnpm` is the only JavaScript package manager ([0009](docs/decisions/0009-repo-layout.md)). CI installs dependencies and then runs these commands. The steps live in the scripts, not in the workflow file.
 
 ```bash
-pnpm check   # lint, unit tests, build, secret scan, requirement IDs
+pnpm check   # lint, unit tests, build, secret scan, requirement catalog
 pnpm smoke   # docker compose up --build and health checks
 ```
 
-Unit tests use Node's built-in runner. They live next to the app they test (`apps/*/test`). A covering test calls `covers()` from `@cookbook/test`. That maps the test to an ID; it is not acceptance. Requirement IDs are checked by `scripts/requirements.mjs`. Say what is proven, what is only mapped, and what is unproven. What else a pull request must show is in [Work types](#work-types).
+Unit tests use Node's built-in runner. They live next to the app they test (`apps/*/test`). A product leaf uses `verifies()` from `@cookbook/test`. That binds the test to an ID; it is not acceptance. Requirement IDs are checked by `scripts/requirements.mjs`. Say what is proven, what is only mapped, and what is unproven. What else a pull request must show is in [Work types](#work-types).
 
 ## Full stack
 

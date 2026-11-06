@@ -11,7 +11,7 @@
   "scripts": {
     "build": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/api build && pnpm --filter @cookbook/mcp build && pnpm --filter @cookbook/web build",
     "lint": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/shared lint && pnpm --filter @cookbook/test lint && pnpm --filter @cookbook/api lint && pnpm --filter @cookbook/mcp lint && pnpm --filter @cookbook/web lint",
-    "test": "pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/shared test && pnpm --filter @cookbook/test test && pnpm --filter @cookbook/api test && pnpm --filter @cookbook/mcp test && pnpm --filter @cookbook/web test",
+    "test": "node scripts/requirements.mjs --reset-evidence && pnpm --filter @cookbook/shared build && pnpm --filter @cookbook/shared test && pnpm --filter @cookbook/test test && pnpm --filter @cookbook/api test && pnpm --filter @cookbook/mcp test && pnpm --filter @cookbook/web test",
     "secrets": "bash scripts/secrets.sh",
     "smoke": "bash scripts/smoke.sh",
     "requirements": "node scripts/requirements.mjs",

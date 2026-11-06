@@ -20,7 +20,7 @@ Do not add a new ADR file. Durable rationale belongs in the living topic doc.
 
 ## Requirements
 
-Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky. List the IDs. The format is in CONTRIBUTING.md. `covers()` traces an ID; it is not acceptance. Say what is proven, what is only mapped, and what is unproven.
+Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky. List the IDs. The format is in CONTRIBUTING.md. `verifies()` binds a leaf; it is not acceptance. Say what is proven, what is only mapped, and what is unproven.
 
 - IDs:
 

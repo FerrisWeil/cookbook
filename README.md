@@ -62,7 +62,7 @@ apps/web            Responsive PWA skeleton (Vite + React)
 apps/api            HTTP API, migrations, seed
 apps/mcp            Cookbook MCP (read, list, save, hello + bearer auth)
 packages/shared     Shared TypeScript types
-packages/test       `covers()` helper for requirement IDs in tests
+packages/test       `verifies()` helper for requirement IDs in tests
 db/migrations/      Numbered SQL. The API applies it on startup.
 docs/decisions/     ADRs
 deploy/nas/         Unraid skeleton (no host ports)

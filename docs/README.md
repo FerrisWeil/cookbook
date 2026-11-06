@@ -15,9 +15,9 @@ Current state:
 | Unraid production | [unraid-production.md](unraid-production.md) |
 | Parallel agents | [parallel-agents.md](parallel-agents.md) |
 | Kitchen UI values and screens | [design/](design/) |
-| Requirements | [requirements/](requirements/) |
+| Requirements | [requirements/requirements.yaml](requirements/requirements.yaml) |
 | Agent skills | [agent-skills.md](agent-skills.md) |
 
-Requirements YAML catalogs behavior. It is not acceptance.
+Requirements YAML catalogs portable application behavior. It is not acceptance. Hosting stays in the Unraid doc.
 
 The production Compose file is not in the tree. The skeleton is [deploy/nas/docker-compose.yml](../deploy/nas/docker-compose.yml). The UI package is not in the tree. The sequence check is not in the tree.

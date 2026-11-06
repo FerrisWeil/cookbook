@@ -1,82 +1,61 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "cookbook-requirements",
-  "title": "Requirements topic",
+  "title": "Requirements catalog",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "title", "requirements"],
+  "required": ["requirements"],
   "properties": {
-    "id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
-    "title": { "type": "string", "minLength": 1 },
     "requirements": {
       "type": "array",
-      "items": { "$ref": "#/$defs/requirement" }
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/root" }
     }
   },
   "$defs": {
-    "requirement": {
-      "oneOf": [
-        {
-          "description": "Only after this requirement has a test. An ID with implemented: false is deleted and the rest are renumbered.",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["id", "removed"],
-          "properties": {
-            "id": { "type": "string", "pattern": "^[1-9][0-9]*\\.[1-9][0-9]*$" },
-            "removed": { "const": true }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["id", "type", "text", "details"],
-          "properties": {
-            "id": { "type": "string", "pattern": "^[1-9][0-9]*\\.[1-9][0-9]*$" },
-            "type": { "enum": ["functional", "non-functional", "system"] },
-            "text": { "type": "string", "minLength": 1 },
-            "see": { "$ref": "#/$defs/see" },
-            "details": {
-              "type": "array",
-              "minItems": 1,
-              "items": { "$ref": "#/$defs/detail" }
-            }
-          }
+    "id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "status": { "enum": ["accepted", "implemented", "verified"] },
+    "root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["normal", "shared"] },
+        "status": { "$ref": "#/$defs/status" },
+        "text": { "type": "string", "minLength": 1 },
+        "children": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/child" }
         }
-      ]
-    },
-    "detail": {
-      "oneOf": [
-        {
-          "description": "Only after this detail has a test. An ID with implemented: false is deleted and the rest are renumbered.",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["id", "removed"],
-          "properties": {
-            "id": { "type": "string", "pattern": "^[1-9][0-9]*\\.[1-9][0-9]*\\.[1-9][0-9]*$" },
-            "removed": { "const": true }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["id", "text"],
-          "properties": {
-            "id": { "type": "string", "pattern": "^[1-9][0-9]*\\.[1-9][0-9]*\\.[1-9][0-9]*$" },
-            "text": { "type": "string", "minLength": 1 },
-            "implemented": { "type": "boolean" },
-            "check": { "const": "manual" },
-            "see": { "$ref": "#/$defs/see" }
-          }
-        }
-      ]
-    },
-    "see": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "pattern": "^[1-9][0-9]*(?:\\.[1-9][0-9]*){1,2}$"
       }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "status": { "$ref": "#/$defs/status" },
+        "text": { "type": "string", "minLength": 1 },
+        "children": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/child" }
+        }
+      }
+    },
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/id" }
+      }
+    },
+    "child": {
+      "oneOf": [{ "$ref": "#/$defs/node" }, { "$ref": "#/$defs/ref" }]
     }
   }
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-// Requirement ID check. Policy is CONTRIBUTING.md. File shape is docs/requirements/README.md.
+// Requirement catalog check. Policy is CONTRIBUTING.md.
 // Fixture IDs stay in this file. The reference scan does not read it.
-// Markdown under docs/decisions is scanned for requirement IDs. Other docs are not.
 
-import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,22 +13,25 @@ import { isMap, isScalar, isSeq, LineCounter, parseDocument } from "yaml";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SELF = path.join(ROOT, "scripts", "requirements.mjs");
 const REQUIREMENTS_DIR = path.join(ROOT, "docs", "requirements");
+const CATALOG_NAME = "requirements.yaml";
 const DECISIONS_DIR = path.join(ROOT, "docs", "decisions");
-
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage"]);
-
-const PART = "[1-9][0-9]*";
-const ID_SOURCE = `[FNS]${PART}(?:\\.${PART}){0,2}`;
-const TOKEN_RE = new RegExp(`(?<![A-Za-z0-9.])${ID_SOURCE}(?![A-Za-z0-9.])`, "g");
-const OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(?![A-Za-z0-9.])`, "g");
-const YAML_FILE_RE = new RegExp(`^(${PART})-[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$`);
-const YAML_TYPES = new Set(["functional", "non-functional", "system"]);
-const NUMERIC_ID_RE = new RegExp(`(?<![A-Za-z0-9.])${PART}(?:\\.${PART}){1,2}(?![A-Za-z0-9.])`, "g");
-const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART}(?:\\.${PART}){1,2})(?![A-Za-z0-9.])`, "g");
-const COVER_ID_RE = new RegExp(`^${PART}(?:\\.${PART}){1,2}$`);
+const EVIDENCE_DIR = path.join(ROOT, ".requirements-evidence");
 const SCHEMA = JSON.parse(readFileSync(path.join(REQUIREMENTS_DIR, "schema.json"), "utf8"));
+
+const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage", ".requirements-evidence"]);
+const STATUSES = new Set(["accepted", "implemented", "verified"]);
+const ID_RE = /^[1-9][0-9]*$/;
+const PART = "[1-9][0-9]*";
+const LETTER_ID_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){0,2}(?![A-Za-z0-9.])`, "g");
+const LETTER_OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(?![A-Za-z0-9.])`, "g");
+const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART})(?![A-Za-z0-9])`, "g");
 const TEST_CALL_RE =
-  /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?(['"`])([^'"`\n]*)\2/g;
+  /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?"([^"\n]*)"/g;
+
+function requirementFingerprint(id, text) {
+  const payload = JSON.stringify({ v: 1, id: String(id), text });
+  return createHash("sha256").update("cookbook.req.fp.v1\n").update(payload).digest("hex").slice(0, 16);
+}
 
 function isIdentChar(char) {
   return typeof char === "string" && /[A-Za-z0-9_$]/.test(char);
@@ -71,8 +74,6 @@ function describeSkipOpen(text, i) {
   return text[j] === "(" ? j : -1;
 }
 
-// Blank block comments and the arguments of describe.skip / describe.todo.
-// Line comments stay in the source the reference scan reads.
 function maskInactiveRegions(text) {
   const out = text.split("");
   const n = text.length;
@@ -95,7 +96,6 @@ function maskInactiveRegions(text) {
   while (i < n) {
     const frame = stack[stack.length - 1];
     const c = text[i];
-
     if (frame && frame.type === "str") {
       if (c === "\\") {
         i += 2;
@@ -110,12 +110,10 @@ function maskInactiveRegions(text) {
       i += 1;
       continue;
     }
-
     if (c === "/" && text[i + 1] === "/") {
       while (i < n && text[i] !== "\n") i += 1;
       continue;
     }
-
     if (c === "/" && text[i + 1] === "*") {
       const start = i;
       i += 2;
@@ -124,27 +122,23 @@ function maskInactiveRegions(text) {
       mask(start, i);
       continue;
     }
-
     if (c === "'" || c === '"' || c === "`") {
       stack.push({ type: "str", q: c });
       i += 1;
       continue;
     }
-
     const skipOpen = describeSkipOpen(text, i);
     if (skipOpen >= 0) {
       stack.push({ type: "skip", depth: 1, start: skipOpen + 1 });
       i = skipOpen + 1;
       continue;
     }
-
     if (c === "(") {
       const skip = activeSkip();
       if (skip) skip.depth += 1;
       i += 1;
       continue;
     }
-
     if (c === ")") {
       const skip = activeSkip();
       if (skip) {
@@ -157,23 +151,19 @@ function maskInactiveRegions(text) {
       i += 1;
       continue;
     }
-
     if (frame && frame.type === "expr" && c === "{") {
       frame.depth += 1;
       i += 1;
       continue;
     }
-
     if (frame && frame.type === "expr" && c === "}") {
       frame.depth -= 1;
       if (frame.depth === 0) stack.pop();
       i += 1;
       continue;
     }
-
     i += 1;
   }
-
   return out.join("");
 }
 
@@ -225,14 +215,6 @@ function objectDeclaresSkipOrTodo(text, open) {
   }
   if (depth !== 0) return false;
   return /(?:^|[^A-Za-z0-9_$])(?:skip|todo)\s*:\s*true\b/.test(top);
-}
-
-function followingOptionsSkip(text, index) {
-  let i = skipTrivia(text, index);
-  if (text[i] !== ",") return false;
-  i = skipTrivia(text, i + 1);
-  if (text[i] !== "{") return false;
-  return objectDeclaresSkipOrTodo(text, i);
 }
 
 function skipMatching(text, start) {
@@ -289,58 +271,6 @@ function skipMatching(text, start) {
   return i;
 }
 
-function skipExpression(text, start) {
-  let i = start;
-  const n = text.length;
-  const stack = [];
-  while (i < n) {
-    const frame = stack[stack.length - 1];
-    const c = text[i];
-    if (frame && frame.type === "str") {
-      if (c === "\\") {
-        i += 2;
-        continue;
-      }
-      if (frame.q === "`" && c === "$" && text[i + 1] === "{") {
-        stack.push({ type: "g", close: "}" });
-        i += 2;
-        continue;
-      }
-      if (c === frame.q) stack.pop();
-      i += 1;
-      continue;
-    }
-    if (c === "/" && text[i + 1] === "/") {
-      while (i < n && text[i] !== "\n") i += 1;
-      continue;
-    }
-    if (c === "/" && text[i + 1] === "*") {
-      i += 2;
-      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
-      i = Math.min(n, i + 2);
-      continue;
-    }
-    if (stack.length === 0 && (c === "," || c === ")")) return i;
-    if (c === "'" || c === '"' || c === "`") {
-      stack.push({ type: "str", q: c });
-      i += 1;
-      continue;
-    }
-    if (c === "(" || c === "{" || c === "[") {
-      stack.push({ type: "g", close: c === "(" ? ")" : c === "{" ? "}" : "]" });
-      i += 1;
-      continue;
-    }
-    if (c === ")" || c === "}" || c === "]") {
-      if (frame && c === frame.close) stack.pop();
-      i += 1;
-      continue;
-    }
-    i += 1;
-  }
-  return i;
-}
-
 function readStringLiteral(text, start) {
   const q = text[start];
   if (q !== "'" && q !== '"' && q !== "`") return null;
@@ -363,30 +293,31 @@ function readStringLiteral(text, start) {
   return null;
 }
 
-function parseCoverArgs(text, open) {
-  if (text[open] !== "(") return null;
-  const ids = [];
-  let i = skipTrivia(text, open + 1);
-  if (text[i] === ")") return ids;
-  while (i < text.length) {
-    const lit = readStringLiteral(text, i);
-    if (!lit) return null;
-    ids.push(lit.value);
-    i = skipTrivia(text, lit.end);
-    if (text[i] === ",") {
-      i = skipTrivia(text, i + 1);
-      if (text[i] === ")") return ids;
-      continue;
-    }
-    if (text[i] === ")") return ids;
-    return null;
-  }
-  return null;
+function parseVerifiesCall(text, start) {
+  if (text[start] !== "(") return null;
+  let i = skipTrivia(text, start + 1);
+  const idLit = readStringLiteral(text, i);
+  if (!idLit) return null;
+  i = skipTrivia(text, idLit.end);
+  if (text[i] !== ",") return null;
+  i = skipTrivia(text, i + 1);
+  const fpLit = readStringLiteral(text, i);
+  if (!fpLit) return null;
+  i = skipTrivia(text, fpLit.end);
+  if (text[i] !== ",") return null;
+  i = skipTrivia(text, i + 1);
+  const fnStart = i;
+  if (text[i] === ")") return null;
+  const fnEnd = skipMatching(text, start);
+  return { id: idLit.value, fingerprint: fpLit.value, fnStart, fnEnd };
 }
 
-function coverIdsIn(text) {
-  const ids = [];
-  const seen = new Set();
+function callNameAt(text, i, name) {
+  return !isIdentChar(text[i - 1]) && text.startsWith(name, i) && !isIdentChar(text[i + name.length]);
+}
+
+function leftoverCalls(text, name) {
+  const hits = [];
   let i = 0;
   const n = text.length;
   const stack = [];
@@ -432,85 +363,20 @@ function coverIdsIn(text) {
       i += 1;
       continue;
     }
-    if (
-      !isIdentChar(text[i - 1]) &&
-      text[i - 1] !== "." &&
-      text.startsWith("covers", i) &&
-      !isIdentChar(text[i + "covers".length])
-    ) {
-      const afterName = skipTrivia(text, i + "covers".length);
-      if (text[afterName] === "(") {
-        const args = parseCoverArgs(text, afterName);
-        if (args) {
-          for (const id of args) {
-            if (!id || seen.has(id)) continue;
-            seen.add(id);
-            ids.push(id);
-          }
-        }
-        i = skipMatching(text, afterName);
-        continue;
-      }
+    if (callNameAt(text, i, name)) {
+      const after = skipTrivia(text, i + name.length);
+      if (text[after] === "(") hits.push(i);
     }
     i += 1;
   }
-  return ids;
-}
-
-function testFnSource(text, afterTitle) {
-  let i = skipTrivia(text, afterTitle);
-  if (text[i] !== ",") return "";
-  i = skipTrivia(text, i + 1);
-  if (text[i] === "{") {
-    i = skipMatching(text, i);
-    i = skipTrivia(text, i);
-    if (text[i] !== ",") return "";
-    i = skipTrivia(text, i + 1);
-  }
-  if (text.startsWith("async", i) && !isIdentChar(text[i + 5])) {
-    i = skipTrivia(text, i + 5);
-  }
-  if (text.startsWith("function", i) && !isIdentChar(text[i + 8])) {
-    i = skipTrivia(text, i + 8);
-    if (isIdentChar(text[i])) {
-      while (isIdentChar(text[i])) i += 1;
-      i = skipTrivia(text, i);
-    }
-    if (text[i] !== "(") return "";
-    i = skipMatching(text, i);
-    i = skipTrivia(text, i);
-    if (text[i] !== "{") return "";
-    const end = skipMatching(text, i);
-    return text.slice(i, end);
-  }
-  if (text[i] === "(") {
-    i = skipMatching(text, i);
-  } else if (isIdentChar(text[i])) {
-    while (isIdentChar(text[i])) i += 1;
-  } else {
-    return "";
-  }
-  i = skipTrivia(text, i);
-  if (text[i] === ":") {
-    const arrow = text.indexOf("=>", i);
-    if (arrow < 0) return "";
-    i = arrow;
-  }
-  if (text[i] !== "=" || text[i + 1] !== ">") return "";
-  i = skipTrivia(text, i + 2);
-  if (text[i] === "{") {
-    const end = skipMatching(text, i);
-    return text.slice(i, end);
-  }
-  const end = skipExpression(text, i);
-  return text.slice(i, end);
+  return hits;
 }
 
 function leftoverReqPrefix(fileName, title) {
   const errors = [];
   REQ_REF_RE.lastIndex = 0;
   for (const match of title.matchAll(REQ_REF_RE)) {
-    errors.push(`${fileName}: req:${match[1]} is not coverage; call covers("${match[1]}") in the test`);
+    errors.push(`${fileName}: req:${match[1]} is not coverage; use verifies("${match[1]}", fingerprint, fn)`);
   }
   return errors;
 }
@@ -519,81 +385,56 @@ function evidenceFromTests(text) {
   const masked = maskInactiveRegions(text);
   const calls = [];
   const extraErrors = [];
+  const wrapperSites = new Set();
   TEST_CALL_RE.lastIndex = 0;
   for (const call of masked.matchAll(TEST_CALL_RE)) {
-    extraErrors.push(...leftoverReqPrefix("", call[3]));
-    if (call[1] === "skip" || call[1] === "todo") continue;
-    if (followingOptionsSkip(masked, call.index + call[0].length)) continue;
-    const reqIds = [];
-    const seen = new Set();
-    for (const id of coverIdsIn(testFnSource(masked, call.index + call[0].length))) {
-      if (!COVER_ID_RE.test(id)) {
-        extraErrors.push(`covers(${JSON.stringify(id)}) is not a requirement id`);
+    extraErrors.push(...leftoverReqPrefix("", call[2]));
+    const skipped = call[1] === "skip" || call[1] === "todo";
+    let i = skipTrivia(masked, call.index + call[0].length);
+    if (masked[i] !== ",") {
+      calls.push({ skipped, binding: null });
+      continue;
+    }
+    i = skipTrivia(masked, i + 1);
+    let optionsSkip = false;
+    if (masked[i] === "{") {
+      optionsSkip = objectDeclaresSkipOrTodo(masked, i);
+      i = skipMatching(masked, i);
+      i = skipTrivia(masked, i);
+      if (masked[i] !== ",") {
+        calls.push({ skipped: skipped || optionsSkip, binding: null });
         continue;
       }
-      if (seen.has(id)) continue;
-      seen.add(id);
-      reqIds.push(id);
+      i = skipTrivia(masked, i + 1);
     }
-    calls.push({ reqIds });
+    if (callNameAt(masked, i, "verifies")) {
+      const afterName = skipTrivia(masked, i + "verifies".length);
+      const parsed = parseVerifiesCall(masked, afterName);
+      if (!parsed) {
+        extraErrors.push("verifies() must be verifies(id, fingerprint, fn)");
+        calls.push({ skipped: skipped || optionsSkip, binding: null });
+        continue;
+      }
+      wrapperSites.add(i);
+      calls.push({
+        skipped: skipped || optionsSkip,
+        binding: { id: parsed.id, fingerprint: parsed.fingerprint },
+      });
+      continue;
+    }
+    calls.push({ skipped: skipped || optionsSkip, binding: null });
+  }
+
+  for (const index of leftoverCalls(masked, "verifies")) {
+    if (!wrapperSites.has(index)) {
+      extraErrors.push('verifies() must wrap the test function at the it() or test() call');
+    }
+  }
+  for (const _ of leftoverCalls(masked, "covers")) {
+    extraErrors.push("covers() is removed; use verifies(id, fingerprint, fn)");
+    break;
   }
   return { calls, extraErrors };
-}
-
-function yamlChildId(parent) {
-  return new RegExp(`^${parent.replaceAll(".", "\\.")}\\.${PART}$`);
-}
-
-function parentOf(id) {
-  const dot = id.lastIndexOf(".");
-  return dot === -1 ? null : id.slice(0, dot);
-}
-
-function scanIds(text) {
-  return {
-    ids: [...text.matchAll(TOKEN_RE)].map((match) => match[0]),
-    invalid: [...text.matchAll(OVERLONG_RE)].map((match) => match[0]),
-  };
-}
-
-// A trailing period is a boundary, so "F3." still counts. A dot before a number stays in the ID.
-const DECISION_PERIOD_RE = new RegExp(
-  `(?<![A-Za-z0-9.])(${ID_SOURCE}(?:\\.${PART})*)\\.(?![0-9])`,
-  "g",
-);
-
-function decisionIdErrors(name, text) {
-  DECISION_PERIOD_RE.lastIndex = 0;
-  const scanned = scanIds(text.replace(DECISION_PERIOD_RE, "$1 "));
-  return [...scanned.ids, ...scanned.invalid].map((id) => `${name}: cites requirement id ${id}`);
-}
-
-const NUMERIC_DECISION_PERIOD_RE = new RegExp(
-  `(?<![A-Za-z0-9.])(${PART}(?:\\.${PART}){1,2})\\.(?![0-9])`,
-  "g",
-);
-
-function decisionNumericIdErrors(name, text, knownIds) {
-  const normalized = text.replace(NUMERIC_DECISION_PERIOD_RE, "$1 ");
-  const errors = [];
-  NUMERIC_ID_RE.lastIndex = 0;
-  for (const match of normalized.matchAll(NUMERIC_ID_RE)) {
-    if (!knownIds.has(match[0])) continue;
-    const before = normalized.slice(Math.max(0, match.index - 5), match.index);
-    if (before === "WCAG ") continue;
-    errors.push(`${name}: cites requirement id ${match[0]}`);
-  }
-  return errors;
-}
-
-function yamlLine(lineCounter, node) {
-  if (!node?.range) return 1;
-  return lineCounter.linePos(node.range[0]).line;
-}
-
-function yamlPair(map, key) {
-  if (!isMap(map)) return undefined;
-  return map.items.find((pair) => isScalar(pair.key) && pair.key.value === key);
 }
 
 const SCHEMA_SKIP = new Set(["$schema", "$id", "title", "description", "$defs"]);
@@ -621,10 +462,8 @@ function validateAgainstSchema(value, name) {
       if (!defs[ref]) return [`${loc}: unknown schema ref ${sub.$ref}`];
       return check(defs[ref], val, loc);
     }
-
     const unknown = Object.keys(sub).filter((key) => !SCHEMA_SKIP.has(key) && !SCHEMA_KEYS.has(key));
     if (unknown.length > 0) return [`${loc}: unsupported schema keyword ${unknown[0]}`];
-
     if (sub.oneOf) {
       const attempts = sub.oneOf.map((option) => check(option, val, loc));
       const matched = attempts.filter((list) => list.length === 0);
@@ -632,7 +471,6 @@ function validateAgainstSchema(value, name) {
       if (matched.length > 1) return [`${loc}: matches more than one schema`];
       return attempts.sort((a, b) => a.length - b.length)[0] ?? [`${loc}: does not match schema`];
     }
-
     const errors = [];
     if (sub.type === "object") {
       if (!val || typeof val !== "object" || Array.isArray(val)) return [`${loc}: must be an object`];
@@ -640,10 +478,7 @@ function validateAgainstSchema(value, name) {
       if (!Array.isArray(val)) return [`${loc}: must be a list`];
     } else if (sub.type === "string") {
       if (typeof val !== "string") return [`${loc}: must be a string`];
-    } else if (sub.type === "boolean") {
-      if (typeof val !== "boolean") return [`${loc}: must be true or false`];
     }
-
     if (Object.hasOwn(sub, "const") && !Object.is(val, sub.const)) {
       errors.push(`${loc}: must be ${JSON.stringify(sub.const)}`);
     }
@@ -669,7 +504,9 @@ function validateAgainstSchema(value, name) {
       }
     }
     if (sub.type === "array") {
-      if (typeof sub.minItems === "number" && val.length < sub.minItems) errors.push(`${loc}: must not be empty`);
+      if (typeof sub.minItems === "number" && val.length < sub.minItems) {
+        errors.push(`${loc}: need at least ${sub.minItems} entries`);
+      }
       if (sub.items) {
         val.forEach((item, index) => {
           errors.push(...check(sub.items, item, `${loc}/${index}`));
@@ -682,24 +519,25 @@ function validateAgainstSchema(value, name) {
   return check(SCHEMA, value, name);
 }
 
-// Whole words only, so ordinary words such as "yesterday" and "lateral" stay.
 const TIMED_WORD_RE = /\b(?:v\d+|version|release|phase|for now|yet|initially|currently|later)\b/i;
 
-function timedTextError(name, field, idText) {
-  if (!field || !TIMED_WORD_RE.test(field.text)) return null;
-  return `${name}:${field.line}: ${idText} names a version or a time`;
+function yamlLine(lineCounter, node) {
+  if (!node?.range) return 1;
+  return lineCounter.linePos(node.range[0]).line;
 }
 
-function parseYamlCategory(name, text) {
-  const fileMatch = YAML_FILE_RE.exec(name);
-  if (!fileMatch) {
-    return {
-      errors: [`${name}: topic file name must look like 1-mcp.yaml`],
-      reqs: [],
-    };
-  }
+function yamlPair(map, key) {
+  if (!isMap(map)) return undefined;
+  return map.items.find((pair) => isScalar(pair.key) && pair.key.value === key);
+}
 
-  const categoryId = fileMatch[1];
+function rollupStatus(statuses) {
+  if (statuses.some((status) => status === "accepted")) return "accepted";
+  if (statuses.length > 0 && statuses.every((status) => status === "verified")) return "verified";
+  return "implemented";
+}
+
+function parseCatalog(name, text) {
   const lineCounter = new LineCounter();
   const doc = parseDocument(text, { lineCounter, uniqueKeys: true });
   const problems = [...doc.errors, ...doc.warnings];
@@ -709,16 +547,19 @@ function parseYamlCategory(name, text) {
         const line = problem.linePos?.[0]?.line ?? 1;
         return `${name}:${line}: ${problem.message}`;
       }),
-      reqs: [],
+      nodes: [],
     };
   }
 
   const root = doc.contents;
+  const errors = [];
   if (!isMap(root)) {
-    return { errors: [`${name}:1: topic file must be a mapping`], reqs: [] };
+    return { errors: [`${name}:1: catalog must be a mapping`], nodes: [] };
   }
 
-  const errors = [];
+  function at(node) {
+    return yamlLine(lineCounter, node);
+  }
 
   function rejectFlow(node) {
     if (!node || typeof node !== "object") return;
@@ -734,80 +575,6 @@ function parseYamlCategory(name, text) {
   }
 
   rejectFlow(root);
-  const reqs = [];
-  const seen = new Set();
-
-  function at(node) {
-    return yamlLine(lineCounter, node);
-  }
-
-  function addReq(id, line, fields) {
-    const parent = parentOf(id);
-    if (parent && !seen.has(parent)) {
-      errors.push(`${name}:${line}: ${id} is missing parent ${parent}`);
-    }
-    if (seen.has(id)) {
-      errors.push(`${name}:${line}: duplicate id ${id}`);
-      return;
-    }
-    seen.add(id);
-    reqs.push({
-      id,
-      line,
-      file: name,
-      status: null,
-      manual: false,
-      kind: "topic",
-      text: null,
-      see: [],
-      implementedFalse: false,
-      skipCoverage: false,
-      ...fields,
-    });
-  }
-
-  function isRemoved(map) {
-    const pair = yamlPair(map, "removed");
-    if (!pair) return false;
-    const node = pair.value;
-    if (!isScalar(node) || node.value !== true) {
-      errors.push(`${name}:${at(node ?? pair.key)}: removed must be true`);
-    }
-    return true;
-  }
-
-  function takeSee(map) {
-    const pair = yamlPair(map, "see");
-    if (!pair) return [];
-    if (!isSeq(pair.value)) {
-      errors.push(`${name}:${at(pair.value ?? pair.key)}: see must be a list`);
-      return [];
-    }
-    if (pair.value.items.length === 0) {
-      errors.push(`${name}:${at(pair.value)}: see must name an id`);
-      return [];
-    }
-    const ids = [];
-    const seeRe = new RegExp(`^${PART}(?:\\.${PART}){1,2}$`);
-    for (const item of pair.value.items) {
-      if (!isScalar(item) || item.type !== "QUOTE_DOUBLE" || typeof item.value !== "string" || !seeRe.test(item.value)) {
-        errors.push(`${name}:${at(item)}: see id must be a double-quoted requirement id`);
-        continue;
-      }
-      ids.push(item.value);
-    }
-    return ids;
-  }
-
-  function takeManual(map) {
-    const pair = yamlPair(map, "check");
-    if (!pair) return false;
-    if (!isScalar(pair.value) || pair.value.value !== "manual") {
-      errors.push(`${name}:${at(pair.value ?? pair.key)}: check must be manual`);
-      return false;
-    }
-    return true;
-  }
 
   function rejectUnknown(map, allowed) {
     for (const pair of map.items) {
@@ -820,6 +587,24 @@ function parseYamlCategory(name, text) {
         errors.push(`${name}:${at(keyNode)}: unknown key ${keyNode.value}`);
       }
     }
+  }
+
+  function takeQuotedId(map, key) {
+    const pair = yamlPair(map, key);
+    if (!pair) {
+      errors.push(`${name}:${at(map)}: missing ${key}`);
+      return null;
+    }
+    const node = pair.value;
+    if (!isScalar(node) || node.type !== "QUOTE_DOUBLE" || typeof node.value !== "string") {
+      errors.push(`${name}:${at(node ?? pair.key)}: ${key} must be a double-quoted string`);
+      return null;
+    }
+    if (!ID_RE.test(node.value)) {
+      errors.push(`${name}:${at(node)}: ${key} must be a positive integer id`);
+      return null;
+    }
+    return { text: node.value, line: at(node) };
   }
 
   function takeString(map, key) {
@@ -841,33 +626,110 @@ function parseYamlCategory(name, text) {
     return { text: scalar, line: at(value) };
   }
 
-  function takeId(map, key) {
-    const pair = yamlPair(map, key);
+  function takeStatus(map) {
+    const pair = yamlPair(map, "status");
     if (!pair) {
-      errors.push(`${name}:${at(map)}: missing ${key}`);
+      errors.push(`${name}:${at(map)}: missing status`);
       return null;
     }
-    const node = pair.value;
-    if (!isScalar(node) || node.type !== "QUOTE_DOUBLE" || typeof node.value !== "string") {
-      errors.push(`${name}:${at(node ?? pair.key)}: ${key} must be a double-quoted string`);
+    const value = isScalar(pair.value) ? pair.value.value : null;
+    if (!STATUSES.has(value)) {
+      errors.push(`${name}:${at(pair.value ?? pair.key)}: status must be accepted, implemented, or verified`);
       return null;
     }
-    if (!node.value || node.value !== node.value.trim() || node.value.includes("\n")) {
-      errors.push(`${name}:${at(node)}: ${key} must be an id`);
-      return null;
-    }
-    return { text: node.value, line: at(node) };
+    return value;
   }
 
-  rejectUnknown(root, new Set(["id", "title", "requirements"]));
-  const idField = takeId(root, "id");
-  takeString(root, "title");
-  if (idField && idField.text !== categoryId) {
-    errors.push(`${name}:${idField.line}: ${idField.text} does not match file category ${categoryId}`);
-  } else if (idField) {
-    addReq(idField.text, idField.line, { kind: "topic" });
+  const nodes = [];
+  const seen = new Set();
+
+  function addNode(fields) {
+    if (seen.has(fields.id)) {
+      errors.push(`${name}:${fields.line}: duplicate id ${fields.id}`);
+      return;
+    }
+    seen.add(fields.id);
+    nodes.push(fields);
   }
 
+  function parseNode(map, parentId, inShared, isRoot) {
+    if (yamlPair(map, "ref") && yamlPair(map, "id")) {
+      errors.push(`${name}:${at(map)}: a reference cannot also be a node`);
+      return null;
+    }
+    if (yamlPair(map, "ref")) {
+      rejectUnknown(map, new Set(["ref"]));
+      const refId = takeQuotedId(map, "ref");
+      if (!refId) return null;
+      return { type: "ref", id: refId.text, line: refId.line };
+    }
+
+    const allowed = isRoot
+      ? new Set(["id", "kind", "status", "text", "children"])
+      : new Set(["id", "status", "text", "children"]);
+    rejectUnknown(map, allowed);
+    const idField = takeQuotedId(map, "id");
+    const textField = takeString(map, "text");
+    const status = takeStatus(map);
+    let kind = "normal";
+    const kindPair = yamlPair(map, "kind");
+    if (kindPair) {
+      if (!isRoot) {
+        errors.push(`${name}:${at(kindPair.key)}: kind is only allowed on a root`);
+      }
+      const value = isScalar(kindPair.value) ? kindPair.value.value : null;
+      if (value !== "normal" && value !== "shared") {
+        errors.push(`${name}:${at(kindPair.value ?? kindPair.key)}: kind must be normal or shared`);
+      } else {
+        kind = value;
+      }
+    }
+    if (textField && TIMED_WORD_RE.test(textField.text)) {
+      errors.push(`${name}:${textField.line}: ${idField ? idField.text : "text"} names a version or a time`);
+    }
+
+    const shared = isRoot ? kind === "shared" : inShared;
+    const childEntries = [];
+    const childrenPair = yamlPair(map, "children");
+    if (childrenPair) {
+      if (!isSeq(childrenPair.value)) {
+        errors.push(`${name}:${at(childrenPair.value)}: children must be a list`);
+      } else if (childrenPair.value.items.length < 2) {
+        errors.push(`${name}:${at(childrenPair.value)}: children must have at least two entries`);
+      } else {
+        for (const item of childrenPair.value.items) {
+          if (!isMap(item)) {
+            errors.push(`${name}:${at(item)}: child must be a mapping`);
+            continue;
+          }
+          const child = parseNode(item, idField ? idField.text : null, shared, false);
+          if (child) childEntries.push(child);
+        }
+      }
+    }
+
+    if (!idField || !textField || !status) return null;
+    const childIds = childEntries.filter((child) => child.type === "node").map((child) => child.id);
+    const refIds = childEntries.filter((child) => child.type === "ref").map((child) => child.id);
+    addNode({
+      type: "node",
+      id: idField.text,
+      line: idField.line,
+      file: name,
+      text: textField.text,
+      status,
+      kind,
+      parentId,
+      childIds,
+      refIds,
+      inSharedTree: shared,
+      isRoot,
+      fingerprint: requirementFingerprint(idField.text, textField.text),
+    });
+    return { type: "node", id: idField.text };
+  }
+
+  rejectUnknown(root, new Set(["requirements"]));
   const requirementsPair = yamlPair(root, "requirements");
   if (!requirementsPair) {
     errors.push(`${name}:${at(root)}: missing requirements`);
@@ -876,247 +738,205 @@ function parseYamlCategory(name, text) {
   } else {
     for (const item of requirementsPair.value.items) {
       if (!isMap(item)) {
-        errors.push(`${name}:${at(item)}: requirement must be a mapping`);
+        errors.push(`${name}:${at(item)}: root must be a mapping`);
         continue;
       }
-      if (isRemoved(item)) {
-        rejectUnknown(item, new Set(["id", "removed"]));
-        const removedId = takeId(item, "id");
-        const removedOk = removedId && yamlChildId(categoryId).test(removedId.text);
-        if (removedId && !removedOk) {
-          errors.push(`${name}:${removedId.line}: ${removedId.text} is outside category ${categoryId}`);
-        } else if (removedId) {
-          addReq(removedId.text, removedId.line, { kind: "removed" });
-        }
-        continue;
-      }
-      rejectUnknown(item, new Set(["id", "type", "text", "details", "see"]));
-      const reqId = takeId(item, "id");
-      const typePair = yamlPair(item, "type");
-      if (!typePair) {
-        errors.push(`${name}:${at(item)}: missing type`);
-      } else if (!isScalar(typePair.value) || !YAML_TYPES.has(typePair.value.value)) {
-        errors.push(
-          `${name}:${at(typePair.value ?? typePair.key)}: type must be functional, non-functional, or system`,
-        );
-      }
-      const reqText = takeString(item, "text");
-      const timedReq = timedTextError(name, reqText, reqId ? reqId.text : "text");
-      if (timedReq) errors.push(timedReq);
-      const reqSee = takeSee(item);
-      const reqOk = reqId && yamlChildId(categoryId).test(reqId.text);
-      if (reqId && !reqOk) {
-        errors.push(`${name}:${reqId.line}: ${reqId.text} is outside category ${categoryId}`);
-      } else if (reqId) {
-        addReq(reqId.text, reqId.line, {
-          kind: "requirement",
-          text: reqText ? reqText.text : null,
-          see: reqSee,
-        });
-      }
-
-      const detailsPair = yamlPair(item, "details");
-      if (!detailsPair) {
-        errors.push(`${name}:${at(item)}: missing details`);
-        continue;
-      }
-      if (!isSeq(detailsPair.value)) {
-        errors.push(`${name}:${at(detailsPair.value)}: details must be a list`);
-        continue;
-      }
-      for (const detail of detailsPair.value.items) {
-        if (!isMap(detail)) {
-          errors.push(`${name}:${at(detail)}: detail must be a mapping`);
-          continue;
-        }
-        if (isRemoved(detail)) {
-          rejectUnknown(detail, new Set(["id", "removed"]));
-          const removedId = takeId(detail, "id");
-          const parentId = reqOk ? reqId.text : null;
-          const removedOk = removedId && parentId && yamlChildId(parentId).test(removedId.text);
-          if (removedId && !removedOk) {
-            const why = parentId
-              ? `${removedId.text} is not under ${parentId}`
-              : `${removedId.text} is outside category ${categoryId}`;
-            errors.push(`${name}:${removedId.line}: ${why}`);
-          } else if (removedId) {
-            addReq(removedId.text, removedId.line, { kind: "removed" });
-          }
-          continue;
-        }
-        rejectUnknown(detail, new Set(["id", "text", "implemented", "check", "see"]));
-        const detailId = takeId(detail, "id");
-        const detailText = takeString(detail, "text");
-        const timedDetail = timedTextError(name, detailText, detailId ? detailId.text : "text");
-        if (timedDetail) errors.push(timedDetail);
-        const detailSee = takeSee(detail);
-        const manual = takeManual(detail);
-        const implementedPair = yamlPair(detail, "implemented");
-        let status = "Implemented";
-        let implementedFalse = false;
-        let skipCoverage = false;
-        if (implementedPair) {
-          const value = isScalar(implementedPair.value) ? implementedPair.value.value : null;
-          if (value !== true && value !== false) {
-            const where = implementedPair.value ?? implementedPair.key;
-            errors.push(`${name}:${at(where)}: implemented must be true or false`);
-            status = null;
-            skipCoverage = true;
-          } else if (value === false) {
-            status = null;
-            implementedFalse = true;
-          }
-        }
-        const parentId = reqOk ? reqId.text : null;
-        const detailOk = detailId && parentId && yamlChildId(parentId).test(detailId.text);
-        if (detailId && !detailOk) {
-          const why = parentId
-            ? `${detailId.text} is not under ${parentId}`
-            : `${detailId.text} is outside category ${categoryId}`;
-          errors.push(`${name}:${detailId.line}: ${why}`);
-        } else if (detailId) {
-          addReq(detailId.text, detailId.line, {
-            kind: "detail",
-            text: detailText ? detailText.text : null,
-            status,
-            manual,
-            see: detailSee,
-            implementedFalse,
-            skipCoverage,
-          });
-        }
-      }
+      parseNode(item, null, false, true);
     }
   }
 
   errors.push(...validateAgainstSchema(doc.toJS(), name));
-  return { errors, reqs };
+  return { errors, nodes };
 }
 
-function check({ requirementFiles, testFiles, scriptFiles, decisionFiles = [] }) {
+function loadEvidenceFiles(dir) {
+  if (!existsSync(dir)) return [];
+  const rows = [];
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".json")) continue;
+    try {
+      const raw = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+      rows.push({
+        id: String(raw.id ?? ""),
+        fingerprint: String(raw.fingerprint ?? ""),
+        passed: raw.passed === true,
+      });
+    } catch {
+      rows.push({ id: name, fingerprint: "", passed: false, invalid: true });
+    }
+  }
+  return rows;
+}
+
+function isLeaf(node) {
+  return node.childIds.length === 0 && node.refIds.length === 0;
+}
+
+function check({ requirementFiles, testFiles, decisionFiles = [], evidence = [] }) {
   const errors = [];
   const byId = new Map();
   const files = [...requirementFiles].sort((a, b) => a.name.localeCompare(b.name));
+  const yamlFiles = files.filter((file) => file.name.endsWith(".yaml"));
 
   for (const file of files) {
-    if (file.name === "README.md") continue;
-    if (!file.name.endsWith(".yaml")) {
-      if (file.name.endsWith(".md")) {
-        errors.push(`${file.name}: topic files are YAML, named like 1-mcp.yaml`);
-      }
+    if (file.name === "README.md" || file.name === "migration.md") continue;
+    if (file.name.endsWith(".md")) {
+      errors.push(`${file.name}: the catalog is ${CATALOG_NAME}`);
+    }
+  }
+  for (const file of yamlFiles) {
+    if (file.name !== CATALOG_NAME) {
+      errors.push(`${file.name}: the catalog is ${CATALOG_NAME}`);
       continue;
     }
-    const parsed = parseYamlCategory(file.name, file.text);
+    const parsed = parseCatalog(file.name, file.text);
     errors.push(...parsed.errors);
-    for (const req of parsed.reqs) {
-      const prior = byId.get(req.id);
+    for (const node of parsed.nodes) {
+      const prior = byId.get(node.id);
       if (prior) {
-        errors.push(`${req.file}:${req.line}: duplicate id ${req.id} (also ${prior.file}:${prior.line})`);
+        errors.push(`${node.file}:${node.line}: duplicate id ${node.id} (also ${prior.file}:${prior.line})`);
         continue;
       }
-      byId.set(req.id, req);
+      byId.set(node.id, node);
     }
   }
 
-  const referenced = new Map();
-  const detailTests = new Map();
-
-  function note(id, where) {
-    if (!referenced.has(id)) referenced.set(id, where);
+  for (const node of byId.values()) {
+    for (const refId of node.refIds) {
+      const target = byId.get(refId);
+      if (!target) {
+        errors.push(`${node.file}:${node.line}: ${node.id} references unknown id ${refId}`);
+        continue;
+      }
+      if (!target.inSharedTree) {
+        errors.push(
+          `${node.file}:${node.line}: ${node.id} references ${refId}, which is not in a shared tree`,
+        );
+      }
+    }
   }
 
-  function noteDetail(id, where) {
-    const list = detailTests.get(id) ?? [];
-    list.push(where);
-    detailTests.set(id, list);
-    note(id, where);
+  const visiting = new Set();
+  const visited = new Set();
+  function walk(id, stack) {
+    if (visiting.has(id)) {
+      errors.push(`cycle: ${[...stack, id].join(" -> ")}`);
+      return;
+    }
+    if (visited.has(id)) return;
+    const node = byId.get(id);
+    if (!node) return;
+    visiting.add(id);
+    for (const childId of [...node.childIds, ...node.refIds]) walk(childId, [...stack, id]);
+    visiting.delete(id);
+    visited.add(id);
+  }
+  for (const id of byId.keys()) walk(id, []);
+
+  for (const node of byId.values()) {
+    if (isLeaf(node)) continue;
+    const statuses = [];
+    for (const childId of node.childIds) {
+      const child = byId.get(childId);
+      if (child) statuses.push(child.status);
+    }
+    for (const refId of node.refIds) {
+      const child = byId.get(refId);
+      if (child) statuses.push(child.status);
+    }
+    const expected = rollupStatus(statuses);
+    if (node.status !== expected) {
+      errors.push(
+        `${node.file}:${node.line}: ${node.id} status ${node.status} does not roll up to ${expected}`,
+      );
+    }
   }
 
+  const bindings = new Map();
   const tests = [...testFiles].sort((a, b) => a.name.localeCompare(b.name));
   for (const file of tests) {
     const text = file.text.replace(/\r\n/g, "\n");
-    const scanned = scanIds(text);
-    for (const id of scanned.ids) note(id, file.name);
-    for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-    const evidence = evidenceFromTests(text);
-    for (const extra of evidence.extraErrors) {
+    const evidenceScan = evidenceFromTests(text);
+    for (const extra of evidenceScan.extraErrors) {
       errors.push(extra.startsWith(": ") ? `${file.name}${extra}` : `${file.name}: ${extra}`);
     }
-    for (const call of evidence.calls) {
-      for (const id of call.reqIds) noteDetail(id, file.name);
+    LETTER_ID_RE.lastIndex = 0;
+    LETTER_OVERLONG_RE.lastIndex = 0;
+    for (const match of text.matchAll(LETTER_ID_RE)) {
+      errors.push(`unknown id ${match[0]} in ${file.name}`);
+    }
+    for (const match of text.matchAll(LETTER_OVERLONG_RE)) {
+      errors.push(`invalid id ${match[0]} in ${file.name}`);
+    }
+    for (const call of evidenceScan.calls) {
+      if (!call.binding || call.skipped) continue;
+      const list = bindings.get(call.binding.id) ?? [];
+      list.push({ ...call.binding, file: file.name });
+      bindings.set(call.binding.id, list);
     }
   }
 
-  const scripts = [...scriptFiles].sort((a, b) => a.name.localeCompare(b.name));
-  for (const file of scripts) {
-    const scanned = scanIds(file.text);
-    for (const id of scanned.ids) note(id, file.name);
-    for (const id of scanned.invalid) errors.push(`invalid id ${id} in ${file.name}`);
-  }
-
-  for (const [id, where] of [...referenced.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    if (!byId.has(id)) errors.push(`unknown id ${id} in ${where}`);
-  }
-
-  function yamlCover(req) {
-    const named = detailTests.get(req.id) ?? [];
-    if (req.skipCoverage) return;
-    if (req.kind === "topic" || req.kind === "requirement") {
-      if (named.length > 0) errors.push(`${req.file}:${req.line}: ${req.id} is not a detail`);
-      return;
+  for (const [id, list] of [...bindings.entries()].sort((a, b) => Number(a[0]) - Number(b[0]))) {
+    const node = byId.get(id);
+    if (!node) {
+      errors.push(`unknown id ${id} in ${list[0].file}`);
+      continue;
     }
-    if (req.kind === "removed") {
-      if (named.length > 0) errors.push(`${req.file}:${req.line}: ${req.id} is removed and is covered by a test`);
-      return;
+    if (!isLeaf(node)) {
+      errors.push(`${list[0].file}: ${id} is not a leaf`);
+      continue;
     }
-    if (req.kind !== "detail") return;
-    if (req.implementedFalse && req.manual) {
-      errors.push(`${req.file}:${req.line}: ${req.id} is implemented: false and uses check: manual`);
+    if (list.length > 1) {
+      errors.push(`${node.file}:${node.line}: ${id} is bound by more than one test`);
     }
-    if (req.implementedFalse) {
-      if (named.length > 0) {
-        errors.push(`${req.file}:${req.line}: ${req.id} is implemented: false and is covered by a test`);
+    for (const binding of list) {
+      if (binding.fingerprint !== node.fingerprint) {
+        errors.push(
+          `${binding.file}: ${id} fingerprint ${binding.fingerprint} does not match ${node.fingerprint}`,
+        );
       }
-      return;
-    }
-    if (req.manual) {
-      if (named.length > 0) {
-        errors.push(`${req.file}:${req.line}: ${req.id} uses check: manual and is covered by a test`);
-      }
-      return;
-    }
-    if (named.length === 0) {
-      errors.push(`${req.file}:${req.line}: ${req.id} (Implemented) has no test that covers ${req.id}`);
-    }
-    if (named.length > 1) {
-      errors.push(`${req.file}:${req.line}: ${req.id} is covered by more than one test`);
     }
   }
 
-  for (const req of byId.values()) {
-    yamlCover(req);
-    for (const target of req.see ?? []) {
-      if (target === req.id) {
-        errors.push(`${req.file}:${req.line}: ${req.id} see itself`);
-        continue;
-      }
-      const other = byId.get(target);
-      if (!other) errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is unknown`);
-      else if (other.kind === "removed") {
-        errors.push(`${req.file}:${req.line}: ${req.id} see ${target} is removed`);
-      }
+  const passed = new Map();
+  for (const row of evidence) {
+    if (row.invalid || !row.passed) continue;
+    passed.set(row.id, row);
+  }
+
+  for (const node of byId.values()) {
+    if (!isLeaf(node) || node.status !== "verified") continue;
+    const bound = bindings.get(node.id) ?? [];
+    if (bound.length === 0) {
+      errors.push(`${node.file}:${node.line}: ${node.id} is verified and has no test binding`);
+      continue;
+    }
+    const run = passed.get(node.id);
+    if (!run || run.fingerprint !== node.fingerprint) {
+      errors.push(
+        `${node.file}:${node.line}: ${node.id} is verified without an executed passing test`,
+      );
     }
   }
 
   const decisions = [...decisionFiles].sort((a, b) => a.name.localeCompare(b.name));
   for (const file of decisions) {
-    errors.push(...decisionIdErrors(file.name, file.text));
-    errors.push(...decisionNumericIdErrors(file.name, file.text, byId));
+    if (file.text.includes("verifies(") || file.text.includes("covers(")) {
+      errors.push(`${file.name}: cites a requirement test helper`);
+    }
+    REQ_REF_RE.lastIndex = 0;
+    for (const match of file.text.matchAll(REQ_REF_RE)) {
+      errors.push(`${file.name}: cites requirement id ${match[1]}`);
+    }
+    LETTER_ID_RE.lastIndex = 0;
+    for (const match of file.text.matchAll(LETTER_ID_RE)) {
+      errors.push(`${file.name}: cites requirement id ${match[0]}`);
+    }
   }
 
   return {
     errors,
-    ids: [...byId.keys()].sort(),
+    ids: [...byId.keys()].sort((a, b) => Number(a) - Number(b)),
   };
 }
 
@@ -1129,8 +949,30 @@ function sameIds(got, want) {
   return pending.size === 0;
 }
 
+function catalogYaml(body) {
+  return `requirements:\n${body}`;
+}
+
+function twoLeaves(status = "accepted") {
+  return [
+    '  - id: "1"',
+    `    status: ${status}`,
+    '    text: Agents can read a recipe.',
+    "    children:",
+    '      - id: "2"',
+    `        status: ${status}`,
+    '        text: Given a recipe ID, the agent receives that recipe.',
+    '      - id: "3"',
+    `        status: ${status}`,
+    '        text: Without a recipe ID, the agent is told an ID is required.',
+    "",
+  ].join("\n");
+}
+
 function runCanary() {
   const failures = [];
+  const fp2 = requirementFingerprint("2", "Given a recipe ID, the agent receives that recipe.");
+  const fp3 = requirementFingerprint("3", "Without a recipe ID, the agent is told an ID is required.");
 
   function pass(label, input, ids) {
     const result = check(input);
@@ -1152,593 +994,499 @@ function runCanary() {
     }
   }
 
-  pass("empty", { requirementFiles: [], testFiles: [], scriptFiles: [] }, []);
+  pass("empty", { requirementFiles: [], testFiles: [] }, []);
   pass(
-    "readme is not a category",
-    {
-      requirementFiles: [{ name: "README.md", text: "# F3 Meals\n\nStatus: Implemented\n" }],
-      testFiles: [],
-      scriptFiles: [],
-    },
+    "readme is not the catalog",
+    { requirementFiles: [{ name: "README.md", text: "# Requirements\n" }], testFiles: [] },
     [],
   );
+
+  const accepted = [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")) }];
+  pass("accepted leaves need no test", { requirementFiles: accepted, testFiles: [] }, ["1", "2", "3"]);
+
+  const implemented = [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("implemented")) }];
+  pass("implemented leaves need no test", { requirementFiles: implemented, testFiles: [] }, ["1", "2", "3"]);
+
+  const verifiedYaml = catalogYaml(twoLeaves("verified"));
   fail(
-    "markdown topic file",
-    { requirementFiles: [{ name: "F3-meals.md", text: "# F3 Meals\n" }], testFiles: [], scriptFiles: [] },
-    "topic files are YAML",
-  );
-  pass(
-    "adr without an id",
-    {
-      requirementFiles: [],
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [
-        {
-          name: "docs/decisions/0001-choice.md",
-          text: "# Choice\n\n* Status: accepted\n\nStore meals in one place. Requirements stay in the requirements docs.\n",
-        },
-      ],
-    },
-    [],
-  );
-  fail(
-    "adr cites an id",
-    {
-      requirementFiles: [],
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [
-        {
-          name: "docs/decisions/0001-choice.md",
-          text: "# Choice\n\n* Status: accepted\n\nSave a meal (F3.2).\n",
-        },
-      ],
-    },
-    "docs/decisions/0001-choice.md: cites requirement id F3.2",
-  );
-  fail(
-    "letter id in a test is unknown",
-    {
-      requirementFiles: [],
-      testFiles: [{ name: "save.test.ts", text: "// see F3.2 later\n" }],
-      scriptFiles: [],
-    },
-    "unknown id F3.2 in save.test.ts",
+    "verified leaf needs a binding",
+    { requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }], testFiles: [] },
+    "is verified and has no test binding",
   );
 
-  const yamlProposed = [
-    'id: "1"',
-    "title: MCP",
-    "requirements:",
-    '  - id: "1.1"',
-    "    type: functional",
-    "    text: Agents can read a recipe.",
-    "    details:",
-    '      - id: "1.1.1"',
-    "        text: Given a deleted recipe, the agent does not receive it.",
-    "        implemented: false",
-    '      - id: "1.1.2"',
-    "        text: Given a recipe, the agent receives its title.",
-    "        implemented: false",
-    "",
-  ].join("\n");
-  const yamlImplemented = yamlProposed.replaceAll("        implemented: false\n", "");
-  const yamlFile = (text) => [{ name: "1-mcp.yaml", text }];
-
-  pass("yaml unimplemented needs no test", { requirementFiles: yamlFile(yamlProposed), testFiles: [], scriptFiles: [] }, [
-    "1",
-    "1.1",
-    "1.1.1",
-    "1.1.2",
-  ]);
-  pass(
-    "yaml one test can cover several details",
+  const verifiedTests = [
     {
-      requirementFiles: yamlFile(yamlImplemented),
+      name: "read.test.ts",
+      text: `it("receives that recipe", verifies("2", "${fp2}", () => {\n  assert.ok(true);\n}));\nit("requires an id", verifies("3", "${fp3}", () => {\n  assert.ok(true);\n}));\n`,
+    },
+  ];
+  fail(
+    "verified without executed evidence",
+    {
+      requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
+      testFiles: verifiedTests,
+      evidence: [],
+    },
+    "without an executed passing test",
+  );
+  pass(
+    "verified with executed evidence",
+    {
+      requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
+      testFiles: verifiedTests,
+      evidence: [
+        { id: "2", fingerprint: fp2, passed: true },
+        { id: "3", fingerprint: fp3, passed: true },
+      ],
+    },
+    ["1", "2", "3"],
+  );
+  fail(
+    "skipped test is not executed evidence",
+    {
+      requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'it("read", () => {\n  covers("1.1.1", "1.1.2");\n});\n',
+          text: `it.skip("receives that recipe", verifies("2", "${fp2}", () => {}));\nit("requires an id", verifies("3", "${fp3}", () => {}));\n`,
         },
       ],
-      scriptFiles: [],
+      evidence: [
+        { id: "2", fingerprint: fp2, passed: true },
+        { id: "3", fingerprint: fp3, passed: true },
+      ],
     },
-    ["1", "1.1", "1.1.1", "1.1.2"],
+    "is verified and has no test binding",
   );
-  pass(
-    "yaml concise arrow covers a detail",
+  fail(
+    "failing evidence is not verified",
     {
-      requirementFiles: yamlFile(yamlImplemented),
+      requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
+      testFiles: verifiedTests,
+      evidence: [
+        { id: "2", fingerprint: fp2, passed: false },
+        { id: "3", fingerprint: fp3, passed: true },
+      ],
+    },
+    "without an executed passing test",
+  );
+  fail(
+    "stale fingerprint",
+    {
+      requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'it("read", () => covers("1.1.1"));\nit("title", () => covers("1.1.2"));\n',
+          text: `it("receives that recipe", verifies("2", "deadbeefdeadbeef", () => {}));\nit("requires an id", verifies("3", "${fp3}", () => {}));\n`,
         },
       ],
-      scriptFiles: [],
+      evidence: [
+        { id: "2", fingerprint: fp2, passed: true },
+        { id: "3", fingerprint: fp3, passed: true },
+      ],
     },
-    ["1", "1.1", "1.1.1", "1.1.2"],
+    "does not match",
   );
   fail(
-    "yaml file name",
-    { requirementFiles: [{ name: "notes.yaml", text: "id: 1\n" }], testFiles: [], scriptFiles: [] },
-    "topic file name must look like 1-mcp.yaml",
-  );
-  fail(
-    "yaml letter id file name",
-    { requirementFiles: [{ name: "F1-mcp.yaml", text: "id: 1\n" }], testFiles: [], scriptFiles: [] },
-    "topic file name must look like 1-mcp.yaml",
-  );
-  fail(
-    "yaml implemented detail needs a test",
-    { requirementFiles: yamlFile(yamlImplemented), testFiles: [], scriptFiles: [] },
-    "1.1.1 (Implemented) has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml requirement id is not a detail",
+    "binding to a parent",
     {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("1.1");\n});\n' }],
-      scriptFiles: [],
-    },
-    "is not a detail",
-  );
-  fail(
-    "yaml id in the test body does not count",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  const id = "1.1.1";\n});\n' }],
-      scriptFiles: [],
-    },
-    "1.1.1 (Implemented) has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml script mention does not cover a detail",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [],
-      scriptFiles: [{ name: "scripts/smoke.sh", text: "# 1.1.1\n" }],
-    },
-    "1.1.1 (Implemented) has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml implemented true still needs a test",
-    {
-      requirementFiles: yamlFile(yamlProposed.replaceAll("implemented: false", "implemented: true")),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "1.1.1 (Implemented) has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml proposed key",
-    {
-      requirementFiles: yamlFile(yamlProposed.replaceAll("implemented: false", "proposed: true")),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "unknown key proposed",
-  );
-  fail(
-    "yaml missing type",
-    {
-      requirementFiles: yamlFile(yamlProposed.replace("    type: functional\n", "")),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "missing type",
-  );
-  fail(
-    "yaml flow style",
-    {
-      requirementFiles: yamlFile(
-        [
-          "id: 1",
-          "title: MCP",
-          'requirements: [{id: "1.1", type: functional, text: Agents can read a recipe., details: [{id: "1.1.1", text: Given a deleted recipe, the agent does not receive it., implemented: false}]}]',
-          "",
-        ].join("\n"),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "not flow style",
-  );
-  fail(
-    "yaml category mismatch",
-    {
-      requirementFiles: yamlFile(yamlProposed.replace('id: "1"\n', 'id: "2"\n')),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "2 does not match file category 1",
-  );
-  fail(
-    "yaml id in a decision",
-    {
-      requirementFiles: yamlFile(yamlProposed),
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See 1.1.1.\n" }],
-    },
-    "cites requirement id 1.1.1",
-  );
-  pass(
-    "wcag version is not a requirement id",
-    {
-      requirementFiles: yamlFile(yamlProposed),
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
-    },
-    ["1", "1.1", "1.1.1", "1.1.2"],
-  );
-  const yamlWcag = [
-    'id: "2"',
-    "title: UI",
-    "requirements:",
-    '  - id: "2.2"',
-    "    type: non-functional",
-    "    text: The app installs.",
-    "    details:",
-    '      - id: "2.2.1"',
-    "        text: Given a secure context, the app installs.",
-    "        implemented: false",
-    "",
-  ].join("\n");
-  pass(
-    "wcag 2.2 does not cite requirement 2.2",
-    {
-      requirementFiles: [{ name: "2-kitchen-ui.yaml", text: yamlWcag }],
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
-    },
-    ["2", "2.2", "2.2.1"],
-  );
-  fail(
-    "a decision cites requirement 2.2",
-    {
-      requirementFiles: [{ name: "2-kitchen-ui.yaml", text: yamlWcag }],
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See 2.2.\n" }],
-    },
-    "cites requirement id 2.2",
-  );
-  pass(
-    "two topic files, unimplemented needs no test",
-    {
-      requirementFiles: [...yamlFile(yamlProposed), { name: "2-kitchen-ui.yaml", text: yamlWcag }],
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["1", "1.1", "1.1.1", "1.1.2", "2", "2.2", "2.2.1"],
-  );
-  fail(
-    "unimplemented detail in a later topic file is covered",
-    {
-      requirementFiles: [...yamlFile(yamlImplemented), { name: "2-kitchen-ui.yaml", text: yamlWcag }],
+      requirementFiles: [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")) }],
       testFiles: [
-        { name: "read.test.ts", text: 'it("read", () => {\n  covers("1.1.1", "1.1.2");\n});\n' },
-        { name: "ui.test.ts", text: 'it("opens", () => {\n  covers("2.2.1");\n});\n' },
-      ],
-      scriptFiles: [],
-    },
-    "implemented: false and is covered by a test",
-  );
-  pass(
-    "yaml text may contain more than one period",
-    {
-      requirementFiles: yamlFile(
-        yamlProposed.replace(
-          "Given a deleted recipe, the agent does not receive it.",
-          "Given a deleted recipe, the agent does not receive it. The row stays.",
-        ),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["1", "1.1", "1.1.1", "1.1.2"],
-  );
-  fail(
-    "yaml names a version",
-    {
-      requirementFiles: yamlFile(yamlProposed.replace("Agents can read a recipe.", "v1 can read a recipe.")),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "names a version",
-  );
-  fail(
-    "yaml names a time",
-    {
-      requirementFiles: yamlFile(
-        yamlProposed.replace("Given a deleted recipe, the agent does not receive it.", "Search comes later."),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "names a version",
-  );
-  pass(
-    "yaml ordinary words are not a time",
-    {
-      requirementFiles: yamlFile(
-        yamlProposed.replace("Agents can read a recipe.", "Yesterday a lateral read returns the title."),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["1", "1.1", "1.1.1", "1.1.2"],
-  );
-  pass(
-    "a decision may name a time",
-    {
-      requirementFiles: yamlFile(yamlProposed),
-      testFiles: [],
-      scriptFiles: [],
-      decisionFiles: [
         {
-          name: "docs/decisions/0001-choice.md",
-          text: "Search comes later. The v1 release is a phase for now.\n",
+          name: "read.test.ts",
+          text: `it("parent", verifies("1", "${requirementFingerprint("1", "Agents can read a recipe.")}", () => {}));\n`,
         },
       ],
     },
-    ["1", "1.1", "1.1.1", "1.1.2"],
+    "is not a leaf",
   );
   fail(
-    "markdown index is rejected",
+    "one test per leaf",
     {
-      requirementFiles: [{ name: "index.md", text: "1.1 Agents can read.\n" }],
-      testFiles: [],
-      scriptFiles: [],
+      requirementFiles: [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")) }],
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: `it("a", verifies("2", "${fp2}", () => {}));\nit("b", verifies("2", "${fp2}", () => {}));\n`,
+        },
+      ],
     },
-    "topic files are YAML",
-  );
-  const yamlGap = [
-    'id: "1"',
-    "title: MCP",
-    "requirements:",
-    '  - id: "1.1"',
-    "    type: functional",
-    "    text: Agents can read a recipe.",
-    "    details:",
-    '      - id: "1.1.1"',
-    "        text: Given a recipe, the agent receives its title.",
-    "        implemented: false",
-    '  - id: "1.3"',
-    "    removed: true",
-    "",
-  ].join("\n");
-  pass(
-    "yaml ids may gap and a removed marker keeps its number",
-    { requirementFiles: yamlFile(yamlGap), testFiles: [], scriptFiles: [] },
-    ["1", "1.1", "1.1.1", "1.3"],
+    "bound by more than one test",
   );
   fail(
-    "yaml removed id in a test",
+    "verifies inside the body is not a binding",
     {
-      requirementFiles: yamlFile(yamlGap),
-      testFiles: [{ name: "read.test.ts", text: 'it("stays", () => {\n  covers("1.3");\n});\n' }],
-      scriptFiles: [],
+      requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
+      testFiles: [
+        {
+          name: "read.test.ts",
+          text: `it("receives that recipe", () => {\n  verifies("2", "${fp2}");\n});\nit("requires an id", verifies("3", "${fp3}", () => {}));\n`,
+        },
+      ],
+      evidence: [
+        { id: "2", fingerprint: fp2, passed: true },
+        { id: "3", fingerprint: fp3, passed: true },
+      ],
     },
-    "is removed and is covered by a test",
-  );
-  pass(
-    "yaml quoted 1.10 keeps its id",
-    {
-      requirementFiles: yamlFile(
-        [
-          'id: "1"',
-          "title: Ten",
-          "requirements:",
-          '  - id: "1.10"',
-          "    type: system",
-          "    text: Agents can reach the tenth requirement.",
-          "    details:",
-          '      - id: "1.10.1"',
-          "        text: Given a call, the agent is told the tenth detail.",
-          "        implemented: false",
-          "",
-        ].join("\n"),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["1", "1.10", "1.10.1"],
+    "must wrap the test function",
   );
   fail(
-    "yaml unquoted id",
+    "covers is removed",
     {
-      requirementFiles: yamlFile(yamlProposed.replace('id: "1.1"\n', "id: 1.1\n")),
+      requirementFiles: accepted,
+      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("2");\n});\n' }],
+    },
+    "covers() is removed",
+  );
+  fail(
+    "single child list",
+    {
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "1"',
+              "    status: accepted",
+              '    text: Agents can list recipes.',
+              "    children:",
+              '      - id: "2"',
+              "        status: accepted",
+              '        text: Given a deleted recipe, the list does not include it.',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
       testFiles: [],
-      scriptFiles: [],
+    },
+    "at least two entries",
+  );
+  fail(
+    "unquoted id",
+    {
+      requirementFiles: [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")).replace('id: "1"', "id: 1") }],
+      testFiles: [],
     },
     "double-quoted",
   );
   fail(
-    "yaml implemented false already has a test",
+    "missing reference",
     {
-      requirementFiles: yamlFile(yamlProposed),
-      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("1.1.1");\n});\n' }],
-      scriptFiles: [],
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "1"',
+              "    kind: shared",
+              "    status: accepted",
+              '    text: Shared auth.',
+              "    children:",
+              '      - id: "2"',
+              "        status: accepted",
+              '        text: Without the secret, the call is refused.',
+              '      - id: "3"',
+              "        status: accepted",
+              '        text: Liveness does not ask for the secret.',
+              '  - id: "4"',
+              "    status: accepted",
+              '    text: Recipe calls require the secret.',
+              "    children:",
+              '      - ref: "2"',
+              '      - ref: "9"',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
+      testFiles: [],
     },
-    "implemented: false and is covered by a test",
+    "unknown id 9",
   );
   fail(
-    "yaml detail named in two tests",
+    "reference to a normal tree node",
     {
-      requirementFiles: yamlFile(yamlImplemented),
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "1"',
+              "    status: accepted",
+              '    text: Kitchen UI.',
+              "    children:",
+              '      - id: "2"',
+              "        status: accepted",
+              '        text: The list shows each recipe title.',
+              '      - id: "3"',
+              "        status: accepted",
+              '        text: The list shows each favorite.',
+              '  - id: "4"',
+              "    status: accepted",
+              '    text: Another screen.',
+              "    children:",
+              '      - ref: "2"',
+              '      - id: "5"',
+              "        status: accepted",
+              '        text: Settings uses the same list row.',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
+      testFiles: [],
+    },
+    "not in a shared tree",
+  );
+  fail(
+    "cycle through references",
+    {
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "1"',
+              "    kind: shared",
+              "    status: accepted",
+              '    text: Shared a.',
+              "    children:",
+              '      - id: "2"',
+              "        status: accepted",
+              '        text: Leaf a.',
+              '      - ref: "3"',
+              '  - id: "3"',
+              "    kind: shared",
+              "    status: accepted",
+              '    text: Shared b.',
+              "    children:",
+              '      - id: "4"',
+              "        status: accepted",
+              '        text: Leaf b.',
+              '      - ref: "1"',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
+      testFiles: [],
+    },
+    "cycle",
+  );
+  fail(
+    "parent verified with mixed children",
+    {
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "1"',
+              "    status: verified",
+              '    text: Agents can read a recipe.',
+              "    children:",
+              '      - id: "2"',
+              "        status: implemented",
+              '        text: Given a recipe ID, the agent receives that recipe.',
+              '      - id: "3"',
+              "        status: verified",
+              '        text: Without a recipe ID, the agent is told an ID is required.',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
+      testFiles: [],
+    },
+    "does not roll up",
+  );
+  pass(
+    "mixed implemented and verified rolls up to implemented",
+    {
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "1"',
+              "    status: implemented",
+              '    text: Agents can read a recipe.',
+              "    children:",
+              '      - id: "2"',
+              "        status: implemented",
+              '        text: Given a recipe ID, the agent receives that recipe.',
+              '      - id: "3"',
+              "        status: verified",
+              '        text: Without a recipe ID, the agent is told an ID is required.',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'it("reads", () => {\n  covers("1.1.1");\n});\nit("again", () => {\n  covers("1.1.1");\n});\nit("title", () => {\n  covers("1.1.2");\n});\n',
+          text: `it("requires an id", verifies("3", "${fp3}", () => {}));\n`,
         },
       ],
-      scriptFiles: [],
+      evidence: [{ id: "3", fingerprint: fp3, passed: true }],
     },
-    "covered by more than one test",
+    ["1", "2", "3"],
   );
-  fail(
-    "yaml bare id in a title does not count",
+  pass(
+    "shared refs count toward children and rollup",
     {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("1.1.1 and 1.1.2 read", () => {});\n' }],
-      scriptFiles: [],
-    },
-    "has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml skipped test does not count",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(
+            [
+              '  - id: "10"',
+              "    kind: shared",
+              "    status: verified",
+              '    text: MCP liveness.',
+              "    children:",
+              '      - id: "11"',
+              "        status: verified",
+              '        text: Liveness does not ask for a secret.',
+              '      - id: "12"',
+              "        status: verified",
+              '        text: Liveness does not return recipes.',
+              '  - id: "13"',
+              "    status: verified",
+              '    text: Health checks.',
+              "    children:",
+              '      - id: "14"',
+              "        status: verified",
+              '        text: The API answers without a secret.',
+              '      - ref: "11"',
+              "",
+            ].join("\n"),
+          ),
+        },
+      ],
       testFiles: [
         {
-          name: "read.test.ts",
-          text: 'test.skip("reads", () => {\n  covers("1.1.1");\n});\nit.todo("later");\n',
+          name: "health.test.ts",
+          text: [
+            `it("mcp no secret", verifies("11", "${requirementFingerprint("11", "Liveness does not ask for a secret.")}", () => {}));`,
+            `it("mcp no recipes", verifies("12", "${requirementFingerprint("12", "Liveness does not return recipes.")}", () => {}));`,
+            `it("api no secret", verifies("14", "${requirementFingerprint("14", "The API answers without a secret.")}", () => {}));`,
+            "",
+          ].join("\n"),
         },
       ],
-      scriptFiles: [],
-    },
-    "has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml describe.skip does not count",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [
+      evidence: [
         {
-          name: "read.test.ts",
-          text: 'describe.skip("suite", () => { it("reads", () => { covers("1.1.1"); }); });\n',
+          id: "11",
+          fingerprint: requirementFingerprint("11", "Liveness does not ask for a secret."),
+          passed: true,
         },
-      ],
-      scriptFiles: [],
-    },
-    "has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml unknown req id",
-    {
-      requirementFiles: yamlFile(yamlProposed),
-      testFiles: [{ name: "read.test.ts", text: 'it("missing", () => {\n  covers("9.9.9");\n});\n' }],
-      scriptFiles: [],
-    },
-    "unknown id 9.9.9",
-  );
-  fail(
-    "yaml req prefix is not coverage",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [
         {
-          name: "read.test.ts",
-          text: 'it("req:1.1.1 reads", () => {\n  covers("1.1.1");\n});\nit("title", () => {\n  covers("1.1.2");\n});\n',
+          id: "12",
+          fingerprint: requirementFingerprint("12", "Liveness does not return recipes."),
+          passed: true,
+        },
+        {
+          id: "14",
+          fingerprint: requirementFingerprint("14", "The API answers without a secret."),
+          passed: true,
         },
       ],
-      scriptFiles: [],
+    },
+    ["10", "11", "12", "13", "14"],
+  );
+  fail(
+    "kind on a nested node",
+    {
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(twoLeaves("accepted")).replace(
+            '      - id: "2"\n        status: accepted',
+            '      - id: "2"\n        kind: shared\n        status: accepted',
+          ),
+        },
+      ],
+      testFiles: [],
+    },
+    "kind is only allowed on a root",
+  );
+  fail(
+    "second yaml file",
+    {
+      requirementFiles: [
+        { name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")) },
+        { name: "1-mcp.yaml", text: "id: 1\n" },
+      ],
+      testFiles: [],
+    },
+    `the catalog is ${CATALOG_NAME}`,
+  );
+  fail(
+    "adr cites req prefix",
+    {
+      requirementFiles: accepted,
+      testFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See req:2.\n" }],
+    },
+    "cites requirement id 2",
+  );
+  pass(
+    "wcag 2.2 is not a requirement id",
+    {
+      requirementFiles: accepted,
+      testFiles: [],
+      decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
+    },
+    ["1", "2", "3"],
+  );
+  fail(
+    "yaml names a time",
+    {
+      requirementFiles: [
+        {
+          name: CATALOG_NAME,
+          text: catalogYaml(twoLeaves("accepted")).replace(
+            "Given a recipe ID, the agent receives that recipe.",
+            "Search comes later.",
+          ),
+        },
+      ],
+      testFiles: [],
+    },
+    "names a version",
+  );
+  fail(
+    "req prefix in a title",
+    {
+      requirementFiles: accepted,
+      testFiles: [{ name: "read.test.ts", text: 'it("req:2 reads", () => {});\n' }],
     },
     "is not coverage",
   );
   fail(
-    "yaml covers in a comment does not count",
+    "unknown verifies id",
     {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  // covers("1.1.1")\n});\n' }],
-      scriptFiles: [],
-    },
-    "has no test that covers 1.1.1",
-  );
-  fail(
-    "yaml it options skip does not count",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
+      requirementFiles: accepted,
       testFiles: [
         {
           name: "read.test.ts",
-          text: 'it("reads", { skip: true }, () => {\n  covers("1.1.1");\n});\n',
+          text: `it("missing", verifies("9", "${requirementFingerprint("9", "nope")}", () => {}));\n`,
         },
       ],
-      scriptFiles: [],
     },
-    "has no test that covers 1.1.1",
+    "unknown id 9",
   );
-  pass(
-    "yaml playwright-style callback covers details",
-    {
-      requirementFiles: yamlFile(yamlImplemented),
-      testFiles: [
-        {
-          name: "read.spec.ts",
-          text: 'test("read", async ({ page }) => {\n  covers("1.1.1");\n  covers("1.1.2");\n});\n',
-        },
-      ],
-      scriptFiles: [],
-    },
-    ["1", "1.1", "1.1.1", "1.1.2"],
-  );
-  const yamlManual = yamlProposed.replace(
-    '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
-    '      - id: "1.1.2"\n        text: Given a NAS boot, the documented token is rejected.\n        check: manual\n',
-  );
-  pass("yaml check manual needs no test", { requirementFiles: yamlFile(yamlManual), testFiles: [], scriptFiles: [] }, [
+
+  const known = requirementFingerprint(
     "1",
-    "1.1",
-    "1.1.1",
-    "1.1.2",
-  ]);
-  fail(
-    "yaml check manual with a test",
-    {
-      requirementFiles: yamlFile(yamlManual),
-      testFiles: [{ name: "read.test.ts", text: 'it("rejects the token", () => {\n  covers("1.1.2");\n});\n' }],
-      scriptFiles: [],
-    },
-    "uses check: manual and is covered by a test",
+    "Without the shared secret, the agent is told the call is not allowed.",
   );
-  fail(
-    "yaml implemented false cannot use check manual",
-    {
-      requirementFiles: yamlFile(
-        yamlProposed.replace(
-          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
-          '      - id: "1.1.2"\n        text: Given a NAS boot, the documented token is rejected.\n        implemented: false\n        check: manual\n',
-        ),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "implemented: false and uses check: manual",
-  );
-  pass(
-    "yaml see names another id",
-    {
-      requirementFiles: yamlFile(
-        yamlProposed.replace(
-          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
-          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n        see:\n          - "1.1.1"\n',
-        ),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    ["1", "1.1", "1.1.1", "1.1.2"],
-  );
-  fail(
-    "yaml see target must exist",
-    {
-      requirementFiles: yamlFile(
-        yamlProposed.replace(
-          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n',
-          '      - id: "1.1.2"\n        text: Given a recipe, the agent receives its title.\n        implemented: false\n        see:\n          - "9.9"\n',
-        ),
-      ),
-      testFiles: [],
-      scriptFiles: [],
-    },
-    "see 9.9 is unknown",
-  );
+  if (known !== "d631eefaf753e9d7") {
+    failures.push(`fingerprint fixture: got ${known}`);
+  }
 
   return failures;
 }
@@ -1757,19 +1505,11 @@ function isTestFile(filePath) {
   return /\.(?:test|spec)\.(?:js|mjs|cjs|ts|tsx|jsx)$/.test(filePath);
 }
 
-function isScriptMention(filePath) {
-  if (path.resolve(filePath) === SELF) return false;
-  const relative = path.relative(ROOT, filePath);
-  if (!relative.startsWith(`scripts${path.sep}`)) return false;
-  return /\.(?:sh|mjs|js|cjs)$/.test(filePath);
-}
-
 async function loadRepo() {
-  const requirementNames = (await readdir(REQUIREMENTS_DIR))
-    .filter((name) => name.endsWith(".md") || name.endsWith(".yaml"))
-    .sort();
+  const requirementNames = (await readdir(REQUIREMENTS_DIR)).sort();
   const requirementFiles = [];
   for (const name of requirementNames) {
+    if (!name.endsWith(".md") && !name.endsWith(".yaml")) continue;
     requirementFiles.push({
       name,
       text: await readFile(path.join(REQUIREMENTS_DIR, name), "utf8"),
@@ -1777,19 +1517,11 @@ async function loadRepo() {
   }
 
   const testFiles = [];
-  const scriptFiles = [];
   await walk(ROOT, async (full) => {
-    const name = path.relative(ROOT, full);
     if (isTestFile(full)) {
-      testFiles.push({ name, text: await readFile(full, "utf8") });
-    } else if (isScriptMention(full)) {
-      scriptFiles.push({ name, text: await readFile(full, "utf8") });
+      testFiles.push({ name: path.relative(ROOT, full), text: await readFile(full, "utf8") });
     }
   });
-
-  if (scriptFiles.some((file) => path.resolve(ROOT, file.name) === SELF)) {
-    throw new Error("requirements checker scanned itself");
-  }
 
   const decisionFiles = [];
   async function walkDecisions(dir) {
@@ -1804,7 +1536,12 @@ async function loadRepo() {
   }
   await walkDecisions(DECISIONS_DIR);
 
-  return { requirementFiles, testFiles, scriptFiles, decisionFiles };
+  return {
+    requirementFiles,
+    testFiles,
+    decisionFiles,
+    evidence: loadEvidenceFiles(EVIDENCE_DIR),
+  };
 }
 
 function report(header, lines) {
@@ -1813,6 +1550,21 @@ function report(header, lines) {
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === SELF;
 if (isMain) {
+  if (process.argv.includes("--reset-evidence")) {
+    rmSync(EVIDENCE_DIR, { recursive: true, force: true });
+    process.exit(0);
+  }
+  if (process.argv.includes("--fingerprints")) {
+    const parsed = parseCatalog(
+      CATALOG_NAME,
+      readFileSync(path.join(REQUIREMENTS_DIR, CATALOG_NAME), "utf8"),
+    );
+    for (const node of parsed.nodes) {
+      if (!isLeaf(node)) continue;
+      console.log(`${node.id}\t${node.status}\t${node.fingerprint}\t${node.text}`);
+    }
+    process.exit(parsed.errors.length > 0 ? 1 : 0);
+  }
   const canary = runCanary();
   if (canary.length > 0) {
     report("requirements canary failed:", canary);
@@ -1826,3 +1578,5 @@ if (isMain) {
   const count = result.ids.length;
   console.log(count === 0 ? "requirements ok" : `requirements ok (${count} ids)`);
 }
+
+export { check, requirementFingerprint, parseCatalog, isLeaf };

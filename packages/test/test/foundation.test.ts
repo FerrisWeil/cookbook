@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
-import { covers } from "../src/covers.ts";
+import { verifies } from "../src/index.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -15,45 +15,44 @@ function readRepo(...parts: string[]): string {
 }
 
 describe("local compose stack", () => {
-  it("starts web, the API, Postgres, and MCP and checks health", () => {
-    covers("6.1.1", "6.6.2");
+  it(
+    "starts web, the API, Postgres, and MCP and checks health",
+    verifies("136", "da26cbcc295301fe", () => {
+      const pkg = JSON.parse(readRepo("package.json")) as {
+        scripts: Record<string, string>;
+      };
+      assert.equal(pkg.scripts.smoke, "bash scripts/smoke.sh");
 
-    const pkg = JSON.parse(readRepo("package.json")) as {
-      scripts: Record<string, string>;
-    };
-    assert.equal(pkg.scripts.smoke, "bash scripts/smoke.sh");
+      const compose = parse(readRepo("docker-compose.yml")) as {
+        services?: Record<string, { healthcheck?: unknown; image?: string }>;
+      };
+      const services = compose.services ?? {};
+      assert.deepEqual(Object.keys(services).sort(), ["api", "db", "mcp", "web"]);
+      assert.equal(typeof services.db?.healthcheck, "object");
+      assert.match(String(services.db?.image ?? ""), /^postgres:/);
 
-    const compose = parse(readRepo("docker-compose.yml")) as {
-      services?: Record<string, { healthcheck?: unknown; image?: string }>;
-    };
-    const services = compose.services ?? {};
-    assert.deepEqual(Object.keys(services).sort(), ["api", "db", "mcp", "web"]);
-    assert.equal(typeof services.db?.healthcheck, "object");
-    assert.match(String(services.db?.image ?? ""), /^postgres:/);
+      for (const relative of [
+        "docker/api.Dockerfile",
+        "docker/mcp.Dockerfile",
+        "docker/web.Dockerfile",
+      ]) {
+        assert.match(readRepo(relative), /^HEALTHCHECK /m, relative);
+      }
 
-    for (const relative of [
-      "docker/api.Dockerfile",
-      "docker/mcp.Dockerfile",
-      "docker/web.Dockerfile",
-    ]) {
-      assert.match(readRepo(relative), /^HEALTHCHECK /m, relative);
-    }
-
-    const smoke = readRepo("scripts/smoke.sh");
-    assert.match(smoke, /docker compose up --build/);
-    assert.match(smoke, /127\.0\.0\.1:3000\/health/);
-    assert.match(smoke, /127\.0\.0\.1:3000\/health\/ready/);
-    assert.match(smoke, /127\.0\.0\.1:8787\/health/);
-    assert.match(smoke, /127\.0\.0\.1:8080/);
-    assert.match(smoke, /"database":"up"/);
-    assert.match(smoke, /psql /);
-  });
+      const smoke = readRepo("scripts/smoke.sh");
+      assert.match(smoke, /docker compose up --build/);
+      assert.match(smoke, /127\.0\.0\.1:3000\/health/);
+      assert.match(smoke, /127\.0\.0\.1:3000\/health\/ready/);
+      assert.match(smoke, /127\.0\.0\.1:8787\/health/);
+      assert.match(smoke, /127\.0\.0\.1:8080/);
+      assert.match(smoke, /"database":"up"/);
+      assert.match(smoke, /psql /);
+    }),
+  );
 });
 
 describe("repo checks", () => {
   it("runs lint, unit tests, the build, secret scanning, and the requirement check", () => {
-    covers("6.6.1");
-
     const pkg = JSON.parse(readRepo("package.json")) as {
       scripts: Record<string, string>;
     };
@@ -76,8 +75,6 @@ describe("repo checks", () => {
   });
 
   it("invokes pnpm check and pnpm smoke from CI", () => {
-    covers("6.6.3", "6.6.4");
-
     const workflow = parse(readRepo(".github/workflows/ci.yml")) as {
       jobs?: Record<string, { steps?: Array<{ run?: string }> }>;
     };
@@ -87,16 +84,8 @@ describe("repo checks", () => {
     const runs = Object.values(jobs).flatMap((job) =>
       (job.steps ?? []).flatMap((step) => (step.run ? [step.run] : [])),
     );
-    assert.equal(
-      runs.includes("pnpm check"),
-      true,
-      "CI must run pnpm check",
-    );
-    assert.equal(
-      runs.includes("pnpm smoke"),
-      true,
-      "CI must run pnpm smoke",
-    );
+    assert.equal(runs.includes("pnpm check"), true, "CI must run pnpm check");
+    assert.equal(runs.includes("pnpm smoke"), true, "CI must run pnpm smoke");
     const pnpmRuns = runs.filter((run) => run.startsWith("pnpm "));
     for (const run of pnpmRuns) {
       assert.equal(

@@ -145,3 +145,12 @@ Steady state pins `COOKBOOK_IMAGE_TAG` to a `sha-` tag. `.env.example` may conta
 Rollback is steps 2–5 with the previous sha. If the old API will not boot because a migration ran, restore the dump into an empty `postgres/` directory. There is no down migration.
 
 No Watchtower. Naming `api`, `web`, and `mcp` keeps a sha bump from also moving the digest-pinned Postgres or Tailscale image. Changing those two images is an edit to the compose file, and it gets a dump first.
+
+## Hosting notes moved out of the application catalog
+
+The requirements YAML catalogs portable app behavior. These operator items stay here, not in that catalog.
+
+- Production is one Compose stack on the household Unraid NAS. Images are built elsewhere; the NAS starts the images it was given. No host ports. No default secret. The API answers on the stack network.
+- Family devices reach the web node over the tailnet. Web and MCP are separate tailnet identities. The bot's grant is the MCP node. No public ingress. Funnel is off. `http://cookbook/` opens the app. A local stack may publish ports; this production file does not.
+- Dump the running database (including a deleted recipe) before an update. Image pulls run when an operator starts them.
+- Extra household cooks are added on the NAS, outside git. Git still ships `taylor`, `chef`, and `system`.

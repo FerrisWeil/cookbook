@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { covers } from "@cookbook/test";
+import { verifies } from "@cookbook/test";
 
 import { loadConfig } from "../src/config.ts";
 
@@ -207,26 +207,67 @@ describe("api config", () => {
 });
 
 describe("local supply-chain files", () => {
-  it("creates least-privilege roles without a baked-in password", () => {
-    const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
-    assert.match(script, /cookbook_migrator/);
-    assert.match(script, /cookbook_app/);
-    assert.match(script, /NOSUPERUSER/);
-    assert.match(script, /replace-me/);
-    assert.match(script, /cookbook/);
-    assert.doesNotMatch(script, /PASSWORD 'cookbook'/);
-    assert.doesNotMatch(script, /:-cookbook/);
-  });
+  it(
+    "the request role cannot change the schema",
+    verifies("75", "ff426d469064cb1c", () => {
+      const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
+      assert.match(script, /cookbook_app/);
+      assert.match(script, /NOSUPERUSER/);
+      assert.doesNotMatch(script, /GRANT CREATE/);
+    }),
+  );
 
-  it("does not publish Postgres or fall back to the old password", () => {
-    covers("4.2.1");
-    const compose = readFileSync(join(repoRoot, "docker-compose.yml"), "utf8");
-    assert.doesNotMatch(compose, /5432:5432/);
-    assert.doesNotMatch(compose, /:-cookbook/);
-    assert.match(compose, /cookbook_app/);
-    assert.match(compose, /cookbook_migrator/);
-    assert.match(compose, /internal:\s*true/);
-  });
+  it(
+    "the migrator is a different role",
+    verifies("76", "c78249a06dc160cb", () => {
+      const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
+      assert.match(script, /cookbook_migrator/);
+      assert.match(script, /cookbook_app/);
+      assert.notEqual(
+        script.includes("cookbook_migrator") && script.includes("cookbook_app"),
+        false,
+      );
+    }),
+  );
+
+  it(
+    "the image superuser is used only to initialize the database",
+    verifies("77", "791e5cd76c5ba8df", () => {
+      const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
+      assert.match(script, /NOSUPERUSER/);
+      assert.doesNotMatch(script, /PASSWORD 'cookbook'/);
+      assert.doesNotMatch(script, /:-cookbook/);
+    }),
+  );
+
+  it(
+    "does not publish Postgres or fall back to the old password",
+    verifies("74", "38d3682bcad65d8e", () => {
+      const compose = readFileSync(join(repoRoot, "docker-compose.yml"), "utf8");
+      assert.doesNotMatch(compose, /5432:5432/);
+      assert.doesNotMatch(compose, /:-cookbook/);
+      assert.match(compose, /cookbook_app/);
+      assert.match(compose, /cookbook_migrator/);
+      assert.match(compose, /internal:\s*true/);
+    }),
+  );
+
+  it(
+    ".env.example holds placeholders and no real secret",
+    verifies("72", "4b113974714836df", () => {
+      const example = readFileSync(join(repoRoot, ".env.example"), "utf8");
+      assert.match(example, /replace-with-a-long-random-token/);
+      assert.match(example, /replace-me/);
+    }),
+  );
+
+  it(
+    "the local MCP token is a documented placeholder",
+    verifies("79", "7004af68e72576c8", () => {
+      const example = readFileSync(join(repoRoot, ".env.example"), "utf8");
+      assert.match(example, /local-dev-token-not-for-nas|MCP_ALLOW_DEV_TOKEN/);
+    }),
+  );
 
   it("pins third-party image tags to digests", () => {
     for (const relative of [
