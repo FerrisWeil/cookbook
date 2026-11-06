@@ -24,6 +24,12 @@ Once a detail has a test, its ID stays. Do not renumber it. Deleting that one le
 
 Batch wording in one pull request. Split the pull request when the behavior change is risky.
 
+A topic pull request changes only its own topic YAML, plus tests and code when implementing. Shared docs change in their own pull request: `docs/requirements/README.md`, `CONTRIBUTING.md`, this skill, and `docs/requirements/schema.json`. The README does not list topics.
+
+Good. The pull request edits only `docs/requirements/2-kitchen-ui.yaml`.
+
+Bad. That same pull request adds the filename to `docs/requirements/README.md`.
+
 ## What belongs
 
 A requirement states testable product behavior. Condition, then outcome. No error code, status code, or response body. A requirement is timeless. It names no version, release, phase, or point in time ("for now", "yet", "initially", "currently", "later"). State the behavior that is true. Good: "The MCP offers only the read, list, and save tools." Bad: "Search comes later."

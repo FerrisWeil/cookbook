@@ -1,10 +1,14 @@
 # NNNN. Title
 
-* Status: proposed | accepted | superseded by NNNN
+* Status: accepted
 * Date: YYYY-MM-DD
-* Confirmed: Taylor, YYYY-MM-DD (accepted only)
+* Confirmed: Taylor, YYYY-MM-DD
 
-Status stays proposed until Taylor confirms in chat. Do not merge the pull request before that.
+A new ADR uses `Status: accepted` from the start, never `proposed`. Merging the pull request is the acceptance. A later ADR sets Status to `superseded by NNNN`.
+
+Good. The status line is `Status: accepted` when the pull request opens.
+
+Bad. `Status: proposed` while waiting for merge.
 
 ## Problem
 
