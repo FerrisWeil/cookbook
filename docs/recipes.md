@@ -8,4 +8,4 @@ A recipe id is an opaque string. The written ingredient line is stored as writte
 
 Delete sets `hidden_at` and `hidden_by`. The row stays. Save does not revive a hidden id.
 
-HTTP and MCP import `createPgRecipeStore` from `apps/api/src/recipes/`. Domain functions live in the API (`save`, `read`, `list`, `hide`). Recipe HTTP is in [api.md](api.md). MCP tools are in [mcp.md](mcp.md).
+The API uses `createPgRecipeStore` from `apps/api/src/recipes/`. Domain functions live in the API (`save`, `read`, `list`, `hide`). Recipe HTTP is in [api.md](api.md). MCP tools call that HTTP and are in [mcp.md](mcp.md).
