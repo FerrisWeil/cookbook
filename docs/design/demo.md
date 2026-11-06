@@ -2,7 +2,7 @@
 
 Detail for [0018](../decisions/0018-ui-demos.md) and [0020](../decisions/0020-kitchen-design-system.md).
 
-Review is this running app: the `/guide` route plus desktop and phone captures. Not a Figma file.
+The designer reviews each UI pull request by running the app locally. Not a CI screenshot job. Not a per-pull-request preview. Not a Figma file. Desktop and phone captures still attach to the pull request ([0018](../decisions/0018-ui-demos.md)).
 
 Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The unit runner is [0011](../decisions/0011-test-tooling.md).
 
@@ -13,7 +13,7 @@ Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](
 3. Both themes, when the change touches color. Otherwise one theme is enough, and the pull request says which.
 4. A short screen recording only when the review is about motion or a sequence of taps.
 
-Captures are taken from the running web app. They are images on the pull request, not a screenshot package and not Playwright.
+Captures are taken from the local running app. They are images on the pull request. There is no screenshot package, no screenshot CI job, and no Playwright in the first UI pull request.
 
 ## Example data
 
@@ -21,20 +21,21 @@ Every visible recipe title starts with `Example:`. Do not photograph a real phon
 
 ## Review route
 
-The UI feature adds `/guide`.
+`/guide` is a hand-built route in `apps/web`. It uses the real `@cookbook/ui` components.
 
 - Not linked from the list, the recipe, or settings.
-- Renders the components on example data: colors in both themes, type scale, button, card, article, filter chips, a step check-off, load and error messages.
-- Opening it on a phone after a deploy is in addition to the pull-request images. Review has to be possible before a deploy.
+- Shows every state on example data, in light and dark: colors, type scale, buttons, cards (favorite on and off, rated and unrated, extra tags), article, filter chips, a step check-off, load and error messages.
+- Theme and reduced-motion toggles live on the route.
 
 ## Tests
 
 Allowed in the UI feature pull request:
 
-- `node:test` for the contrast pairs in [tokens](tokens.md) and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
+- `node:test` for the contrast pairs in [tokens](tokens.md), the motion token values, and for the theme choice (`system` when storage is empty, the stored value when it is `light` or `dark`, `system` when storage throws).
+- `node:test` that a browser-facing payload has no token, once the proxy exists. Detail is [web.md](../web.md).
 - The web package grows a `test` script, and the root `pnpm test` runs it.
 
-Not until those tokens exist: tests for spacing, radius, motion, or icon artwork.
+Not until those tokens exist: tests for spacing, radius, or icon artwork.
 
 Not allowed until the feature has been demoed and confirmed in chat:
 
