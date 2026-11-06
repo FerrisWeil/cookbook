@@ -41,4 +41,4 @@ Each ecosystem has two catch-all groups, `patterns: ["*"]`, for `major`, `minor`
 
 ## Review
 
-CI is the merge bar. Write a Security section only for a hit: audit output when it is not clean, a change to `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude`, a new install script, an Action that is not a full SHA, an image without a digest, or a new `ports:` key. A clean diff has no Security section. A bot pull request is not a new ADR.
+CI is the merge bar. Write a Security section only for a hit: audit output when it is not clean, a change to `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude`, a new install script, an Action that is not a full SHA, an image without a digest, or a new `ports:` key. A clean diff has no Security section. A bot pull request does not add an ADR file.

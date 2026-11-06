@@ -11,10 +11,10 @@ Docs stay brief and readable: understandable over detail. Requirements and the o
 
 ## Start
 
-1. Name the work type and whether an ADR is required (`yes` or `no`). The rules are [Work types](../../../CONTRIBUTING.md#work-types). An ADR follows [Docs](../../../CONTRIBUTING.md#docs). Do not copy those rules.
+1. Name the work type. Do not add an ADR. The rules are [Work types](../../../CONTRIBUTING.md#work-types).
 2. A Spike follows that row.
 3. Any other type is a pull request against `master`. Do not merge it.
-4. Stop and ask only for an architecture or feature decision Taylor has not confirmed. Put every open question in one message. Otherwise do the work. When to ask, the form of a question, and when a plan is committed, is in [Work types](../../../CONTRIBUTING.md#work-types).
+4. Get ahead of product and engineering issues. Stop and ask only when Taylor's judgment matters and he has not confirmed. Put every open question in one message, each with a recommendation. Otherwise do the work. When to ask, and when a plan is committed, is in [Work types](../../../CONTRIBUTING.md#work-types).
 
 ## Models
 

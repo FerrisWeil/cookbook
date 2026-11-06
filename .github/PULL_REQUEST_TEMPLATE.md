@@ -1,27 +1,26 @@
 ## Type
 
 - Type: Feature | Task | Docs | Bug | Spike | Chore | Security fix
-- ADR: yes | no
 - Link:
 
-Rules for the type and for the ADR axis: CONTRIBUTING.md.
+Rules: CONTRIBUTING.md.
 
 ## What
 
+For a Feature: outcome, scope, YAML IDs, the scenario, and open questions. Do not attach a separate plan file.
+
 ## Why
 
-## ADRs
+## Decisions
 
-Merged means accepted (Taylor, 2026-10-26): an ADR merged to `master` is accepted. Write Status: accepted from the start. Never proposed. Merging this PR is the acceptance.
+Do not add a new ADR file. Durable rationale belongs in the living topic doc.
 
-ADR text has no versions, ports, file paths, env names, commands, or schemas. Those belong in the linked doc.
-
-- ADRs in this PR (Status: accepted; merge accepts them):
-- Already merged:
+- Living docs:
+- Existing ADRs retired or amended:
 
 ## Requirements
 
-Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky. List the IDs. The format is in CONTRIBUTING.md.
+Batch wording changes in one pull request. Use a separate pull request when the behavior change is risky. List the IDs. The format is in CONTRIBUTING.md. `covers()` traces an ID; it is not acceptance. Say what is proven, what is only mapped, and what is unproven.
 
 - IDs:
 

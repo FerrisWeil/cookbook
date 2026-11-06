@@ -21,8 +21,8 @@ Production still compiles on the NAS. [0015](0015-production.md) already chose p
 9. **Bake Tailscale into the app images** — drops the sidecar, and a new Tailscale release rebuilds the app.
 10. **One env file beside the compose file** — every secret, not in git, not in the data directory, not mounted into a container ([0007](0007-public-repo-secrets.md), [0015](0015-production.md)).
 11. **Secrets in the data directory or in Unraid templates** — a share or a template can leak them.
-12. **API applies forward migrations on boot** — already [0010](0010-migration-tooling.md). No migrate job. No down migrations.
-13. **A separate migrate container** — another NAS container, which is an ADR ([0012](0012-parallel-agents.md)).
+12. **API applies forward migrations on boot** — already [0004](0004-postgres-migrations.md). No migrate job. No down migrations.
+13. **A separate migrate container** — another NAS container ([0012](0012-parallel-agents.md)). Record it in the Unraid doc, not a new ADR.
 14. **Operator logical dumps, including before every update; no scheduled job in this repo** — the dump is the backup. A cron in git would run unattended against the only copy.
 15. **Unraid appdata backup as the only backup** — a copy of a running database can be corrupt.
 16. **Rollback is the previous pin; a schema rollback is a dump restore** — no down migrations.

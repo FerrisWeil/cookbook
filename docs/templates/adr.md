@@ -4,7 +4,7 @@
 * Date: YYYY-MM-DD
 * Confirmed: Taylor, YYYY-MM-DD
 
-Write Status: accepted from the start. Never proposed. Merging the pull request is the acceptance.
+Do not add new files from this template. Existing ADRs keep this shape. Status is accepted, never proposed.
 
 ## Problem
 

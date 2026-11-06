@@ -22,6 +22,6 @@ Follow [Checks](../../../CONTRIBUTING.md#checks) and [Work types](../../../CONTR
 
 - `pnpm check` when the change can affect lint, unit tests, the build, secrets, or requirement IDs.
 - `pnpm smoke` when the change touches Compose, images, health, or startup.
-- A Feature demo is the evidence that row requires. Collect it before claiming the feature works.
+- A Feature demo is the evidence that row requires. Collect it before claiming the feature works. `covers()` mapping an ID is not that evidence. State what is proven, what is only mapped, and what is unproven. The Engineer also checks that new requirements match Taylor's design asks and that the pull request delivers them, with explicit gaps. The rule is [Work types](../../../CONTRIBUTING.md#work-types).
 
 Fill [docs/security-review.md](../../../docs/security-review.md) before marking a pull request ready. The rule is in Work types.

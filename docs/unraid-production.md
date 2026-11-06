@@ -103,7 +103,7 @@ Two auth keys, reusable, not ephemeral, and pre-authorized if the tailnet requir
 
 Health on the tailnet: `http://cookbook/` and `http://cookbook-mcp:8787/health`. MCP calls still need the bearer token.
 
-`http://cookbook/` is not a secure context. The installable app does not install from that URL until a later ADR turns Serve on.
+`http://cookbook/` is not a secure context. Serve stays off ([0024](decisions/0024-production-images-and-operator-deploy.md)). The installable app does not install from that URL.
 
 ## Data and backups
 

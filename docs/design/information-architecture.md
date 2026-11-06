@@ -14,7 +14,7 @@ Wireframes use invented example recipes. They are not household data. They do no
 | `/recipes/:id` | One recipe. `:id` is explicit in the example data. |
 | `/settings` | Theme only. |
 
-`/guide` is the review route from [0018](../decisions/0018-ui-demos.md). It is not part of this information architecture.
+`/guide` is the review route from [demo](demo.md). It is not part of this information architecture.
 
 ## Screens
 

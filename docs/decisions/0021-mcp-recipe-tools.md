@@ -32,7 +32,7 @@ Recipe calls on MCP use the existing shared secret. Recipe routes on the API req
 * A compromised MCP can call the API with its own caller secret and cannot run SQL.
 * A leaked caller secret can use the recipe routes until it is revoked. It is not the other caller's secret and cannot call MCP.
 * The first recipe HTTP routes land with this feature, even though the kitchen UI does not use them yet.
-* Adding journal, tag, or search is a new decision.
+* Adding journal, tag, or search is recorded in the MCP doc, not a new ADR.
 * Tool arguments, valid fields, and the sentences are in the MCP doc.
 * Recipe routes and caller tokens are in the API doc.
 * Auth mechanics stay in the security doc ([0003](0003-mcp-bearer-token.md), [0007](0007-public-repo-secrets.md)).
