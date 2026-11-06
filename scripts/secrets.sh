@@ -116,12 +116,5 @@ if ! grep -q 'aws-access-token' "$report"; then
 fi
 rm -f "$report"
 
-# Scan commits reachable from HEAD. A fetch of every remote branch would
-# fail this check for a secret that exists only on another open PR.
-"$bin" detect \
-  --source . \
-  --config .gitleaks.toml \
-  --no-banner \
-  --redact \
-  --exit-code 1 \
-  --log-opts="HEAD"
+# HEAD only. fetch-depth 0 in CI also fetches other agents' branches.
+"$bin" detect --source . --config .gitleaks.toml --log-opts="HEAD" --no-banner --redact --exit-code 1

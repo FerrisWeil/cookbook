@@ -28,3 +28,5 @@ Two secrets, both from the environment, never committed, never printed.
 The API accepts either caller token on recipe routes. It is the process that holds both. MCP holds only the MCP caller token. The web server holds only the web token. The MCP caller token is not the Chef-facing MCP secret. The browser never receives a token. The two caller tokens differ from each other and from the Chef-facing MCP secret.
 
 Local compose already publishes the API. On the NAS the API is not a tailnet node; the web proxy and the Docker network reach it.
+
+How the web server attaches the web token, and which browser calls it forwards, is [web.md](web.md).
