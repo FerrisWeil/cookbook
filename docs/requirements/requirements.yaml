@@ -1,0 +1,524 @@
+# Canonical application requirements. Shape: schema.json. Rules: CONTRIBUTING.md.
+# IDs are stable numeric strings. Do not renumber on move or reorder.
+requirements:
+  - id: "5"
+    kind: shared
+    status: verified
+    text: "The MCP refuses recipe calls without the shared secret and answers liveness without a secret or recipe data."
+    children:
+      - id: "1"
+        status: verified
+        text: "Without the shared secret, the agent is told the call is not allowed."
+      - id: "2"
+        status: verified
+        text: "Given a liveness check, the agent is not asked for the shared secret."
+      - id: "3"
+        status: verified
+        text: "Given a liveness check, the agent is told whether the server is up."
+      - id: "4"
+        status: verified
+        text: "Given a liveness check, the agent is not given recipe data."
+  - id: "32"
+    status: verified
+    text: "Agents can read, list, and save recipes through MCP with the shared secret, and those are the only recipe tools."
+    children:
+      - id: "13"
+        status: verified
+        text: "Agents can retrieve the details of one recipe."
+        children:
+          - id: "6"
+            status: verified
+            text: "Given a recipe ID, the agent receives that recipe."
+          - id: "7"
+            status: verified
+            text: "Without a recipe ID, the agent is told an ID is required."
+          - id: "8"
+            status: verified
+            text: "Given an ID that matches no recipe, the agent is told the recipe was not found."
+          - id: "9"
+            status: verified
+            text: "Given the ID of a deleted recipe, the agent is told the recipe was not found."
+          - id: "10"
+            status: verified
+            text: "Given any combination of fields, the agent receives only those fields."
+          - id: "11"
+            status: verified
+            text: "Given an unknown field, the agent is told which field is invalid."
+          - id: "12"
+            status: verified
+            text: "Without fields, the agent receives the title, steps in saved order, servings, and nutrition when present."
+      - id: "14"
+        status: verified
+        text: "Given a deleted recipe, the list does not include it."
+      - id: "26"
+        status: verified
+        text: "Agents can save a recipe."
+        children:
+          - id: "15"
+            status: verified
+            text: "Given a nutrition row, the saved recipe records that one row."
+          - id: "16"
+            status: verified
+            text: "Given an actor, the saved recipe records that actor."
+          - id: "17"
+            status: verified
+            text: "Without an actor, the agent is told an actor is required."
+          - id: "18"
+            status: verified
+            text: "Given a non-empty title, the saved recipe records that title."
+          - id: "19"
+            status: verified
+            text: "Without a non-empty title, the agent is told a title is required."
+          - id: "20"
+            status: verified
+            text: "Given steps, the saved recipe records them in that order."
+          - id: "21"
+            status: verified
+            text: "Without steps, the agent is told steps are required."
+          - id: "22"
+            status: verified
+            text: "Given servings, the saved recipe records those servings."
+          - id: "23"
+            status: verified
+            text: "Without servings, the agent is told servings are required."
+          - id: "24"
+            status: verified
+            text: "Given a favorite, the saved recipe records that favorite."
+          - id: "25"
+            status: verified
+            text: "Given a rating, the saved recipe records that rating."
+      - id: "27"
+        status: verified
+        text: "Recipe calls require the shared secret."
+        children:
+          - ref: "1"
+          - ref: "2"
+          - ref: "3"
+          - ref: "4"
+      - id: "31"
+        status: verified
+        text: "The MCP offers only the read, list, and save tools."
+        children:
+          - id: "28"
+            status: verified
+            text: "Given a journal request, the agent is told that operation is not available."
+          - id: "29"
+            status: verified
+            text: "Given a tag request, the agent is told that operation is not available."
+          - id: "30"
+            status: verified
+            text: "Given a search request, the agent is told that operation is not available."
+  - id: "67"
+    status: accepted
+    text: "A user can open and install the app on a desktop or phone, use three accessible screens, choose a theme, on a phone write favorite and rating, check off steps on the recipe, keep the screen awake while a recipe is open, and show only favorites on the list."
+    children:
+      - id: "35"
+        status: implemented
+        text: "A user can open the app on a desktop browser or a phone."
+        children:
+          - id: "33"
+            status: implemented
+            text: "Given a desktop browser, the user can open the app."
+          - id: "34"
+            status: implemented
+            text: "Given a phone, the user can open the app."
+      - id: "40"
+        status: accepted
+        text: "The app is an installable responsive web app."
+        children:
+          - id: "36"
+            status: verified
+            text: "The layout responds to the screen size."
+          - id: "37"
+            status: accepted
+            text: "Given a secure context, the app can be installed to the home screen."
+          - id: "38"
+            status: accepted
+            text: "Given a document that fails to load, the browser shows its own error."
+          - id: "39"
+            status: verified
+            text: "Given a loaded app, a failed read is told in words."
+      - id: "52"
+        status: accepted
+        text: "The user reaches the recipe list, one recipe, and settings."
+        children:
+          - id: "41"
+            status: accepted
+            text: "The screens are the recipe list, one recipe, and settings."
+          - id: "42"
+            status: accepted
+            text: "The settings screen is where a theme is chosen."
+          - id: "43"
+            status: verified
+            text: "The list shows each recipe's title."
+          - id: "44"
+            status: accepted
+            text: "The list shows each recipe's favorite."
+          - id: "45"
+            status: verified
+            text: "The recipe screen shows the title."
+          - id: "46"
+            status: verified
+            text: "The recipe screen shows the ingredient lines."
+          - id: "47"
+            status: verified
+            text: "The recipe screen shows the steps in saved order."
+          - id: "48"
+            status: accepted
+            text: "Given a nutrition row, the recipe screen shows it."
+          - id: "49"
+            status: accepted
+            text: "Given a rating, the recipe screen shows it."
+          - id: "50"
+            status: verified
+            text: "The recipe screen shows each ingredient as one written line."
+          - id: "51"
+            status: implemented
+            text: "The list includes a recipe whose favorite is off."
+      - id: "58"
+        status: accepted
+        text: "The three screens meet WCAG 2.2 AA, with large primary targets, click or tap, zoom, and no overlap on the recipe."
+        children:
+          - id: "53"
+            status: accepted
+            text: "The three screens meet WCAG 2.2 AA."
+          - id: "54"
+            status: verified
+            text: "A primary action target is at least 44 by 44 CSS pixels."
+          - id: "55"
+            status: verified
+            text: "Every action is reachable by a click or a tap."
+          - id: "56"
+            status: verified
+            text: "The user can zoom the page."
+          - id: "57"
+            status: verified
+            text: "On the recipe screen, no control overlaps the title, ingredient lines, or steps."
+      - id: "61"
+        status: accepted
+        text: "The user can select a theme."
+        children:
+          - id: "59"
+            status: verified
+            text: "The first paint follows the system."
+          - id: "60"
+            status: accepted
+            text: "Given a theme chosen on settings, the three screens use that theme."
+      - id: "66"
+        status: accepted
+        text: "A phone write is attributed to system."
+        children:
+          - id: "62"
+            status: accepted
+            text: "A phone write records the actor as system."
+          - id: "63"
+            status: accepted
+            text: "A phone write may set the favorite and the rating."
+          - id: "64"
+            status: accepted
+            text: "A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged."
+          - id: "65"
+            status: accepted
+            text: "The phone write screen offers the favorite and the rating."
+      - id: "155"
+        status: accepted
+        text: "On the recipe screen, steps can be checked off."
+        children:
+          - id: "156"
+            status: accepted
+            text: "A checked step is stored on the device."
+          - id: "157"
+            status: accepted
+            text: "A checked step is not sent to the API."
+      - id: "158"
+        status: accepted
+        text: "While a recipe is open, the screen stays awake where the browser supports it."
+      - id: "159"
+        status: accepted
+        text: "On the recipe list, a user can show only favorites."
+  - id: "84"
+    status: accepted
+    text: "The public tree holds no secret, the database is unpublished with separate roles, a local documented token may boot, only web and MCP call the API, and an API call does not ask for a shared secret."
+    children:
+      - id: "73"
+        status: accepted
+        text: "The public repo contains no secret, recipe, or personal note."
+        children:
+          - id: "68"
+            status: implemented
+            text: "CI rejects a secret in the tree."
+          - id: "69"
+            status: accepted
+            text: "A demo, fixture, or doc uses no real recipe, note, token, or tailnet name."
+          - id: "70"
+            status: accepted
+            text: "A stand-in title starts with Example:."
+          - id: "71"
+            status: accepted
+            text: "Git refuses a .env file."
+          - id: "72"
+            status: implemented
+            text: ".env.example holds placeholders and no real secret."
+      - id: "74"
+        status: verified
+        text: "The database is not on a published port."
+      - id: "78"
+        status: implemented
+        text: "Database roles stay separate."
+        children:
+          - id: "75"
+            status: implemented
+            text: "The request role cannot change the schema."
+          - id: "76"
+            status: implemented
+            text: "The migrator is a different role."
+          - id: "77"
+            status: implemented
+            text: "The image superuser is used only to initialize the database."
+      - id: "81"
+        status: implemented
+        text: "A local stack may boot with a documented token."
+        children:
+          - id: "79"
+            status: implemented
+            text: "That token is a documented placeholder."
+          - id: "80"
+            status: verified
+            text: "Given that documented token, the server starts only when the local flag is set."
+      - id: "82"
+        status: implemented
+        text: "Only the web app and the MCP server can call the API."
+      - id: "83"
+        status: accepted
+        text: "Given an API call, the caller is not asked for a shared secret."
+  - id: "135"
+    status: accepted
+    text: "A recipe stores ingredient lines, favorite, rating, optional nutrition, title, steps, servings, and a stable id, and delete hides it."
+    children:
+      - id: "90"
+        status: verified
+        text: "The ingredient line is the source of truth."
+        children:
+          - id: "85"
+            status: verified
+            text: "Amount, unit, and name may be empty."
+          - id: "86"
+            status: verified
+            text: "Given a written line, an unstated amount, unit, or name is stored empty."
+          - id: "87"
+            status: verified
+            text: "The written ingredient line is required."
+          - id: "88"
+            status: verified
+            text: "The order of the ingredient list is the stored order."
+          - id: "89"
+            status: verified
+            text: "A save replaces the stored ingredient lines."
+      - id: "94"
+        status: implemented
+        text: "A recipe has a favorite flag."
+        children:
+          - id: "91"
+            status: verified
+            text: "A recipe has one favorite."
+          - id: "92"
+            status: implemented
+            text: "The favorite is the household's."
+          - id: "93"
+            status: verified
+            text: "The favorite defaults to off."
+      - id: "98"
+        status: verified
+        text: "A recipe has one optional rating."
+        children:
+          - id: "95"
+            status: verified
+            text: "A rating is one score for the recipe, empty or a whole number from 1 to 5."
+          - id: "96"
+            status: verified
+            text: "Given a new rating, the stored favorite stays."
+          - id: "97"
+            status: verified
+            text: "A recipe can be a favorite while the rating is empty."
+      - id: "109"
+        status: accepted
+        text: "A recipe may have nutrition."
+        children:
+          - id: "99"
+            status: implemented
+            text: "A recipe has at most one nutrition row."
+          - id: "100"
+            status: implemented
+            text: "The numbers are per serving."
+          - id: "101"
+            status: accepted
+            text: "Given the label estimated, the numbers were calculated from the ingredients."
+          - id: "102"
+            status: implemented
+            text: "Given the label entered, a person typed the numbers."
+          - id: "103"
+            status: implemented
+            text: "Given the label copied, the numbers were taken from a package label or a published recipe."
+          - id: "104"
+            status: verified
+            text: "A nutrition row has exactly one label, and that label is estimated, entered, or copied."
+          - id: "105"
+            status: implemented
+            text: "The divisor is the recipe's stored servings."
+          - id: "106"
+            status: verified
+            text: "That servings is greater than zero."
+          - id: "107"
+            status: verified
+            text: "Given a save that omits nutrition, the stored nutrition row stays."
+          - id: "108"
+            status: verified
+            text: "Given a save that clears nutrition, that nutrition row is removed."
+      - id: "115"
+        status: verified
+        text: "Delete hides a recipe."
+        children:
+          - id: "110"
+            status: verified
+            text: "A deleted recipe is hidden from read and from list."
+          - id: "111"
+            status: verified
+            text: "The recipe stays stored."
+          - id: "112"
+            status: verified
+            text: "A save does not make a deleted recipe visible again."
+          - id: "113"
+            status: verified
+            text: "The hidden recipe records when it was hidden."
+          - id: "114"
+            status: verified
+            text: "The hidden recipe records who hid it."
+      - id: "118"
+        status: verified
+        text: "Git ships the household actors."
+        children:
+          - id: "116"
+            status: verified
+            text: "The actors shipped in git are taylor, chef, and system."
+          - id: "117"
+            status: verified
+            text: "Given no actor, a save is refused."
+      - id: "121"
+        status: verified
+        text: "A recipe has a title."
+        children:
+          - id: "119"
+            status: verified
+            text: "The title is non-empty."
+          - id: "120"
+            status: verified
+            text: "Two recipes may share a title."
+      - id: "124"
+        status: verified
+        text: "A recipe stores steps."
+        children:
+          - id: "122"
+            status: verified
+            text: "Steps are stored in the order they were saved."
+          - id: "123"
+            status: verified
+            text: "A step is stored as plain text."
+      - id: "128"
+        status: accepted
+        text: "A recipe has servings."
+        children:
+          - id: "125"
+            status: verified
+            text: "A recipe stores its servings."
+          - id: "126"
+            status: verified
+            text: "Without a servings count greater than zero, a save is refused."
+          - id: "127"
+            status: accepted
+            text: "Given a scaled view, the stored recipe stays the authored one."
+      - id: "134"
+        status: verified
+        text: "A recipe keeps a stable id."
+        children:
+          - id: "129"
+            status: verified
+            text: "A recipe id is opaque."
+          - id: "130"
+            status: verified
+            text: "Given an id from the caller, the saved recipe uses that id."
+          - id: "131"
+            status: verified
+            text: "Given the id of a visible recipe, a save updates that recipe."
+          - id: "132"
+            status: verified
+            text: "The actor recorded at creation does not change."
+          - id: "133"
+            status: verified
+            text: "Given a changed title, the recipe keeps its id."
+  - id: "147"
+    status: accepted
+    text: "A local compose stack runs the apps, the home page reports readiness, health needs no secret, MCP requires the bearer, and Postgres applies the schema."
+    children:
+      - id: "136"
+        status: implemented
+        text: "Given docker compose up --build, web, the API, Postgres, and MCP are running."
+      - id: "139"
+        status: accepted
+        text: "The home page reports the stack."
+        children:
+          - id: "137"
+            status: verified
+            text: "Given the home page, it loads."
+          - id: "138"
+            status: accepted
+            text: "Given the home page, it shows whether the API and the database are ready."
+      - id: "141"
+        status: verified
+        text: "A health check does not ask for a secret."
+        children:
+          - id: "140"
+            status: verified
+            text: "Given a health check, the API answers without a secret."
+          - ref: "2"
+      - id: "143"
+        status: verified
+        text: "The MCP server requires the bearer secret."
+        children:
+          - ref: "1"
+          - id: "142"
+            status: verified
+            text: "Given an authorized caller, the hello tool returns a structured greeting."
+      - id: "146"
+        status: implemented
+        text: "Postgres applies the foundation schema."
+        children:
+          - id: "144"
+            status: implemented
+            text: "Given the migrations, each pending one is applied."
+          - id: "145"
+            status: implemented
+            text: "Given the seed, app_meta receives the seed row."
+  - id: "154"
+    status: accepted
+    text: "A theme stays readable, and screens use shared components in that theme."
+    children:
+      - id: "150"
+        status: verified
+        text: "A theme's colors stay readable."
+        children:
+          - id: "148"
+            status: verified
+            text: "Given a theme, its text on its background meets WCAG 2.2 AA contrast."
+          - id: "149"
+            status: verified
+            text: "Given a theme, a control's boundary on its background meets WCAG 2.2 AA contrast."
+      - id: "153"
+        status: accepted
+        text: "Screens use the shared components."
+        children:
+          - id: "151"
+            status: accepted
+            text: "A control on a screen is a component from the shared UI package."
+          - id: "152"
+            status: accepted
+            text: "Given a selected theme, that component uses the theme's colors."

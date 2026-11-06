@@ -14,7 +14,7 @@ Cursor loads `.cursor/skills/` and `.agents/skills/`. This repo uses `.cursor/sk
 
 The first four replace the PStack `/interrogate` skill and the Superpowers workflow skills. Reviewer count, model slugs, and the Act on / Consider / Noted / Dismissed buckets are in `cookbook-review`.
 
-`requirements` holds the YAML format and the checker rules. The other four link to CONTRIBUTING and do not carry that format. Taylor added it on 2026-11-01. It does not add a reviewer or a subagent.
+`requirements` points at CONTRIBUTING and the requirements README for the YAML format. The other four link to CONTRIBUTING and do not copy it. It does not add a reviewer or a subagent. YAML catalogs behavior; `verifies()` is not acceptance.
 
 Another skill has to name which of these cannot cover the job, and what it costs to run. A standing second reviewer, a subagent per task, and a baseline agent that exists only to fail are costs to raise with Taylor first.
 

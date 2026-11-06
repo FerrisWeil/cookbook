@@ -36,7 +36,7 @@ A recipe keeps a stable identity when the title changes.
 
 ## Consequences
 
-* Schema changes stay ordered SQL ([0010](0010-migration-tooling.md)). This decision adds no ORM.
+* Schema changes stay ordered SQL ([0004](0004-postgres-migrations.md)). This decision adds no ORM.
 * Real recipes stay out of git ([0007](0007-public-repo-secrets.md)). The foundation left the schema open ([0004](0004-postgres-migrations.md)).
 * The three screens stay as they are ([0016](0016-kitchen-ui.md)) until a feature reads this model.
 * Not decided here: the meal-plan shape, where photos live, per-ingredient nutrition, full-text search, and a tool that restores or erases a hidden recipe.

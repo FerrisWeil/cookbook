@@ -50,9 +50,7 @@ Each Compose project has its own Postgres container and its own gitignored env f
 
 ## ADR numbers
 
-Files stay `docs/decisions/NNNN-slug.md`, contiguous, same claim steps as migrations (`ADRs: 0012` in the pull request body). A merged ADR keeps its number. Taylor allowed one rewrite on 2026-10-31 that renumbered the set to `0001`–`0018`. Do not renumber again. The next ADR is `0020`.
-
-The status table in `docs/README.md` is gone. Status stays in each file.
+Do not add new ADR files. Existing files stay `docs/decisions/NNNN-slug.md`. Retired numbers are not reused. The rule is [CONTRIBUTING.md](../CONTRIBUTING.md#docs).
 
 ## Other shared files
 
@@ -65,6 +63,6 @@ The status table in `docs/README.md` is gone. Status stays in each file.
 | App entry files | One glob loader each, added once. Features do not edit these. The loaders are not in the tree yet. |
 | `docker/nginx.conf` | One `/api/` proxy and the SPA fallback. New screens are client routes. |
 | `db/seed.sql` | Platform seed only. Feature rows go in `features/<slug>/seed.sql`, applied in slug order. |
-| NAS Compose | Not edited per feature. A new container is an ADR. The production file is not in the tree. The skeleton is `deploy/nas/docker-compose.yml`. |
+| NAS Compose | Not edited per feature. A new container is recorded in the Unraid doc, not a new ADR. The production file is not in the tree. The skeleton is `deploy/nas/docker-compose.yml`. |
 | `.env.example` | Append a key. Leave existing lines in place. |
 | `.github/workflows/ci.yml` | Still only `pnpm check` and `pnpm smoke`. |

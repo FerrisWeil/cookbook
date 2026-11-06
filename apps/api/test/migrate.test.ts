@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { covers } from "@cookbook/test";
+import { verifies } from "@cookbook/test";
 
 import {
   applyMigrations,
@@ -82,8 +82,9 @@ function memoryClient(): SqlClient & { statements: string[] } {
 }
 
 describe("applyMigrations", () => {
-  it("applies each file on one connection and skips ones already recorded", async () => {
-    covers("6.5.1");
+  it(
+    "applies each file on one connection and skips ones already recorded",
+    verifies("144", "d24b989f24a3acdf", async () => {
     const db = memoryDb();
     const files = {
       async list() {
@@ -117,7 +118,8 @@ describe("applyMigrations", () => {
       db.log.some((line) => line.includes("INSERT") && line.startsWith("5 ")),
       false,
     );
-  });
+    }),
+  );
 
   it("does not record the id when the migration sql fails", async () => {
     const db = memoryDb();
@@ -148,8 +150,9 @@ describe("applyMigrations", () => {
 });
 
 describe("applySeed", () => {
-  it("runs the seed file", async () => {
-    covers("6.5.2");
+  it(
+    "runs the seed file",
+    verifies("145", "98e5e8ef58230839", async () => {
     const client = memoryClient();
     await applySeed(client, "/db/seed.sql", {
       async list() {
@@ -161,5 +164,6 @@ describe("applySeed", () => {
       },
     });
     assert.equal(client.statements.at(-1)?.startsWith("INSERT INTO app_meta"), true);
-  });
+    }),
+  );
 });

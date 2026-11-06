@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/covers.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

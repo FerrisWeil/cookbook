@@ -1,6 +1,8 @@
 # MCP
 
-Contract for [0003](decisions/0003-mcp-bearer-token.md) and [0021](decisions/0021-mcp-recipe-tools.md). The recipe tools are not in the tree. Recipe HTTP is in [api.md](api.md). Auth that is already running (the token check, the header, and the health body) is in [security-review.md](security-review.md).
+Contract for [0003](decisions/0003-mcp-bearer-token.md) and [0021](decisions/0021-mcp-recipe-tools.md). Recipe HTTP is in [api.md](api.md). The recipe model is in [recipes.md](recipes.md). Auth (the token check, the header, and the health body) is in [security-review.md](security-review.md).
+
+MCP calls the API at `API_BASE_URL` with `API_AUTH_TOKEN_MCP`.
 
 ## Reach
 
@@ -39,7 +41,7 @@ Each item is `id` and `title`. Hidden recipes are omitted.
 
 Required: a non-empty title, steps (at least one, stored in that order), servings greater than zero, and an actor. The actor is a name, not a login. There is no default.
 
-Optional: nutrition (one per-serving row, source `estimated`, `entered`, or `copied`), favorite, rating (empty or a whole number from one to five), ingredient lines (written line required; amount, unit, and name optional).
+Optional: nutrition (one per-serving row, source `estimated`, `entered`, or `copied`, with calories, protein, fat, and carbs), favorite, rating (empty or a whole number from one to five), ingredient lines (written line required; amount, unit, and name may be empty).
 
 Given an id, save uses that id. A visible recipe is updated. A hidden id is not found and is not revived. Without an id, save creates a recipe.
 

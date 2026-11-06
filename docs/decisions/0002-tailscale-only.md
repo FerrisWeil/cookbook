@@ -21,5 +21,5 @@ No public exposure. The family app and the MCP server are separate tailnet ident
 ## Consequences
 
 * Clients need the tailnet. The bearer secret in [0003](0003-mcp-bearer-token.md) is still required.
-* A later ADR can turn tailnet HTTPS on. Until then the production URL is not a secure context, so the installable app in [0005](0005-v1-scope.md) does not install from that URL.
+* Tailnet HTTPS stays off until the Unraid doc says otherwise. Until then the production URL is not a secure context, so the installable app in [0005](0005-v1-scope.md) does not install from that URL.
 * Tags, ports, and bind addresses are in the Unraid doc. Sidecars are [0015](0015-production.md).

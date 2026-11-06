@@ -2,7 +2,7 @@
 
 Checklist for [0013](decisions/0013-security-review.md). Supply-chain pins are [supply-chain.md](supply-chain.md).
 
-Run this list before a pull request is marked ready. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. A clean change leaves the section out. gitleaks and `pnpm audit --audit-level=high` block a clean pull request. There is no second review bot.
+This checklist is contributor process, not an application-catalog requirement. Run this list before a pull request is marked ready. Add a Security section only when a check fails or the diff needs an exception: a new `allowBuilds` entry, an `audit.ignore` GHSA, a moderate advisory CI left green, a secret, a published database port, a workflow permission change, or an Action or image that is not pinned. A clean change leaves the section out. gitleaks and `pnpm audit --audit-level=high` block a clean pull request. There is no second review bot.
 
 ## Dependencies
 
@@ -14,7 +14,7 @@ Run this list before a pull request is marked ready. Add a Security section only
 ## Secrets and env
 
 - No new secret, token, recipe, or note in git. `.env.example` holds placeholders only.
-- No default password or token in a Compose file. The local MCP token below is the exception [0007](decisions/0007-public-repo-secrets.md) allows.
+- No default password or token in a Compose file. The local MCP token and the two local API caller tokens below are the exception [0007](decisions/0007-public-repo-secrets.md) allows.
 
 ## Auth and tokens
 
@@ -29,13 +29,19 @@ MCP today:
 - `GET /health` is unauthenticated and returns `{ "status": "ok" }`.
 - Local Compose sets `MCP_ALLOW_DEV_TOKEN=1` and may boot with `local-dev-token-not-for-nas`. The NAS file does not set that flag. The placeholder `replace-me` is refused.
 
-Recipe HTTP (not in the tree):
+Recipe HTTP:
 
-- Recipe routes require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not.
-- Two caller tokens, from the environment: `API_AUTH_TOKEN_MCP` (the MCP process presents it) and `API_AUTH_TOKEN_WEB` (the web app's server presents it). The API process holds both. MCP holds only the MCP caller token. The web server holds only the web token. The browser never receives a token.
-- Each token is required at API boot. Fewer than 16 characters refuses to boot. Placeholders (`replace-me`, `replace-with-a-long-random-token`) are refused. The two caller tokens must differ from each other and from `MCP_AUTH_TOKEN`. Local compose may use non-secret caller tokens that are not valid on the NAS, the same exception [0007](decisions/0007-public-repo-secrets.md) allows for MCP.
+- Recipe routes (`GET /recipes`, `GET /recipes/:id`, `PUT /recipes`) require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not.
+- Two caller tokens, from the environment: `API_AUTH_TOKEN_MCP` (the MCP process presents it) and `API_AUTH_TOKEN_WEB` (the web app's server presents it). The API process holds both. MCP holds only the MCP caller token. The web server holds only the web token and injects it on `/api/recipes`. The browser never receives a token.
+- Each token is required at API boot. Fewer than 16 characters refuses to boot. Placeholders (`replace-me`, `replace-with-a-long-random-token`) are refused. The two caller tokens must differ from each other and from `MCP_AUTH_TOKEN`. Local compose may use `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas` with `API_ALLOW_DEV_TOKEN=1`, the same exception [0007](decisions/0007-public-repo-secrets.md) allows for MCP. The NAS file does not set that flag.
 - Compare with SHA-256 and `timingSafeEqual`. Missing or wrong token: `401` and `WWW-Authenticate: Bearer`. Rejected recipe bodies stay status-only.
-- Names and placeholders land in `.env.example` with the feature. Real values are never committed or printed.
+
+Kitchen web proxy:
+
+- The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests. The browser never receives a token.
+- Forwarded: list and read. Not forwarded: a full recipe save from the browser (`PUT` is 405). Favorite-and-rating write is not in the tree. Liveness stays unauthenticated.
+- A response to the browser stays free of the token. Logs and client bundles stay free of the token.
+- The proxy target is the configured API origin. The browser cannot choose an upstream URL.
 
 ## Network
 

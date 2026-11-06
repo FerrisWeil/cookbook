@@ -1,65 +1,139 @@
-import { isStackReady, type ReadyStatus } from "@cookbook/shared";
+import { Message } from "@cookbook/ui";
 import { useEffect, useState } from "react";
 
-type LoadState =
-  | { kind: "loading" }
-  | { kind: "error"; message: string }
-  | { kind: "ready"; status: ReadyStatus };
+import {
+  fetchRecipeList,
+  fetchRecipeView,
+  LIST_ERROR,
+  RECIPE_ERROR,
+  RECIPE_MISSING,
+} from "./api";
+import { ListScreen, type ListState } from "./ListScreen";
+import { leaveRecipe, pushAppPath } from "./navigate";
+import { parseRoute } from "./route";
+import { RecipeScreen, type RecipeState } from "./RecipeScreen";
 
-export function App() {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
+export function App({ initialPath }: { initialPath?: string } = {}) {
+  const [path, setPath] = useState(
+    () => initialPath ?? currentPath(),
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const onPop = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  function go(to: string) {
+    if (typeof window !== "undefined") {
+      pushAppPath(to, window.history, window.location);
+    }
+    setPath(to);
+  }
+
+  function backToList() {
+    if (typeof window === "undefined") {
+      setPath("/");
+      return;
+    }
+    if (leaveRecipe(window.history) === "replace") {
+      setPath("/");
+    }
+  }
+
+  const route = parseRoute(path);
+  if (route.name === "recipe") {
+    return (
+      <RecipeRoute
+        id={route.id}
+        onBack={backToList}
+      />
+    );
+  }
+  if (route.name === "list") {
+    return <ListRoute onOpen={go} />;
+  }
+  return (
+    <main className="ui-shell">
+      <Message>That screen is not available.</Message>
+    </main>
+  );
+}
+
+function currentPath(): string {
+  if (typeof window === "undefined") {
+    return "/";
+  }
+  return window.location.pathname;
+}
+
+function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
+  const [state, setState] = useState<ListState>({ kind: "loading" });
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/health/ready", { signal: controller.signal })
-      .then(async (response) => {
-        const body = (await response.json()) as ReadyStatus;
-        setState({ kind: "ready", status: body });
+    setState({ kind: "loading" });
+    fetchRecipeList(controller.signal)
+      .then((recipes) => {
+        if (!controller.signal.aborted) {
+          setState({ kind: "ready", recipes });
+        }
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) {
           return;
         }
-        const message = error instanceof Error ? error.message : "unknown error";
+        const message = error instanceof Error ? error.message : LIST_ERROR;
         setState({ kind: "error", message });
       });
     return () => controller.abort();
-  }, []);
+  }, [nonce]);
 
   return (
-    <main className="page">
-      <p className="eyebrow">At home</p>
-      <h1>Cookbook</h1>
-      <p className="lede">
-        Family recipes for planning meals. Chef saves the ones worth keeping.
-      </p>
-      <StatusCard state={state} />
-    </main>
+    <ListScreen
+      state={state}
+      onOpen={onOpen}
+      onRetry={() => setNonce((value) => value + 1)}
+    />
   );
 }
 
-function StatusCard({ state }: { state: LoadState }) {
-  if (state.kind === "loading") {
-    return <p className="status">Checking the stack…</p>;
-  }
-  if (state.kind === "error") {
-    return (
-      <p className="status status-bad">
-        Cannot reach the API ({state.message}).
-      </p>
-    );
-  }
-  if (isStackReady(state.status)) {
-    return (
-      <p className="status status-ok">
-        Stack is up. Database is ready with seed data.
-      </p>
-    );
-  }
+function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
+  const [state, setState] = useState<RecipeState>({ kind: "loading" });
+  const [nonce, setNonce] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setState({ kind: "loading" });
+    fetchRecipeView(id, controller.signal)
+      .then((recipe) => {
+        if (!controller.signal.aborted) {
+          setState({ kind: "ready", recipe });
+        }
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : RECIPE_ERROR;
+        setState(
+          message === RECIPE_MISSING
+            ? { kind: "missing" }
+            : { kind: "error", message },
+        );
+      });
+    return () => controller.abort();
+  }, [id, nonce]);
+
   return (
-    <p className="status status-bad">
-      API reached, database {state.status.database}, seed{" "}
-      {state.status.seed ? "present" : "missing"}.
-    </p>
+    <RecipeScreen
+      state={state}
+      onBack={onBack}
+      onRetry={() => setNonce((value) => value + 1)}
+    />
   );
 }

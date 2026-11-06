@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 import { toNodeHandler } from "@modelcontextprotocol/node";
 
+import { createHttpCookbookApi } from "./api.js";
 import { requestHasValidBearer } from "./auth.js";
 import type { Config } from "./config.js";
 import { hostHeaderAllowed, originHeaderAllowed } from "./host.js";
@@ -42,7 +43,11 @@ function requestPath(req: IncomingMessage): string {
 export function createRequestListener(
   config: Config,
 ): (req: IncomingMessage, res: ServerResponse) => void {
-  const handleMcp = toNodeHandler(createCookbookMcpHandler());
+  const handleMcp = toNodeHandler(
+    createCookbookMcpHandler(
+      createHttpCookbookApi(config.apiBaseUrl, config.apiAuthToken),
+    ),
+  );
 
   return (req, res) => {
     const path = requestPath(req);

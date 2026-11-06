@@ -7,17 +7,22 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
     "@cookbook/shared": "workspace:*",
+    "@cookbook/ui": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@cookbook/test": "workspace:*",
+    "@types/node": "^22.18.8",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^6.1.2",
+    "tsx": "^4.20.6",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   }

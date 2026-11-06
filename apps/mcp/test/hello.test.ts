@@ -6,7 +6,7 @@ import {
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 
-import { covers } from "@cookbook/test";
+import { verifies } from "@cookbook/test";
 
 import { listen } from "../src/http.ts";
 import { TEST_TOKEN, testConfig } from "./helpers.ts";
@@ -41,23 +41,25 @@ describe("mcp hello over streamable HTTP", () => {
     await close();
   });
 
-  it("exposes only the hello tool", async () => {
+  it("exposes hello plus the recipe tools", async () => {
     const client = await connectClient(baseUrl);
     try {
       const listed = await client.listTools();
       assert.deepEqual(
         listed.tools.map((tool) => tool.name),
-        ["hello"],
+        ["hello", "read", "list", "save"],
       );
-      assert.equal(listed.tools[0]?.annotations?.readOnlyHint, true);
-      assert.equal(listed.tools[0]?.annotations?.destructiveHint, false);
+      const hello = listed.tools.find((tool) => tool.name === "hello");
+      assert.equal(hello?.annotations?.readOnlyHint, true);
+      assert.equal(hello?.annotations?.destructiveHint, false);
     } finally {
       await client.close();
     }
   });
 
-  it("calls hello", async () => {
-    covers("6.4.2");
+  it(
+    "calls hello",
+    verifies("142", "cf0c8fb4dd16c601", async () => {
     const client = await connectClient(baseUrl);
     try {
       const result = await client.callTool({ name: "hello", arguments: {} });
@@ -71,5 +73,6 @@ describe("mcp hello over streamable HTTP", () => {
     } finally {
       await client.close();
     }
-  });
+    }),
+  );
 });

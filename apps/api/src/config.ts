@@ -1,6 +1,15 @@
 const DEFAULT_PORT = 3000;
 const DEFAULT_BIND_HOST = "127.0.0.1";
 const REJECTED_PASSWORDS = new Set(["replace-me", "cookbook"]);
+const MIN_TOKEN_LENGTH = 16;
+const PLACEHOLDER_TOKENS = new Set([
+  "replace-with-a-long-random-token",
+  "replace-me",
+]);
+const DEV_TOKENS = new Set([
+  "local-dev-api-mcp-token-not-for-nas",
+  "local-dev-api-web-token-not-for-nas",
+]);
 
 export type Config = {
   bindHost: string;
@@ -9,7 +18,32 @@ export type Config = {
   migratorDatabaseUrl: string;
   migrationsDir: string;
   seedFile: string;
+  apiAuthTokenMcp: string;
+  apiAuthTokenWeb: string;
 };
+
+function requiredToken(env: NodeJS.Dict<string>, name: string): string {
+  const value = env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `${name} is required. Generate one with: openssl rand -hex 32`,
+    );
+  }
+  if (PLACEHOLDER_TOKENS.has(value)) {
+    throw new Error(
+      `${name} is a public placeholder. Generate one with: openssl rand -hex 32`,
+    );
+  }
+  if (DEV_TOKENS.has(value) && env.API_ALLOW_DEV_TOKEN?.trim() !== "1") {
+    throw new Error(
+      `${name} is a local dev token. Set API_ALLOW_DEV_TOKEN=1 only for local compose, never on the NAS`,
+    );
+  }
+  if (value.length < MIN_TOKEN_LENGTH) {
+    throw new Error(`${name} must be at least ${MIN_TOKEN_LENGTH} characters`);
+  }
+  return value;
+}
 
 function parsePort(value: string | undefined, name: string): number {
   if (!value) {
@@ -114,6 +148,16 @@ export function loadConfig(env: NodeJS.Dict<string> = process.env): Config {
     );
   }
 
+  const apiAuthTokenMcp = requiredToken(env, "API_AUTH_TOKEN_MCP");
+  const apiAuthTokenWeb = requiredToken(env, "API_AUTH_TOKEN_WEB");
+  if (apiAuthTokenMcp === apiAuthTokenWeb) {
+    throw new Error("API_AUTH_TOKEN_MCP and API_AUTH_TOKEN_WEB must differ");
+  }
+  const mcpAuthToken = env.MCP_AUTH_TOKEN?.trim();
+  if (mcpAuthToken && (apiAuthTokenMcp === mcpAuthToken || apiAuthTokenWeb === mcpAuthToken)) {
+    throw new Error("API caller tokens must differ from MCP_AUTH_TOKEN");
+  }
+
   return {
     bindHost: env.BIND_HOST?.trim() || DEFAULT_BIND_HOST,
     port: parsePort(env.PORT, "PORT"),
@@ -121,5 +165,7 @@ export function loadConfig(env: NodeJS.Dict<string> = process.env): Config {
     migratorDatabaseUrl,
     migrationsDir: env.MIGRATIONS_DIR?.trim() || "db/migrations",
     seedFile: env.SEED_FILE?.trim() || "db/seed.sql",
+    apiAuthTokenMcp,
+    apiAuthTokenWeb,
   };
 }

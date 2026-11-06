@@ -1,10 +1,10 @@
 # Tokens, accessibility, breakpoints, iPhone
 
-Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). The UI package is not in the tree. A unit test locks the color pairs when that package lands.
+Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). Tokens live in `@cookbook/ui`. A unit test locks the color pairs.
 
 Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot.
 
-Tokens are semantic CSS custom properties. The hex values can move with the file format inside the UI package. Spacing, radius, and motion tokens are pending.
+Tokens are semantic CSS custom properties. The hex values can move with the file format inside the UI package. Spacing and radius tokens are pending.
 
 ## Color
 
@@ -75,7 +75,7 @@ Root font size stays the browser default so iOS text settings and pinch zoom can
 | `--hit` | 2.75rem |
 | `--read` | 65ch |
 
-Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). The list content column caps near `--read` from the wide breakpoint up. Page padding, gaps, and corner radii wait for spacing and radius tokens.
+Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). Recipe text caps near `--read` from the wide breakpoint up. The list is a card grid from that breakpoint. Page padding and gaps wait for spacing tokens. Button radius is in [buttons](buttons.md).
 
 The end of the page stays clear of any control and of the home indicator: padding plus the safe-area inset.
 
@@ -90,7 +90,7 @@ Floor is WCAG 2.2 level AA on the screens this design system ships.
 * Name and role come from the element. The theme control's accessible name includes the current choice. It is on the settings screen.
 * `prefers-reduced-transparency: reduce` uses the same opaque control fill. Floating controls do not switch to a translucent fill.
 * Headings stay in order on each screen. One `h1`.
-* `prefers-reduced-motion: reduce` disables transitions. Nothing moves by default except a focus ring. No information depends on animation.
+* `prefers-reduced-motion: reduce` keeps only short opacity fades at `--duration-fast`. No transform, scale or slide. No information depends on animation.
 * State is a word as well as a color. "Could not load" is text, not a red card alone.
 * `lang="en"` stays on `html`.
 
@@ -101,7 +101,7 @@ The default CSS is the phone. There is one min-width query.
 | Name | Query | Layout |
 | --- | --- | --- |
 | phone | default | One column. Floating actions ([0016](../decisions/0016-kitchen-ui.md)), not a bottom bar. |
-| wide | `min-width: 48rem` | Same chrome, wider content. List column caps near `65ch`. On the recipe, ingredients and steps sit side by side. |
+| wide | `min-width: 48rem` | Same chrome, wider content. The list is a card grid. Recipe measure caps near `65ch`. On the recipe, ingredients and steps sit side by side. |
 
 No tablet layout and no compact density. A desktop browser window narrower than 48rem gets the phone layout, which is the right fallback.
 
@@ -118,9 +118,23 @@ The page rules a home-screen install needs. No service worker. Icon artwork and 
 * `-webkit-tap-highlight-color` may be transparent only when the control has its own pressed background.
 * Install path stays Safari Share → Add to Home Screen. No prompt library and no App Store.
 
+## Motion
+
+Tokens live in `@cookbook/ui`. Components use them and never a raw duration.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--duration-fast` | 100ms | Press |
+| `--duration-base` | 200ms | Default |
+| `--duration-slow` | 320ms | Theme and larger layout |
+| `--ease-out` | `cubic-bezier(0.2, 0, 0, 1)` | Enter, press |
+| `--ease-in-out` | `cubic-bezier(0.4, 0, 0.2, 1)` | Theme, layout |
+
+Page changes use the View Transitions API where supported; elsewhere the page swaps without animation. Under reduced motion the transition is a short opacity fade.
+
 ## Theme
 
-The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. How it is stored, and how the document exposes light or dark before paint, is the web implementation.
+The first paint follows the system setting unless a stored choice exists. The selector is on the settings screen, not on the list or the recipe. The choice is per browser, not per person, and it is not synced to Postgres. Storage, the first-paint script, and the document hint are in [web.md](../web.md). First paint uses the resolved theme before any transition runs; theme transitions apply only to a change made in settings.
 
 ## Pending
 
@@ -128,8 +142,6 @@ Not decided.
 
 - Spacing tokens (page padding, gaps, the space scale)
 - Radius tokens
-- Motion tokens
-- List card fields
 - Theme control placement on settings
 - Icons and home-screen icons
 

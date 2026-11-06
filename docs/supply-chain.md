@@ -36,9 +36,9 @@ Each ecosystem has two catch-all groups, `patterns: ["*"]`, for `major`, `minor`
 
 - GitHub Actions in `.github/workflows/ci.yml` are full commit SHAs with a trailing version comment. `actions/checkout` sets `persist-credentials: false`. Workflow `permissions` are `contents: read`.
 - Third-party images in the Dockerfiles and the root `docker-compose.yml` are `name:tag@sha256:…` with a specific version tag.
-- Images this repo builds are not digest-pinned.
-- The NAS file still uses floating tags (`postgres:16-alpine`, `tailscale/tailscale:stable`). Pinning that file is part of the production Compose work, which is not in the tree.
+- Images this repo builds are not digest-pinned. They are not signed ([0024](decisions/0024-production-images-and-operator-deploy.md)). The production pin is a `sha-` tag.
+- The NAS skeleton still uses floating tags (`postgres:16-alpine`, `tailscale/tailscale:stable`). The production file digest-pins those images. That file is not in the tree.
 
 ## Review
 
-CI is the merge bar. Write a Security section only for a hit: audit output when it is not clean, a change to `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude`, a new install script, an Action that is not a full SHA, an image without a digest, or a new `ports:` key. A clean diff has no Security section. A bot pull request is not a new ADR.
+CI is the merge bar. Write a Security section only for a hit: audit output when it is not clean, a change to `allowBuilds`, `audit.ignore`, or `minimumReleaseAgeExclude`, a new install script, an Action that is not a full SHA, an image without a digest, or a new `ports:` key. A clean diff has no Security section. A bot pull request does not add an ADR file.

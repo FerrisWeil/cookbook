@@ -2,7 +2,7 @@
 
 Detail for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md).
 
-The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar. The app does not cache the library and does not serve it offline. Free-text search, a meal plan, fullscreen reading, a Chef panel, and live updates stay out. A favorites toggle and tag filter chips are allowed on the list ([0020](../decisions/0020-kitchen-design-system.md)).
+The list, the recipe, and settings are the content. There is no left rail, no tall header band, and no bottom bar. The app does not cache the library and does not serve it offline. Free-text search, a meal plan, fullscreen reading, a Chef panel, and live updates stay out. A favorites toggle and tag filter chips are allowed on the list ([0016](../decisions/0016-kitchen-ui.md)).
 
 ## Controls
 
@@ -16,7 +16,7 @@ The last line of content stays clear of any control and of the safe area. On the
 
 ## Cards
 
-A card has one fill, `--bg-elevated`. It is not a second translucent layer. Which fields a card shows, besides the title, is pending.
+A card has one fill, `--bg-elevated`. It is not a second translucent layer. Fields, the sibling favorite, and layout are [information architecture](information-architecture.md).
 
 ## Theme
 
