@@ -224,6 +224,9 @@ requirements:
         status: accepted
         text: "On the recipe screen, steps can be checked off."
         children:
+          - id: "160"
+            status: accepted
+            text: "On the recipe screen, steps can be checked off."
           - id: "156"
             status: accepted
             text: "A checked step is stored on the device."
