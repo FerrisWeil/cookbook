@@ -12,6 +12,10 @@ Client-rendered React. The web image serves static files. `/` falls back to `ind
 
 The recipe screen requests `fields=title,ingredients,steps`. Default read omits ingredients. Empty ingredient or step lists omit that section. Back pops when the recipe was opened from the list, and replaces the current entry with `/` when the recipe was opened directly.
 
+List and recipe screens subscribe to `GET /api/recipes/events`, then refetch the current list and any open recipe. A refetch does not return the screen to loading. Connection health and pending/failed save counts sit under the title, distinct from "All saved". Screens use `useRecipeList` / `useRecipe`; they do not call `fetch`, `EventSource`, or storage.
+
+Pending field writes live in a per-device outbox (IndexedDB when present). Queue order, overlay, and retry are independent of React and HTTP. Last-save-wins is server application order, not a client clock. Arrays are whole fields. This branch does not yet send the facts PATCH from `cursor/recipe-facts-t248u-5a7f` (`PATCH /recipes/:id/facts`, body a facts object or `null`). The outbox stays queued until that route is integrated.
+
 | Route | Screen |
 | --- | --- |
 | `/` | Recipe list |
@@ -30,7 +34,9 @@ The web token is not in the JavaScript bundle, not in a cookie, and not in a bro
 | `GET /api/health`, `GET /api/health/ready` | yes | Unauthenticated. |
 | `GET /api/recipes` | yes | List. |
 | `GET /api/recipes/:id` | yes | Read. |
+| `GET /api/recipes/events` | yes | SSE. Nginx buffering off, 1h read timeout. Vite proxy timeout 0. |
 | Favorite and rating write | no | Path is not in the tree. |
+| Facts PATCH | no | Owned by the facts branch. Not forwarded here. |
 | Full recipe save | no | `PUT /api/recipes` is 405. |
 | Step check-off | no | Device only. Not an API call. |
 
