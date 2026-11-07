@@ -284,6 +284,54 @@ describe("kitchen list and recipe", () => {
   );
 
   it(
+    "makes every action reachable from the keyboard",
+    verifies("161", "b7830f49843dc529", () => {
+      const list = html(
+        createElement(ListScreen, {
+          state: {
+            kind: "ready",
+            recipes: [{ id: "lentils", title: "Example: Tomato lentils" }],
+          },
+          onOpen() {},
+          onRetry() {},
+        }),
+      );
+      const recipe = html(
+        createElement(RecipeScreen, {
+          state: {
+            kind: "ready",
+            recipe: {
+              title: "Example: Tomato lentils",
+              ingredients: ["1 cup lentils"],
+              steps: ["Simmer."],
+            },
+          },
+          onBack() {},
+          onRetry() {},
+        }),
+      );
+      const failed = html(
+        createElement(ListScreen, {
+          state: { kind: "error", message: LIST_ERROR },
+          onOpen() {},
+          onRetry() {},
+        }),
+      );
+      for (const page of [list, recipe, failed]) {
+        assert.doesNotMatch(page, /tabindex="-1"/);
+        const actions = [...page.matchAll(/<(button|a)\b[^>]*>/g)].map((match) => match[0]);
+        assert.ok(actions.length > 0, page);
+        for (const action of actions) {
+          assert.match(action, /^<(button|a)\b/);
+        }
+      }
+      assert.match(list, /<a\b[^>]*href="\/recipes\/lentils"/);
+      assert.match(recipe, /<button\b[^>]*>Back<\/button>/);
+      assert.match(failed, /<button\b[^>]*>Try again<\/button>/);
+    }),
+  );
+
+  it(
     "lets the user zoom the page",
     verifies("56", "951bbf23cd1df764", () => {
       const document = readWeb("index.html");

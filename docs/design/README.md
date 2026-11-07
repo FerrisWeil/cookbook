@@ -18,5 +18,4 @@ UI for the household cookbook. Kitchen principles are [0016](../decisions/0016-k
 Not decided. Do not invent values for these in code.
 
 - Theme control placement on settings
-- Spacing and radius tokens
 - Icons and home-screen icons

@@ -19,7 +19,7 @@ export function RecipeScreen({
 }) {
   return (
     <main className="ui-shell recipe-screen">
-      <Button className="ui-back" variant="tonal" onClick={onBack}>
+      <Button className="ui-back" variant="primary" onClick={onBack}>
         Back
       </Button>
       {state.kind === "loading" ? <LoadingRecipe /> : null}

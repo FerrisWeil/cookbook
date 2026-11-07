@@ -2,18 +2,11 @@
   display: grid;
   gap: 1rem;
   list-style: none;
-  margin: 1.25rem 0 0;
+  margin: var(--space-stack) 0 0;
   padding: 0;
 }
 
 .recipe-grid > li {
-  margin: 0;
-}
-
-h1 {
-  font-size: var(--text-title);
-  line-height: 1.2;
-  font-weight: 600;
   margin: 0;
 }
 
@@ -59,7 +52,7 @@ h1 {
 .recipe-skeleton-title,
 .recipe-skeleton-block {
   background: var(--bg-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 
 .recipe-skeleton-title {

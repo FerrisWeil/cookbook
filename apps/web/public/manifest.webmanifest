@@ -4,8 +4,8 @@
   "description": "Family recipes at home.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f6f1e9",
-  "theme_color": "#f6f1e9",
+  "background_color": "#f5f9fc",
+  "theme_color": "#f5f9fc",
   "icons": [
     {
       "src": "/icon.svg",

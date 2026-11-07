@@ -10,7 +10,7 @@ body,
 }
 
 html {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
 }
 
 body {
@@ -20,10 +20,17 @@ body {
 
 .ui-shell {
   min-height: 100dvh;
-  padding-top: max(2.5rem, env(safe-area-inset-top));
-  padding-right: max(1.25rem, env(safe-area-inset-right));
-  padding-bottom: max(4rem, env(safe-area-inset-bottom));
-  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-top: max(var(--space-page-top), env(safe-area-inset-top));
+  padding-right: max(var(--space-page-x), env(safe-area-inset-right));
+  padding-bottom: max(var(--space-page-bottom), env(safe-area-inset-bottom));
+  padding-left: max(var(--space-page-x), env(safe-area-inset-left));
+}
+
+.ui-shell h1 {
+  font-size: var(--text-title);
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0;
 }
 
 .ui-button {
@@ -35,7 +42,7 @@ body {
   height: 48px;
   padding: 0 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   font-family: var(--font-sans);
   font-size: var(--text-ui);
   line-height: 1.3;
@@ -93,7 +100,7 @@ body {
   min-height: 112px;
   padding: 1rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   background: var(--bg-elevated);
   color: var(--text);
   text-decoration: none;
@@ -118,7 +125,7 @@ body {
 }
 
 .ui-card-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 1.375rem;
   line-height: 1.2;
   display: -webkit-box;
@@ -150,7 +157,7 @@ body {
 .ui-message {
   margin: 0;
   padding: 0.9rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--danger-bg);
   color: var(--danger);
   font-family: var(--font-sans);

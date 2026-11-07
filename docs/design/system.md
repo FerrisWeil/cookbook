@@ -6,7 +6,7 @@ Detail for [0020](../decisions/0020-kitchen-design-system.md).
 
 ## Tokens
 
-Semantic CSS custom properties. The color set and motion tokens are [tokens](tokens.md). Buttons are [buttons](buttons.md). The foundation `--paper`, `--ink`, and `--herb` names are not kept. One set. Spacing and radius tokens are pending.
+Semantic CSS custom properties. The color set, type, motion, spacing, and radius tokens are [tokens](tokens.md). Buttons are [buttons](buttons.md). The foundation `--paper`, `--ink`, and `--herb` names are not kept. One set.
 
 The package applies the tokens. It does not invent a second palette.
 
@@ -22,7 +22,7 @@ React stays the React `apps/web` already has. The UI package does not install a 
 
 The pieces the screens share: the page shell, a recipe card, the article (ingredients and steps), buttons, filter chips, a step check-off, and the load and error message. This slice ships the shell, card, article, buttons, and load/error copy. `/guide` ([demo](demo.md)) is not built.
 
-Theme control placement, icons, and the pending tokens above wait for a later design pass. List cards are [information architecture](information-architecture.md). Title-only cards omit favorite, rating, and tags until the list API returns them.
+Theme control placement and icons wait for a later design pass. List cards are [information architecture](information-architecture.md). Title-only cards omit favorite, rating, and tags until the list API returns them.
 
 ## Supply chain
 

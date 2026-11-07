@@ -30,7 +30,7 @@ Cards are a single column on the phone and a grid from the wide breakpoint up. E
 
 ### Cards
 
-The whole card is one link to the recipe. The title is serif, at most two lines, then an ellipsis.
+The whole card is one link to the recipe. The title is sans, at most two lines, then an ellipsis.
 
 Every card has a favorite star toggle, top-right, with a 44px hit area. It is a sibling button, not nested inside the link. Accessible name `Favorite` plus the title. `aria-pressed` reflects the state. It updates optimistically, with rollback and a worded error, per [buttons](buttons.md).
 

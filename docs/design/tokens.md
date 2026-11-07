@@ -1,50 +1,50 @@
 # Tokens, accessibility, breakpoints, iPhone
 
-Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). Tokens live in `@cookbook/ui`. A unit test locks the color pairs.
+Values for [0016](../decisions/0016-kitchen-ui.md) and [0020](../decisions/0020-kitchen-design-system.md). Tokens live in `@cookbook/ui`. A unit test checks the WCAG 2.2 AA floors for those pairs.
 
 Contrast ratios below are WCAG 2.x relative luminance, computed for these hex pairs, not measured off a screenshot.
 
-Tokens are semantic CSS custom properties. The hex values can move with the file format inside the UI package. Spacing and radius tokens are pending.
+Tokens are semantic CSS custom properties. The hex values can move with the file format inside the UI package.
 
 ## Color
 
-Light values are the foundation page: paper, ink, herb, and the existing warn pair. Dark is a warm charcoal so a phone on the counter at night is not a pure-black glare.
+Light is Coastal blue: cool mist page, powder-blue cards, ocean-blue controls, navy type. Dark is a complementary cool navy so a phone on the counter at night is not a pure-black glare. The selected mockup is feel, not a pixel spec.
 
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
-| `--bg` | `#f6f1e9` | `#1c1915` | Page |
-| `--bg-elevated` | `#efe6d6` | `#2a2520` | Cards, one fill |
-| `--text` | `#2b241c` | `#f3ecdf` | Body and titles |
-| `--text-muted` | `#5c5348` | `#c4b8a5` | Meta that still meets 4.5:1 |
-| `--accent` | `#3d5a40` | `#c5d4c0` | Links, focus |
-| `--accent-contrast` | `#f6f1e9` | `#1c1915` | Text on an accent fill |
-| `--danger` | `#8a3b2a` | `#f0c2b6` | Error text |
-| `--danger-bg` | `#f3ddd6` | `#3a2924` | Error surface |
-| `--border` | `#7d7264` | `#8a7d6b` | Control boundaries |
-| `--focus` | `#3d5a40` | `#c5d4c0` | Focus ring |
+| `--bg` | `#f5f9fc` | `#0b1a2c` | Page |
+| `--bg-elevated` | `#d7e6f5` | `#16324c` | Cards, one fill |
+| `--text` | `#0b2b51` | `#e8f3fc` | Body and titles |
+| `--text-muted` | `#3a5a78` | `#b7cde3` | Meta that still meets 4.5:1 |
+| `--accent` | `#134175` | `#8bbde8` | Links, focus, primary fill |
+| `--accent-contrast` | `#f5f9fc` | `#0b1a2c` | Text on an accent fill |
+| `--danger` | `#8b2e3a` | `#f0b8c0` | Error text |
+| `--danger-bg` | `#f3d6dc` | `#3a2730` | Error surface |
+| `--border` | `#5a7390` | `#7a93ad` | Control boundaries |
+| `--focus` | `#134175` | `#8bbde8` | Focus ring |
 
 | Pair | Ratio | Bar |
 | --- | --- | --- |
-| `--text` on `--bg`, light | 13.61 | 4.5:1 |
-| `--text-muted` on `--bg`, light | 6.70 | 4.5:1 |
-| `--text-muted` on `--bg-elevated`, light | 6.09 | 4.5:1 |
-| `--accent` on `--bg`, light | 6.83 | 4.5:1 |
-| `--accent` on `--bg-elevated`, light | 6.20 | 4.5:1 |
-| `--accent-contrast` on `--accent`, light | 6.83 | 4.5:1 |
-| `--danger` on `--danger-bg`, light | 5.89 | 4.5:1 |
-| `--danger` on `--bg`, light | 6.82 | 4.5:1 |
-| `--border` on `--bg`, light | 4.18 | 3:1 |
-| `--border` on `--bg-elevated`, light | 3.80 | 3:1 |
-| `--text` on `--bg`, dark | 14.90 | 4.5:1 |
-| `--text` on `--bg-elevated`, dark | 12.92 | 4.5:1 |
-| `--text-muted` on `--bg`, dark | 8.96 | 4.5:1 |
-| `--text-muted` on `--bg-elevated`, dark | 7.77 | 4.5:1 |
-| `--accent` on `--bg`, dark | 11.30 | 4.5:1 |
-| `--accent-contrast` on `--accent`, dark | 11.30 | 4.5:1 |
-| `--danger` on `--bg`, dark | 10.92 | 4.5:1 |
-| `--danger` on `--danger-bg`, dark | 8.60 | 4.5:1 |
-| `--border` on `--bg`, dark | 4.36 | 3:1 |
-| `--border` on `--bg-elevated`, dark | 3.78 | 3:1 |
+| `--text` on `--bg`, light | 13.42 | 4.5:1 |
+| `--text-muted` on `--bg`, light | 6.81 | 4.5:1 |
+| `--text-muted` on `--bg-elevated`, light | 5.67 | 4.5:1 |
+| `--accent` on `--bg`, light | 9.72 | 4.5:1 |
+| `--accent` on `--bg-elevated`, light | 8.10 | 4.5:1 |
+| `--accent-contrast` on `--accent`, light | 9.72 | 4.5:1 |
+| `--danger` on `--danger-bg`, light | 6.06 | 4.5:1 |
+| `--danger` on `--bg`, light | 7.78 | 4.5:1 |
+| `--border` on `--bg`, light | 4.62 | 3:1 |
+| `--border` on `--bg-elevated`, light | 3.85 | 3:1 |
+| `--text` on `--bg`, dark | 15.57 | 4.5:1 |
+| `--text` on `--bg-elevated`, dark | 11.70 | 4.5:1 |
+| `--text-muted` on `--bg`, dark | 10.73 | 4.5:1 |
+| `--text-muted` on `--bg-elevated`, dark | 8.06 | 4.5:1 |
+| `--accent` on `--bg`, dark | 8.80 | 4.5:1 |
+| `--accent-contrast` on `--accent`, dark | 8.80 | 4.5:1 |
+| `--danger` on `--bg`, dark | 10.28 | 4.5:1 |
+| `--danger` on `--danger-bg`, dark | 8.15 | 4.5:1 |
+| `--border` on `--bg`, dark | 5.51 | 3:1 |
+| `--border` on `--bg-elevated`, dark | 4.14 | 3:1 |
 
 `color-scheme` is set to `light` or `dark` with the theme so native form controls match. The foundation `--paper`, `--ink`, and `--herb` names are not kept alongside the semantic names. One set.
 
@@ -57,7 +57,7 @@ No webfont files and no Google Fonts request.
 --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 ```
 
-Recipes use the serif stack (the foundation choice; Iowan Old Style is on iOS). Controls and inputs use the sans stack so a control is not mistaken for a sentence.
+Live screens use the sans stack throughout. `--font-serif` stays defined and unused on those screens.
 
 | Token | Size | Line height | Use |
 | --- | --- | --- | --- |
@@ -75,7 +75,18 @@ Root font size stays the browser default so iOS text settings and pinch zoom can
 | `--hit` | 2.75rem |
 | `--read` | 65ch |
 
-Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). Recipe text caps near `--read` from the wide breakpoint up. The list is a card grid from that breakpoint. Page padding and gaps wait for spacing tokens. Button radius is in [buttons](buttons.md).
+Primary targets stay 44×44 CSS pixels (`--hit` at the default root size). Recipe text caps near `--read` from the wide breakpoint up. The list is a card grid from that breakpoint.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--space-page-x` | `1.25rem` | Shell left and right, plus the safe-area inset |
+| `--space-page-top` | `2.5rem` | Shell top, plus the safe-area inset |
+| `--space-page-bottom` | `4rem` | Shell bottom, plus the safe-area inset |
+| `--space-stack` | `1.25rem` | Title to list |
+| `--radius-control` | `0.75rem` | Buttons and messages |
+| `--radius-card` | `1rem` | Cards |
+
+Button radius is also in [buttons](buttons.md).
 
 The end of the page stays clear of any control and of the home indicator: padding plus the safe-area inset.
 
@@ -113,7 +124,7 @@ The page rules a home-screen install needs. No service worker. Icon artwork and 
 * Shell padding includes `env(safe-area-inset-top)`, `right`, `bottom`, and `left`. Floating controls sit inside that padding, above the home indicator. There is no bottom bar ([0016](../decisions/0016-kitchen-ui.md)).
 * The shell uses `min-height: 100dvh`, not `100vh`, so Safari's toolbars do not cover the page.
 * `apple-mobile-web-app-status-bar-style` is `default`. The OS keeps status-bar contrast. Safe-area padding is still applied so a later style change does not slide the title under the clock.
-* `theme-color` is updated to `--bg` of the active theme (light `#f6f1e9`, dark `#1c1915`). The manifest `background_color` and `theme_color` stay the light pair for the install splash. iOS does not reliably read a dark `theme_color` from the manifest.
+* `theme-color` is updated to `--bg` of the active theme (light `#f5f9fc`, dark `#0b1a2c`). The manifest `background_color` and `theme_color` stay the light pair for the install splash. iOS does not reliably read a dark `theme_color` from the manifest.
 * Inputs are 1rem or larger.
 * `-webkit-tap-highlight-color` may be transparent only when the control has its own pressed background.
 * Install path stays Safari Share → Add to Home Screen. No prompt library and no App Store.
@@ -140,8 +151,6 @@ The first paint follows the system setting unless a stored choice exists. The se
 
 Not decided.
 
-- Spacing tokens (page padding, gaps, the space scale)
-- Radius tokens
 - Theme control placement on settings
 - Icons and home-screen icons
 
