@@ -219,5 +219,52 @@ describe("kitchen session", () => {
     assert.equal(offline.connection, "offline");
     assert.match(offline.label, /Offline/);
     assert.match(offline.label, /1 pending/);
+    session.stop();
+  });
+
+  it("does not let a slower open overwrite a newer refetch", async () => {
+    const first = deferred<RecipeRow>();
+    const second = deferred<RecipeRow>();
+    let reads = 0;
+    const harness = makeHarness();
+    harness.ports.recipes.read = async () => {
+      reads += 1;
+      const row = reads === 1 ? await first.promise : await second.promise;
+      return {
+        title: row.title,
+        ingredients: [...row.ingredients],
+        steps: [...row.steps],
+      };
+    };
+    const session = createKitchenSession(harness.ports);
+    await session.start();
+    const opening = session.openRecipe("r1");
+    await Promise.resolve();
+    const refetching = session.refetch();
+    await Promise.resolve();
+    assert.equal(reads, 2);
+    second.resolve({
+      title: "Newer",
+      ingredients: ["salt"],
+      steps: ["mix"],
+    });
+    await refetching;
+    const afterRefetch = session.recipe("r1");
+    assert.equal(afterRefetch.kind, "ready");
+    if (afterRefetch.kind === "ready") {
+      assert.equal(afterRefetch.recipe.title, "Newer");
+    }
+    first.resolve({
+      title: "Stale",
+      ingredients: ["old"],
+      steps: ["old"],
+    });
+    await opening;
+    const afterOpen = session.recipe("r1");
+    assert.equal(afterOpen.kind, "ready");
+    if (afterOpen.kind === "ready") {
+      assert.equal(afterOpen.recipe.title, "Newer");
+    }
+    session.stop();
   });
 });

@@ -122,6 +122,8 @@ export function createKitchenSession(ports: KitchenPorts) {
   let stopStream: (() => void) | undefined;
   let inflight: Promise<void> = Promise.resolve();
   let fetchGeneration = 0;
+  const recipeReads = new Map<string, number>();
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
   function emit(): void {
     for (const listener of listeners) {
@@ -177,9 +179,30 @@ export function createKitchenSession(ports: KitchenPorts) {
     return status;
   }
 
+  function beginRecipeRead(id: string): number {
+    const seq = (recipeReads.get(id) ?? 0) + 1;
+    recipeReads.set(id, seq);
+    return seq;
+  }
+
+  function commitRecipe(id: string, seq: number, next: RecipeSnapshot): boolean {
+    if (recipeReads.get(id) !== seq) {
+      return false;
+    }
+    snapshots.set(id, next);
+    recipeErrors.delete(id);
+    return true;
+  }
+
   async function refetch(): Promise<void> {
     const generation = (fetchGeneration += 1);
-    const openIds = [...snapshots.keys(), ...recipeErrors.keys()];
+    const openIds = [
+      ...new Set([
+        ...snapshots.keys(),
+        ...recipeErrors.keys(),
+        ...recipeReads.keys(),
+      ]),
+    ];
     try {
       const recipes = await ports.recipes.list();
       if (generation !== fetchGeneration) {
@@ -199,19 +222,22 @@ export function createKitchenSession(ports: KitchenPorts) {
     }
     await Promise.all(
       openIds.map(async (id) => {
+        const seq = beginRecipeRead(id);
         try {
           const next = await ports.recipes.read(id);
           if (generation !== fetchGeneration) {
             return;
           }
-          snapshots.set(id, next);
-          recipeErrors.delete(id);
+          commitRecipe(id, seq, next);
         } catch (error) {
           if (generation !== fetchGeneration) {
             return;
           }
           const message =
             error instanceof Error ? error.message : "Could not load this recipe.";
+          if (recipeReads.get(id) !== seq) {
+            return;
+          }
           if (message === "The recipe was not found.") {
             snapshots.delete(id);
             recipeErrors.set(id, { kind: "missing" });
@@ -227,14 +253,16 @@ export function createKitchenSession(ports: KitchenPorts) {
   }
 
   async function openRecipe(id: string): Promise<void> {
-    if (!snapshots.has(id) && !recipeErrors.has(id)) {
-      recipeErrors.delete(id);
-    }
+    const seq = beginRecipeRead(id);
     try {
       const next = await ports.recipes.read(id);
-      snapshots.set(id, next);
-      recipeErrors.delete(id);
+      if (!commitRecipe(id, seq, next)) {
+        return;
+      }
     } catch (error) {
+      if (recipeReads.get(id) !== seq) {
+        return;
+      }
       const message =
         error instanceof Error ? error.message : "Could not load this recipe.";
       if (message === "The recipe was not found.") {
@@ -256,8 +284,28 @@ export function createKitchenSession(ports: KitchenPorts) {
     return work;
   }
 
+  function clearRetry(): void {
+    if (retryTimer !== undefined) {
+      clearTimeout(retryTimer);
+      retryTimer = undefined;
+    }
+  }
+
+  function armRetry(): void {
+    clearRetry();
+    const wake = outbox.nextRetryAt();
+    if (wake === undefined) {
+      return;
+    }
+    retryTimer = setTimeout(() => {
+      retryTimer = undefined;
+      void track(drain());
+    }, Math.max(0, wake - ports.now()));
+  }
+
   async function drain(): Promise<void> {
     await outbox.drain();
+    armRetry();
     emit();
   }
 
@@ -304,6 +352,7 @@ export function createKitchenSession(ports: KitchenPorts) {
       await track(drain());
     },
     stop() {
+      clearRetry();
       stopStream?.();
       stopStream = undefined;
       started = false;

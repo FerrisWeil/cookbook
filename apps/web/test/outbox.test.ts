@@ -7,6 +7,7 @@ import {
   markFailed,
   markInflight,
   nextSendable,
+  requeue,
   scheduleRetry,
   supersededIds,
   type QueueItem,
@@ -86,6 +87,18 @@ describe("queue order and identity", () => {
     ];
     assert.deepEqual([...supersededIds(items)], ["old"]);
     assert.equal(nextSendable(items, 0)?.mutation.id, "new");
+  });
+
+  it("does not drop a pending write because another recipe used the same field name", () => {
+    const items = enqueue(
+      enqueue([], mutation("m1", { title: "Soup" }, "r1")),
+      mutation("m2", { title: "Stew" }, "r2"),
+    );
+    assert.deepEqual(
+      items.map((item) => item.mutation.id),
+      ["m1", "m2"],
+    );
+    assert.equal(nextSendable(items, 0)?.mutation.id, "m1");
   });
 
   it("still sends an older mutation that writes a field a later one does not", () => {
@@ -216,6 +229,16 @@ describe("retry policy", () => {
       queued(mutation("m2", { title: "Ok" })),
     ];
     assert.equal(nextSendable(items, 0)?.mutation.id, "m2");
+  });
+
+  it("requeues an inflight item without scheduling a retry instant", () => {
+    const items = requeue(
+      markInflight([queued(mutation("m1", { title: "A" }))], "m1"),
+      "m1",
+    );
+    assert.equal(items[0]?.status, "queued");
+    assert.equal(items[0]?.nextAttemptAt, undefined);
+    assert.equal(nextSendable(items, 0)?.mutation.id, "m1");
   });
 
   it("waits until the retry instant before sending a transient item again", () => {
@@ -392,6 +415,7 @@ describe("outbox driver", () => {
     assert.equal(calls, 1);
     assert.equal(outbox.status().pending, 1);
     assert.equal(outbox.status().failed, 0);
+    assert.equal(outbox.nextRetryAt(), 1_000);
     await outbox.drain();
     assert.equal(calls, 1);
     now = 1_000;
@@ -415,8 +439,10 @@ describe("outbox driver", () => {
     });
     await outbox.enqueue(mutation("m1", { title: "A" }));
     await outbox.drain();
-    await outbox.drain();
     assert.equal(calls, 1);
+    assert.equal(outbox.nextRetryAt(), undefined);
+    await outbox.drain();
+    assert.equal(calls, 2);
     assert.equal((await storage.load())[0]?.status, "queued");
     assert.equal(outbox.status().pending, 1);
     assert.equal(outbox.status().failed, 0);

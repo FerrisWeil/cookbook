@@ -38,13 +38,12 @@ export function notifyingRecipeStore(
   hub: CommitHub,
 ): RecipeStore {
   return {
+    ...store,
     async save(input) {
       const recipe = await store.save(input);
       hub.notify({ recipeId: recipe.id, op: "saved" });
       return recipe;
     },
-    read: (id) => store.read(id),
-    list: () => store.list(),
     async hide(input) {
       await store.hide(input);
       const recipeId =

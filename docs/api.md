@@ -21,11 +21,11 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 | `GET` | `/recipes/events` | Authenticated SSE. Heartbeats, then `committed` invalidation events `{ recipeId, op }` after a store save or hide. Clients refetch. Not a recipe snapshot stream. |
 | `PUT` | `/recipes` | Save. Body matches MCP `save`. |
 
-Notifications are emitted from the recipe store seam after a successful commit, not only from the browser HTTP handler. The hub is in-process: one API replica. A restart drops the stream; clients reconnect and refetch. Direct SQL does not notify.
+Notifications are emitted from the recipe store seam after a successful commit, not only from the browser HTTP handler. Extra store methods pass through the wrapper; a new write such as facts must notify after it commits. The hub is in-process: one API replica. A restart drops the stream; clients reconnect and refetch. Direct SQL does not notify.
 
 `keepAliveTimeout` stays 5s. An open SSE socket sets its own timeout to 0. Nginx `proxy_buffering off` and a 1h read timeout apply only to `/api/recipes/events`.
 
-Mutation ids are stored in `recipe_mutation_acks`. `applyWithAck` records the id and payload fingerprint in the same transaction as the effect. Same id and fingerprint is a duplicate ack. Same id and a different fingerprint is rejected. The facts PATCH on `cursor/recipe-facts-t248u-5a7f` does not yet send a mutation id or call this helper.
+Mutation ids are stored in `recipe_mutation_acks`. `applyWithAck` must run on a client already inside the effect's transaction. It locks the ack row, applies the effect, then inserts the id and payload fingerprint. Same id and fingerprint is a duplicate ack. Same id and a different fingerprint is rejected. The facts PATCH does not yet send a mutation id or call this helper.
 
 ## Callers
 

@@ -2,7 +2,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import react from "@vitejs/plugin-react";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin, type ProxyOptions } from "vite";
 
 import {
   incomingRecipeApiPath,
@@ -13,6 +13,22 @@ import {
 } from "./dev-proxy.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
+
+const attachWebToken: NonNullable<ProxyOptions["configure"]> = (proxy) => {
+  proxy.on("proxyReq", (proxyReq, req) => {
+    proxyReq.removeHeader("authorization");
+    const url = req.url ?? "";
+    if (
+      shouldAttachWebToken(url) &&
+      isRecipeReadMethod(req.method ?? "GET")
+    ) {
+      proxyReq.setHeader(
+        "authorization",
+        recipeAuthorization(loadWebToken(process.env)),
+      );
+    }
+  });
+};
 
 function webTokenProxy(): Plugin {
   return {
@@ -47,26 +63,17 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": {
+      "/api/recipes/events": {
         target: "http://127.0.0.1:3000",
         timeout: 0,
         proxyTimeout: 0,
         rewrite: (path) => path.replace(/^\/api/, ""),
-        configure(proxy) {
-          proxy.on("proxyReq", (proxyReq, req) => {
-            proxyReq.removeHeader("authorization");
-            const url = req.url ?? "";
-            if (
-              shouldAttachWebToken(url) &&
-              isRecipeReadMethod(req.method ?? "GET")
-            ) {
-              proxyReq.setHeader(
-                "authorization",
-                recipeAuthorization(loadWebToken(process.env)),
-              );
-            }
-          });
-        },
+        configure: attachWebToken,
+      },
+      "/api": {
+        target: "http://127.0.0.1:3000",
+        rewrite: (path) => path.replace(/^\/api/, ""),
+        configure: attachWebToken,
       },
     },
   },

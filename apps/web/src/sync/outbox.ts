@@ -5,6 +5,7 @@ import {
   markInflight,
   nextSendable,
   prune,
+  requeue,
   scheduleRetry,
 } from "./queue";
 import { backoffMs, classifySendResult } from "./retry";
@@ -51,6 +52,19 @@ export class Outbox {
     return this.items.map((item) => ({ ...item }));
   }
 
+  nextRetryAt(): number | undefined {
+    let soonest: number | undefined;
+    for (const item of this.items) {
+      if (item.status !== "queued" || item.nextAttemptAt === undefined) {
+        continue;
+      }
+      if (soonest === undefined || item.nextAttemptAt < soonest) {
+        soonest = item.nextAttemptAt;
+      }
+    }
+    return soonest;
+  }
+
   async enqueue(mutation: Mutation): Promise<void> {
     await this.lock.withLock(async () => {
       await this.ensureLoaded();
@@ -79,11 +93,7 @@ export class Outbox {
           continue;
         }
         if (classified === "wait") {
-          this.items = scheduleRetry(
-            this.items,
-            next.mutation.id,
-            this.now() + backoffMs(next.attempts),
-          );
+          this.items = requeue(this.items, next.mutation.id);
           await this.persist();
           return;
         }

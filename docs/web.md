@@ -14,7 +14,7 @@ The recipe screen requests `fields=title,ingredients,steps`. Default read omits 
 
 List and recipe screens subscribe to `GET /api/recipes/events`, then refetch the current list and any open recipe. A refetch does not return the screen to loading. Connection health and pending/failed save counts sit under the title, distinct from "All saved". Screens use `useRecipeList` / `useRecipe`; they do not call `fetch`, `EventSource`, or storage.
 
-Pending field writes live in a per-device outbox (IndexedDB when present). Queue order, overlay, and retry are independent of React and HTTP. Last-save-wins is server application order, not a client clock. Arrays are whole fields. This branch does not yet send the facts PATCH from `cursor/recipe-facts-t248u-5a7f` (`PATCH /recipes/:id/facts`, body a facts object or `null`). The outbox stays queued until that route is integrated.
+Pending field writes live in a per-device outbox (IndexedDB when present). Queue order, overlay, and retry are independent of React and HTTP. Last-save-wins is server application order, not a client clock. Arrays are whole fields. This checkpoint does not send `PATCH /recipes/:id/facts` (facts object or `null`). The outbox stays queued until that route is integrated.
 
 | Route | Screen |
 | --- | --- |
@@ -25,7 +25,7 @@ Pending field writes live in a per-device outbox (IndexedDB when present). Queue
 
 ## Proxy
 
-Nginx (Compose and the NAS skeleton) and the Vite dev server attach `Authorization: Bearer` for `GET`/`HEAD` `/api/recipes` and `/api/recipes/:id` only. Other methods on those paths return 405. Health stays unauthenticated. The proxy target is the API origin from config, not a URL the browser supplies.
+Nginx (Compose and the NAS skeleton) and the Vite dev server attach `Authorization: Bearer` for `GET`/`HEAD` `/api/recipes`, `/api/recipes/:id`, and `GET` `/api/recipes/events`. Other methods on those paths return 405. Health stays unauthenticated. The proxy target is the API origin from config, not a URL the browser supplies.
 
 The web token is not in the JavaScript bundle, not in a cookie, and not in a browser response body. Incoming `Authorization` from the browser is stripped. Vite refuses to start the dev server if the token is missing, short, or a placeholder. Nginx substitutes `API_AUTH_TOKEN_WEB` at container start.
 

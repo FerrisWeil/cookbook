@@ -19,6 +19,11 @@ export class MutationAckError extends Error {
   }
 }
 
+/**
+ * Caller must pass a client already inside the effect's transaction.
+ * `apply` must use that same client so the write and ack commit or roll back
+ * together. `SELECT ... FOR UPDATE` serializes concurrent acks for one id.
+ */
 export async function applyWithAck(
   client: SqlClient,
   input: MutationAckInput,
@@ -27,7 +32,8 @@ export async function applyWithAck(
   const existing = await client.query(
     `SELECT payload_fingerprint
      FROM recipe_mutation_acks
-     WHERE mutation_id = $1`,
+     WHERE mutation_id = $1
+     FOR UPDATE`,
     [input.mutationId],
   );
   const row = existing.rows[0] as { payload_fingerprint?: unknown } | undefined;

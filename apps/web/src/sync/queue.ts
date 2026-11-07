@@ -20,7 +20,11 @@ export function supersededIds(items: readonly QueueItem[]): Set<string> {
     }
     const later = items.slice(index + 1);
     const covered = keys.every((key) =>
-      later.some((candidate) => key in candidate.mutation.fields),
+      later.some(
+        (candidate) =>
+          candidate.mutation.recipeId === item.mutation.recipeId &&
+          key in candidate.mutation.fields,
+      ),
     );
     if (covered) {
       drop.add(item.mutation.id);
@@ -73,6 +77,22 @@ export function markFailed(
   return items.map((item) =>
     item.mutation.id === mutationId
       ? { ...item, status: "failed", failure }
+      : item,
+  );
+}
+
+export function requeue(
+  items: readonly QueueItem[],
+  mutationId: string,
+): QueueItem[] {
+  return items.map((item) =>
+    item.mutation.id === mutationId
+      ? {
+          mutation: item.mutation,
+          status: "queued" as const,
+          attempts: item.attempts,
+          failure: item.failure,
+        }
       : item,
   );
 }

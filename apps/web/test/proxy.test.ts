@@ -107,6 +107,17 @@ describe("read-only recipe proxy", () => {
     }
   });
 
+  it("sets an unbounded Vite timeout on the event stream only", () => {
+    const config = readFileSync(join(webRoot, "vite.config.ts"), "utf8");
+    const afterEvents = config.split('"/api/recipes/events"')[1] ?? "";
+    const events = afterEvents.split('"/api"')[0] ?? "";
+    const rest = afterEvents.split('"/api"')[1] ?? "";
+    assert.match(events, /timeout: 0/);
+    assert.match(events, /proxyTimeout: 0/);
+    assert.doesNotMatch(rest, /timeout: 0/);
+    assert.doesNotMatch(rest, /proxyTimeout: 0/);
+  });
+
   it("does not put the web token in client source", () => {
     const files = [
       join(webRoot, "index.html"),
