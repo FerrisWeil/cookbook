@@ -35,7 +35,7 @@ Allowed in the UI feature pull request:
 - `node:test` that a browser-facing payload has no token, once the proxy exists. Detail is [web.md](../web.md).
 - The web package grows a `test` script, and the root `pnpm test` runs it.
 
-Not until those tokens exist: tests for spacing, radius, or icon artwork.
+Spacing and radius tokens exist. Tests for those values, and for icon artwork, are not required in this slice.
 
 Not allowed until the feature has been demoed and confirmed in chat:
 
