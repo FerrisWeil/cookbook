@@ -6,6 +6,7 @@ import Fastify, {
 import { MESSAGES, type ReadyStatus } from "@cookbook/shared";
 
 import { requestHasValidBearer } from "./auth.js";
+import { createCommitHub, type CommitHub } from "./commits.js";
 import { parseFieldList, projectRecipe } from "./recipe-fields.js";
 import { isRecipeError, type RecipeStore } from "./recipes/index.js";
 
@@ -13,6 +14,8 @@ export type ApiDeps = {
   getReady: () => Promise<ReadyStatus>;
   recipes: RecipeStore;
   callerTokens: readonly string[];
+  commits?: CommitHub;
+  sseHeartbeatMs?: number;
 };
 
 export type ApiListener = {
@@ -108,6 +111,60 @@ function isHealthGet(method: string, pathname: string): boolean {
   return method === "GET" && (pathname === "/health" || pathname === "/health/ready");
 }
 
+const DEFAULT_SSE_HEARTBEAT_MS = 15_000;
+
+function openRecipeEventStream(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  hub: CommitHub,
+  heartbeatMs: number,
+): void {
+  reply.hijack();
+  request.raw.socket?.setTimeout(0);
+  const raw = reply.raw;
+  raw.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-store",
+    connection: "keep-alive",
+    "x-accel-buffering": "no",
+  });
+  raw.write("retry: 3000\n\n");
+  raw.write(": keepalive\n\n");
+
+  let closed = false;
+  const httpServer = request.server.server;
+  const cleanup = () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    clearInterval(timer);
+    unsubscribe();
+    request.raw.off("close", cleanup);
+    httpServer.off("close", cleanup);
+    if (!raw.writableEnded && !raw.destroyed) {
+      raw.end();
+    }
+  };
+  const write = (chunk: string) => {
+    if (closed || raw.destroyed || raw.writableEnded) {
+      cleanup();
+      return;
+    }
+    if (!raw.write(chunk)) {
+      cleanup();
+    }
+  };
+  const unsubscribe = hub.subscribe((commit) => {
+    write(`event: committed\ndata: ${JSON.stringify(commit)}\n\n`);
+  });
+  const timer = setInterval(() => {
+    write(": keepalive\n\n");
+  }, heartbeatMs);
+  request.raw.on("close", cleanup);
+  httpServer.on("close", cleanup);
+}
+
 function hasUsableContentType(value: string | string[] | undefined): boolean {
   const header = Array.isArray(value) ? value[0] : value;
   if (!header) {
@@ -119,6 +176,8 @@ function hasUsableContentType(value: string | string[] | undefined): boolean {
 }
 
 function createApp(deps: ApiDeps) {
+  const commits = deps.commits ?? createCommitHub();
+  const sseHeartbeatMs = deps.sseHeartbeatMs ?? DEFAULT_SSE_HEARTBEAT_MS;
   const app = Fastify({
     logger: false,
     exposeHeadRoutes: false,
@@ -198,6 +257,10 @@ function createApp(deps: ApiDeps) {
         seed: false,
       });
     }
+  });
+
+  app.get("/recipes/events", async (request, reply) => {
+    openRecipeEventStream(request, reply, commits, sseHeartbeatMs);
   });
 
   app.get("/recipes", async (_request, reply) => {

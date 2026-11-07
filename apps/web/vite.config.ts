@@ -49,6 +49,8 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: "http://127.0.0.1:3000",
+        timeout: 0,
+        proxyTimeout: 0,
         rewrite: (path) => path.replace(/^\/api/, ""),
         configure(proxy) {
           proxy.on("proxyReq", (proxyReq, req) => {

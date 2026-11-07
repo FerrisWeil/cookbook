@@ -66,21 +66,45 @@ describe("read-only recipe proxy", () => {
   it("attaches the bearer only on recipe reads", () => {
     assert.equal(incomingRecipeApiPath("/api/recipes"), true);
     assert.equal(incomingRecipeApiPath("/api/recipes/alpha"), true);
+    assert.equal(incomingRecipeApiPath("/api/recipes/events"), true);
     assert.equal(incomingRecipeApiPath("/api/recipesfoo"), false);
     assert.equal(incomingRecipeApiPath("/api/health"), false);
     assert.equal(upstreamRecipePath("/recipes"), true);
     assert.equal(upstreamRecipePath("/recipes/alpha"), true);
+    assert.equal(upstreamRecipePath("/recipes/events"), true);
     assert.equal(upstreamRecipePath("/health"), false);
     assert.equal(shouldAttachWebToken("/api/recipes?limit=1"), true);
+    assert.equal(shouldAttachWebToken("/api/recipes/events"), true);
     assert.equal(shouldAttachWebToken("/health"), false);
     assert.equal(isRecipeReadMethod("GET"), true);
     assert.equal(isRecipeReadMethod("HEAD"), true);
     assert.equal(isRecipeReadMethod("PUT"), false);
     assert.equal(isRecipeReadMethod("POST"), false);
+    assert.equal(isRecipeReadMethod("PATCH"), false);
     assert.equal(
       recipeAuthorization("test-api-web-token-xx"),
       "Bearer test-api-web-token-xx",
     );
+  });
+
+  it("disables nginx stream buffering for the recipe event stream", () => {
+    const docker = readFileSync(
+      join(webRoot, "../../docker/nginx.conf"),
+      "utf8",
+    );
+    const nas = readFileSync(
+      join(webRoot, "../../deploy/nas/nginx.conf"),
+      "utf8",
+    );
+    for (const config of [docker, nas]) {
+      assert.match(config, /location = \/api\/recipes\/events/);
+      const block = config.split("location = /api/recipes/events")[1] ?? "";
+      const events = block.split("location /api/recipes")[0] ?? "";
+      assert.match(events, /proxy_buffering off/);
+      assert.match(events, /proxy_read_timeout 1h/);
+      assert.match(events, /if \(\$request_method != GET\)/);
+      assert.doesNotMatch(events, /proxy_pass http:\/\/api:3000\/recipes;/);
+    }
   });
 
   it("does not put the web token in client source", () => {

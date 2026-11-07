@@ -134,6 +134,37 @@ if [[ "$code" != "405" ]]; then
   exit 1
 fi
 
+code=$(curl -sS -o /tmp/cookbook-web-events-put.json -w '%{http_code}' \
+  -X PUT http://127.0.0.1:8080/api/recipes/events)
+if [[ "$code" != "405" ]]; then
+  echo "web proxy forwarded a write to the event stream: ${code}" >&2
+  cat /tmp/cookbook-web-events-put.json >&2
+  exit 1
+fi
+
+acks_table="$(docker compose exec -T db psql -U postgres -d cookbook -tAc "SELECT to_regclass('public.recipe_mutation_acks')" | tr -d '[:space:]')"
+if [[ "$acks_table" != "recipe_mutation_acks" ]]; then
+  echo "recipe_mutation_acks was not applied" >&2
+  exit 1
+fi
+if docker compose exec -T -e PGPASSWORD="$POSTGRES_APP_PASSWORD" db \
+  psql -U cookbook_app -d cookbook -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO recipe_mutation_acks (mutation_id, payload_fingerprint, recipe_id) VALUES ('smoke-mut', 'fp-a', 'smoke-recipe');" \
+  >/tmp/cookbook-mut-ack-insert.txt 2>&1; then
+  :
+else
+  echo "cookbook_app could not insert a mutation ack" >&2
+  cat /tmp/cookbook-mut-ack-insert.txt >&2
+  exit 1
+fi
+if docker compose exec -T -e PGPASSWORD="$POSTGRES_APP_PASSWORD" db \
+  psql -U cookbook_app -d cookbook -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO recipe_mutation_acks (mutation_id, payload_fingerprint, recipe_id) VALUES ('smoke-mut', 'fp-b', 'smoke-recipe');" \
+  >/tmp/cookbook-mut-ack-dup.txt 2>&1; then
+  echo "duplicate mutation_id was accepted" >&2
+  exit 1
+fi
+
 web_token="${API_AUTH_TOKEN_WEB:-local-dev-api-web-token-not-for-nas}"
 if grep -Fq "$web_token" /tmp/cookbook-web-recipes.json; then
   echo "web token leaked in a browser-facing payload" >&2
@@ -233,3 +264,74 @@ fi
 curl -fsS http://127.0.0.1:8080/api/health/ready | tee /tmp/cookbook-web-api.json
 grep -q '"database":"up"' /tmp/cookbook-web-api.json
 grep -q '"status":"ok"' /tmp/cookbook-web-api.json
+
+code=$(curl -sS -o /tmp/cookbook-api-events-unauth.txt -w '%{http_code}' \
+  http://127.0.0.1:3000/recipes/events)
+test "$code" = "401"
+
+node --input-type=module <<'EOF' | tee /tmp/cookbook-sse.log
+const apiToken = process.env.API_AUTH_TOKEN_MCP ?? "local-dev-api-mcp-token-not-for-nas";
+const webToken = process.env.API_AUTH_TOKEN_WEB ?? "local-dev-api-web-token-not-for-nas";
+
+async function readUntil(url, headers, match, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const response = await fetch(url, { headers, signal: controller.signal });
+  if (!response.ok) {
+    throw new Error(`${url} status ${response.status}`);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
+      if (match(text)) return text;
+    }
+    throw new Error(`no match: ${text}`);
+  } finally {
+    clearTimeout(timer);
+    await reader.cancel().catch(() => undefined);
+    controller.abort();
+  }
+}
+
+const apiStream = readUntil(
+  "http://127.0.0.1:3000/recipes/events",
+  { authorization: `Bearer ${apiToken}` },
+  (chunk) => chunk.includes("event: committed"),
+  8000,
+);
+const webStream = readUntil(
+  "http://127.0.0.1:8080/api/recipes/events",
+  {},
+  (chunk) => chunk.includes("event: committed"),
+  8000,
+);
+await new Promise((resolve) => setTimeout(resolve, 300));
+const saved = await fetch("http://127.0.0.1:3000/recipes", {
+  method: "PUT",
+  headers: {
+    authorization: `Bearer ${apiToken}`,
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({
+    title: "Example: Live stream",
+    steps: ["listen"],
+    servings: 1,
+    actor: "chef",
+  }),
+});
+if (!saved.ok) {
+  throw new Error(`save failed ${saved.status}`);
+}
+const [apiText, webText] = await Promise.all([apiStream, webStream]);
+if (apiText.includes(apiToken) || webText.includes(webToken)) {
+  throw new Error("token leaked on the event stream");
+}
+process.stdout.write("sse-ok\n");
+EOF
+grep -q "sse-ok" /tmp/cookbook-sse.log
+

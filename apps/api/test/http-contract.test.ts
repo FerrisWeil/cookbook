@@ -127,9 +127,11 @@ describe("HTTP adapter stays out of application modules", () => {
   it("does not import Fastify outside the HTTP adapter and boot wiring", () => {
     const files = [
       "auth.ts",
+      "commits.ts",
       "config.ts",
       "health.ts",
       "migrate.ts",
+      "mutations.ts",
       "recipe-fields.ts",
       "index.ts",
       "recipes/errors.ts",
