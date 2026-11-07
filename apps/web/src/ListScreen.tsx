@@ -13,14 +13,21 @@ export function ListScreen({
   state,
   onOpen,
   onRetry,
+  status,
 }: {
   state: ListState;
   onOpen: (href: string) => void;
   onRetry: () => void;
+  status?: string;
 }) {
   return (
     <main className="ui-shell">
       <h1>Recipes</h1>
+      {status ? (
+        <p className="sync-status" role="status">
+          {status}
+        </p>
+      ) : null}
       {state.kind === "loading" ? <LoadingList /> : null}
       {state.kind === "error" ? (
         <Message>

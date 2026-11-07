@@ -23,6 +23,23 @@ function readWeb(...parts: string[]): string {
   return readFileSync(join(root, "..", ...parts), "utf8");
 }
 
+describe("kitchen session boundaries", () => {
+  it("keeps fetch, EventSource, and storage out of screens and hooks", () => {
+    const files = [
+      readWeb("src/App.tsx"),
+      readWeb("src/ListScreen.tsx"),
+      readWeb("src/RecipeScreen.tsx"),
+      readWeb("src/useKitchen.tsx"),
+    ];
+    for (const source of files) {
+      assert.doesNotMatch(source, /\bfetch\s*\(/);
+      assert.doesNotMatch(source, /EventSource/);
+      assert.doesNotMatch(source, /indexedDB/);
+      assert.doesNotMatch(source, /localStorage/);
+    }
+  });
+});
+
 describe("home page", () => {
   it(
     "loads",

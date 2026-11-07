@@ -1,22 +1,29 @@
 import { Message } from "@cookbook/ui";
 import { useEffect, useState } from "react";
 
-import {
-  fetchRecipeList,
-  fetchRecipeView,
-  LIST_ERROR,
-  RECIPE_ERROR,
-  RECIPE_MISSING,
-} from "./api";
-import { ListScreen, type ListState } from "./ListScreen";
+import { ListScreen } from "./ListScreen";
 import { leaveRecipe, pushAppPath } from "./navigate";
 import { parseRoute } from "./route";
-import { RecipeScreen, type RecipeState } from "./RecipeScreen";
+import { RecipeScreen } from "./RecipeScreen";
+import { KitchenProvider, useRecipe, useRecipeList } from "./useKitchen";
+import type { KitchenSession } from "./sync/session";
 
-export function App({ initialPath }: { initialPath?: string } = {}) {
-  const [path, setPath] = useState(
-    () => initialPath ?? currentPath(),
+export function App({
+  initialPath,
+  session,
+}: {
+  initialPath?: string;
+  session?: KitchenSession;
+} = {}) {
+  return (
+    <KitchenProvider session={session}>
+      <AppRoutes initialPath={initialPath} />
+    </KitchenProvider>
   );
+}
+
+function AppRoutes({ initialPath }: { initialPath?: string }) {
+  const [path, setPath] = useState(() => initialPath ?? currentPath());
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -46,12 +53,7 @@ export function App({ initialPath }: { initialPath?: string } = {}) {
 
   const route = parseRoute(path);
   if (route.name === "recipe") {
-    return (
-      <RecipeRoute
-        id={route.id}
-        onBack={backToList}
-      />
-    );
+    return <RecipeRoute id={route.id} onBack={backToList} />;
   }
   if (route.name === "list") {
     return <ListRoute onOpen={go} />;
@@ -71,69 +73,25 @@ function currentPath(): string {
 }
 
 function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
-  const [state, setState] = useState<ListState>({ kind: "loading" });
-  const [nonce, setNonce] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setState({ kind: "loading" });
-    fetchRecipeList(controller.signal)
-      .then((recipes) => {
-        if (!controller.signal.aborted) {
-          setState({ kind: "ready", recipes });
-        }
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        const message = error instanceof Error ? error.message : LIST_ERROR;
-        setState({ kind: "error", message });
-      });
-    return () => controller.abort();
-  }, [nonce]);
-
+  const { state, retry, status } = useRecipeList();
   return (
     <ListScreen
       state={state}
       onOpen={onOpen}
-      onRetry={() => setNonce((value) => value + 1)}
+      onRetry={retry}
+      status={status.label}
     />
   );
 }
 
 function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
-  const [state, setState] = useState<RecipeState>({ kind: "loading" });
-  const [nonce, setNonce] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setState({ kind: "loading" });
-    fetchRecipeView(id, controller.signal)
-      .then((recipe) => {
-        if (!controller.signal.aborted) {
-          setState({ kind: "ready", recipe });
-        }
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        const message = error instanceof Error ? error.message : RECIPE_ERROR;
-        setState(
-          message === RECIPE_MISSING
-            ? { kind: "missing" }
-            : { kind: "error", message },
-        );
-      });
-    return () => controller.abort();
-  }, [id, nonce]);
-
+  const { state, retry, status } = useRecipe(id);
   return (
     <RecipeScreen
       state={state}
       onBack={onBack}
-      onRetry={() => setNonce((value) => value + 1)}
+      onRetry={retry}
+      status={status.label}
     />
   );
 }

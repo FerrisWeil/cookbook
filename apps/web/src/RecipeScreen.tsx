@@ -12,16 +12,23 @@ export function RecipeScreen({
   state,
   onBack,
   onRetry,
+  status,
 }: {
   state: RecipeState;
   onBack: () => void;
   onRetry: () => void;
+  status?: string;
 }) {
   return (
     <main className="ui-shell recipe-screen">
       <Button className="ui-back" variant="primary" onClick={onBack}>
         Back
       </Button>
+      {status ? (
+        <p className="sync-status" role="status">
+          {status}
+        </p>
+      ) : null}
       {state.kind === "loading" ? <LoadingRecipe /> : null}
       {state.kind === "error" ? (
         <Message>
