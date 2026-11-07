@@ -2,6 +2,8 @@ import type { RecipeListItem } from "@cookbook/shared";
 import { Button, Card, Message, SkeletonCard } from "@cookbook/ui";
 
 import { LIST_ERROR } from "./api";
+import { factsAccessibleSummary } from "./facts";
+import { RecipeFacts } from "./RecipeFacts";
 import { recipePath } from "./route";
 
 export type ListState =
@@ -40,6 +42,10 @@ export function ListScreen({
               <Card
                 href={recipePath(recipe.id)}
                 title={recipe.title}
+                aria-label={`${recipe.title}. ${factsAccessibleSummary(recipe.facts)}`}
+                meta={
+                  <RecipeFacts facts={recipe.facts} explanations="hover" />
+                }
                 onNavigate={onOpen}
               />
             </li>

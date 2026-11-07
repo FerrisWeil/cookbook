@@ -520,4 +520,110 @@ describe("mcp recipe tools", () => {
       });
     }),
   );
+
+  it(
+    "returns facts when they are in the field list",
+    verifies("174", "dd5d402773900745", async () => {
+      await withClient(async (client) => {
+        await client.callTool({
+          name: "save",
+          arguments: {
+            id: "facts-read",
+            title: "Example: Facts read",
+            steps: ["mix"],
+            servings: 1,
+            actor: "chef",
+            facts: {
+              primaryProtein: "tofu/tempeh",
+              totalMinutes: 25,
+              effort: "low",
+              mealTypes: ["lunch"],
+            },
+          },
+        });
+        const result = await client.callTool({
+          name: "read",
+          arguments: { id: "facts-read", fields: ["facts"] },
+        });
+        assert.equal(result.isError, undefined);
+        assert.deepEqual(result.structuredContent, {
+          facts: {
+            primaryProtein: "tofu/tempeh",
+            totalMinutes: 25,
+            effort: "low",
+            mealTypes: ["lunch"],
+          },
+        });
+        const defaults = await client.callTool({
+          name: "read",
+          arguments: { id: "facts-read" },
+        });
+        assert.equal(defaults.isError, undefined);
+        assert.equal(
+          "facts" in (defaults.structuredContent as object),
+          false,
+        );
+      });
+    }),
+  );
+
+  it(
+    "records facts on save",
+    verifies("175", "0405e448d6fdca0d", async () => {
+      await withClient(async (client) => {
+        const saved = await client.callTool({
+          name: "save",
+          arguments: {
+            id: "facts-save",
+            title: "Example: Facts save",
+            steps: ["mix"],
+            servings: 2,
+            actor: "chef",
+            facts: {
+              primaryProtein: "beans/lentils",
+              totalMinutes: 40,
+              effort: "medium",
+              mealTypes: ["dinner", "lunch"],
+            },
+          },
+        });
+        assert.equal(saved.isError, undefined);
+        const body = saved.structuredContent as {
+          facts: {
+            primaryProtein: string;
+            totalMinutes: number;
+            effort: string;
+            mealTypes: string[];
+          };
+        };
+        assert.deepEqual(body.facts, {
+          primaryProtein: "beans/lentils",
+          totalMinutes: 40,
+          effort: "medium",
+          mealTypes: ["lunch", "dinner"],
+        });
+      });
+    }),
+  );
+
+  it(
+    "includes facts on the recipe list",
+    verifies("176", "0fd018a3b8c0d157", async () => {
+      await withClient(async (client) => {
+        const result = await client.callTool({ name: "list", arguments: {} });
+        assert.equal(result.isError, undefined);
+        const body = result.structuredContent as {
+          recipes: Array<{ id: string; title: string; facts: unknown }>;
+        };
+        const alpha = body.recipes.find((recipe) => recipe.id === "alpha");
+        assert.ok(alpha);
+        assert.deepEqual(alpha.facts, {
+          primaryProtein: null,
+          totalMinutes: null,
+          effort: null,
+          mealTypes: [],
+        });
+      });
+    }),
+  );
 });

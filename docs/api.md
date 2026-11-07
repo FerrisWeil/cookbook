@@ -16,9 +16,23 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 
 | Method | Path | Role |
 | --- | --- | --- |
-| `GET` | `/recipes` | List visible recipes. |
-| `GET` | `/recipes/:id` | Read one visible recipe. Query `fields` for the same projection as MCP `read`. |
-| `PUT` | `/recipes` | Save. Body matches MCP `save`. |
+| `GET` | `/recipes` | List visible recipes as `id`, `title`, and `facts`. |
+| `GET` | `/recipes/:id` | Read one visible recipe. Query `fields` for the same projection as MCP `read`. `facts` is a valid field. |
+| `PUT` | `/recipes` | Save. Body matches MCP `save`. Omit `facts` to leave stored facts. |
+| `PATCH` | `/recipes/:id/facts` | Replace only facts. Body is a facts object or `null` to clear. Does not change title, ingredients, steps, servings, nutrition, favorite, rating, or actor. |
+
+Facts body:
+
+```json
+{
+  "primaryProtein": "chicken",
+  "totalMinutes": 30,
+  "effort": "low",
+  "mealTypes": ["dinner"]
+}
+```
+
+or `null` to unset all four. Success for the facts route is `{ "facts": { … } }`. Validation is in [recipes.md](recipes.md). The kitchen browser uses this PATCH through the web proxy; MCP uses `save`. There is not a second write shape.
 
 ## Callers
 

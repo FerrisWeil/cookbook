@@ -12,6 +12,7 @@ import { ListScreen, type ListState } from "./ListScreen";
 import { leaveRecipe, pushAppPath } from "./navigate";
 import { parseRoute } from "./route";
 import { RecipeScreen, type RecipeState } from "./RecipeScreen";
+import { useRecipeFactsEditor } from "./useRecipeFactsEditor";
 
 export function App({ initialPath }: { initialPath?: string } = {}) {
   const [path, setPath] = useState(
@@ -105,6 +106,19 @@ function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
 function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
   const [state, setState] = useState<RecipeState>({ kind: "loading" });
   const [nonce, setNonce] = useState(0);
+  const facts = state.kind === "ready" ? state.recipe.facts : null;
+  const editor = useRecipeFactsEditor({
+    recipeId: id,
+    revision: nonce,
+    facts,
+    onCommitted(next) {
+      setState((current) =>
+        current.kind === "ready"
+          ? { kind: "ready", recipe: { ...current.recipe, facts: next } }
+          : current,
+      );
+    },
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -132,8 +146,17 @@ function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
   return (
     <RecipeScreen
       state={state}
+      editing={editor.editing}
+      draft={editor.draft}
+      formStatus={editor.status}
       onBack={onBack}
       onRetry={() => setNonce((value) => value + 1)}
+      onEditFacts={editor.open}
+      onDraftChange={editor.changeDraft}
+      onSaveFacts={(next) => {
+        void editor.save(next);
+      }}
+      onCancelFacts={editor.cancel}
     />
   );
 }

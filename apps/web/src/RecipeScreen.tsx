@@ -1,6 +1,14 @@
 import { Button, Message } from "@cookbook/ui";
 
+import type { RecipeFacts } from "@cookbook/shared";
+
 import { RECIPE_ERROR, RECIPE_MISSING, type RecipeView } from "./api";
+import {
+  RecipeFactsForm,
+  type FactsFormStatus,
+} from "./RecipeFactsForm";
+import { RecipeFacts as RecipeFactsDisplay } from "./RecipeFacts";
+import type { FactsDraft } from "./facts";
 
 export type RecipeState =
   | { kind: "loading" }
@@ -10,12 +18,26 @@ export type RecipeState =
 
 export function RecipeScreen({
   state,
+  editing,
+  draft,
+  formStatus,
   onBack,
   onRetry,
+  onEditFacts,
+  onDraftChange,
+  onSaveFacts,
+  onCancelFacts,
 }: {
   state: RecipeState;
+  editing: boolean;
+  draft: FactsDraft | null;
+  formStatus: FactsFormStatus;
   onBack: () => void;
   onRetry: () => void;
+  onEditFacts: () => void;
+  onDraftChange: (draft: FactsDraft) => void;
+  onSaveFacts: (next: RecipeFacts) => void;
+  onCancelFacts: () => void;
 }) {
   return (
     <main className="ui-shell recipe-screen">
@@ -32,7 +54,18 @@ export function RecipeScreen({
         </Message>
       ) : null}
       {state.kind === "missing" ? <Message>{RECIPE_MISSING}</Message> : null}
-      {state.kind === "ready" ? <RecipeArticle recipe={state.recipe} /> : null}
+      {state.kind === "ready" ? (
+        <RecipeArticle
+          recipe={state.recipe}
+          editing={editing}
+          draft={draft}
+          formStatus={formStatus}
+          onEditFacts={onEditFacts}
+          onDraftChange={onDraftChange}
+          onSaveFacts={onSaveFacts}
+          onCancelFacts={onCancelFacts}
+        />
+      ) : null}
     </main>
   );
 }
@@ -47,10 +80,44 @@ function LoadingRecipe() {
   );
 }
 
-export function RecipeArticle({ recipe }: { recipe: RecipeView }) {
+export function RecipeArticle({
+  recipe,
+  editing,
+  draft,
+  formStatus,
+  onEditFacts,
+  onDraftChange,
+  onSaveFacts,
+  onCancelFacts,
+}: {
+  recipe: RecipeView;
+  editing: boolean;
+  draft: FactsDraft | null;
+  formStatus: FactsFormStatus;
+  onEditFacts: () => void;
+  onDraftChange: (draft: FactsDraft) => void;
+  onSaveFacts: (next: RecipeFacts) => void;
+  onCancelFacts: () => void;
+}) {
   return (
     <article className="recipe-article">
       <h1>{recipe.title}</h1>
+      <div className="recipe-facts-block">
+        <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
+        {editing && draft ? (
+          <RecipeFactsForm
+            draft={draft}
+            status={formStatus}
+            onDraftChange={onDraftChange}
+            onSave={onSaveFacts}
+            onCancel={onCancelFacts}
+          />
+        ) : (
+          <Button variant="tonal" onClick={onEditFacts}>
+            Edit recipe facts
+          </Button>
+        )}
+      </div>
       {recipe.ingredients.length > 0 ? (
         <section>
           <h2>Ingredients</h2>

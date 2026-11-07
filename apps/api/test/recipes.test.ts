@@ -513,7 +513,16 @@ describe("actors, title, steps, servings, and id", () => {
       assert.equal(updated.id, "family-soup");
       assert.equal(updated.title, "Example: Soup for two");
       assert.deepEqual(await store.list(), [
-        { id: "family-soup", title: "Example: Soup for two" },
+        {
+          id: "family-soup",
+          title: "Example: Soup for two",
+          facts: {
+            primaryProtein: null,
+            totalMinutes: null,
+            effort: null,
+            mealTypes: [],
+          },
+        },
       ]);
     }),
   );

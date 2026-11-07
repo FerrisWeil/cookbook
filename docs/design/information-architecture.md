@@ -30,7 +30,7 @@ Cards are a single column on the phone and a grid from the wide breakpoint up. E
 
 ### Cards
 
-The whole card is one link to the recipe. The title is sans, at most two lines, then an ellipsis.
+The whole card is one link to the recipe. The title is sans, at most two lines, then an ellipsis. Under the title, four equal facts slots show primary protein, total time, effort, and meal types. Missing slots keep a dash. Slot explanations on the card are hover copy plus the link name; they are not nested buttons. The same four-slot component is on the recipe screen, where explanations are also keyboard-focusable.
 
 Every card has a favorite star toggle, top-right, with a 44px hit area. It is a sibling button, not nested inside the link. Accessible name `Favorite` plus the title. `aria-pressed` reflects the state. It updates optimistically, with rollback and a worded error, per [buttons](buttons.md).
 
@@ -50,7 +50,7 @@ While this screen is open, the app asks the OS to keep the display awake. If the
 
 Favorite and rating are the phone writes. They are offered on this screen. Back returns to the list. It uses an opaque fill and does not cover the title, the ingredient lines, or the steps. The last line stays clear of Back and of the safe area.
 
-Nutrition, when present, is shown. This screen shows the title, ingredient lines, steps, nutrition when present, favorite, and rating. The rating is set here, not on the list.
+Nutrition, when present, is shown. This screen shows the title, facts, ingredient lines, steps, nutrition when present, favorite, and rating. The rating is set here, not on the list. **Edit recipe facts** is a small form on this screen only.
 
 ![Phone wireframe of one example recipe](wireframes/recipe-phone.svg)
 

@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import { emptyRecipeFacts, type RecipeFacts } from "@cookbook/shared";
+
 import { RecipeError } from "./errors.js";
-import { parseHide, parseSave } from "./parse.js";
+import { factsOrEmpty, parseFactsField, parseHide, parseSave } from "./parse.js";
 import {
   SHIPPED_ACTORS,
   type HideRecipeInput,
@@ -12,12 +14,22 @@ import {
   type StoredRecipe,
 } from "./types.js";
 
+function cloneFacts(facts: RecipeFacts): RecipeFacts {
+  return {
+    primaryProtein: facts.primaryProtein,
+    totalMinutes: facts.totalMinutes,
+    effort: facts.effort,
+    mealTypes: [...facts.mealTypes],
+  };
+}
+
 function cloneRecipe(recipe: StoredRecipe): StoredRecipe {
   return {
     ...recipe,
     ingredients: recipe.ingredients.map((item) => ({ ...item })),
     steps: [...recipe.steps],
     nutrition: recipe.nutrition ? { ...recipe.nutrition } : null,
+    facts: cloneFacts(recipe.facts),
     hiddenAt: recipe.hiddenAt ? new Date(recipe.hiddenAt) : null,
   };
 }
@@ -34,6 +46,15 @@ function visible(recipe: StoredRecipe): Recipe {
     ingredients: copy.ingredients,
     steps: copy.steps,
     nutrition: copy.nutrition,
+    facts: copy.facts,
+  };
+}
+
+function listItem(recipe: StoredRecipe): RecipeListItem {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    facts: cloneFacts(recipe.facts),
   };
 }
 
@@ -80,6 +101,10 @@ export class MemoryRecipeStore implements RecipeStore {
           : parsed.nutrition === null
             ? null
             : { ...parsed.nutrition },
+      facts:
+        parsed.facts === undefined
+          ? cloneFacts(existing?.facts ?? emptyRecipeFacts())
+          : factsOrEmpty(parsed.facts),
       hiddenAt: null,
       hiddenBy: null,
     };
@@ -107,7 +132,7 @@ export class MemoryRecipeStore implements RecipeStore {
       if (!stored || stored.hiddenAt) {
         return [];
       }
-      return [{ id: stored.id, title: stored.title }];
+      return [listItem(stored)];
     });
   }
 
@@ -120,6 +145,19 @@ export class MemoryRecipeStore implements RecipeStore {
     }
     stored.hiddenAt = new Date();
     stored.hiddenBy = parsed.actor;
+  }
+
+  async updateFacts(id: string, facts: unknown): Promise<Recipe> {
+    const parsed = parseFactsField(facts);
+    if (parsed === undefined) {
+      throw new RecipeError("invalid_facts", "Facts are required.");
+    }
+    const stored = this.recipes.get(id);
+    if (!stored || stored.hiddenAt) {
+      throw new RecipeError("not_found", "The recipe was not found.");
+    }
+    stored.facts = factsOrEmpty(parsed);
+    return visible(stored);
   }
 
   private requireActor(actor: string): void {

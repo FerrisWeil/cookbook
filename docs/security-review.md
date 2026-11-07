@@ -31,7 +31,7 @@ MCP today:
 
 Recipe HTTP:
 
-- Recipe routes (`GET /recipes`, `GET /recipes/:id`, `PUT /recipes`) require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not.
+- Recipe routes (`GET /recipes`, `GET /recipes/:id`, `PUT /recipes`, `PATCH /recipes/:id/facts`) require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not.
 - Two caller tokens, from the environment: `API_AUTH_TOKEN_MCP` (the MCP process presents it) and `API_AUTH_TOKEN_WEB` (the web app's server presents it). The API process holds both. MCP holds only the MCP caller token. The web server holds only the web token and injects it on `/api/recipes`. The browser never receives a token.
 - Each token is required at API boot. Fewer than 16 characters refuses to boot. Placeholders (`replace-me`, `replace-with-a-long-random-token`) are refused. The two caller tokens must differ from each other and from `MCP_AUTH_TOKEN`. Local compose may use `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas` with `API_ALLOW_DEV_TOKEN=1`, the same exception [0007](decisions/0007-public-repo-secrets.md) allows for MCP. The NAS file does not set that flag.
 - Compare with SHA-256 and `timingSafeEqual`. Missing or wrong token: `401` and `WWW-Authenticate: Bearer`. Rejected recipe bodies stay status-only.
@@ -39,7 +39,7 @@ Recipe HTTP:
 Kitchen web proxy:
 
 - The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests. The browser never receives a token.
-- Forwarded: list and read. Not forwarded: a full recipe save from the browser (`PUT` is 405). Favorite-and-rating write is not in the tree. Liveness stays unauthenticated.
+- Forwarded: list, read, and a same-origin JSON `PATCH` to `/api/recipes/:id/facts`. Not forwarded: a full recipe save from the browser (`PUT` is 405), a cross-origin facts PATCH, or a non-PATCH facts call. Favorite-and-rating write is not in the tree. Liveness stays unauthenticated. The browser cannot choose the upstream URL, path, or `Authorization` header.
 - A response to the browser stays free of the token. Logs and client bundles stay free of the token.
 - The proxy target is the configured API origin. The browser cannot choose an upstream URL.
 

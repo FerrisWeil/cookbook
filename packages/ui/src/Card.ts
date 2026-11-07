@@ -2,15 +2,25 @@ import {
   createElement,
   type AnchorHTMLAttributes,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 
 export type CardProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
   href: string;
   title: string;
+  meta?: ReactNode;
   onNavigate?: (href: string) => void;
 };
 
-export function Card({ href, title, onNavigate, className, onClick, ...props }: CardProps) {
+export function Card({
+  href,
+  title,
+  meta,
+  onNavigate,
+  className,
+  onClick,
+  ...props
+}: CardProps) {
   const classes = ["ui-card", className].filter(Boolean).join(" ");
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -35,7 +45,7 @@ export function Card({ href, title, onNavigate, className, onClick, ...props }: 
     "a",
     { href, className: classes, onClick: handleClick, ...props },
     createElement("span", { className: "ui-card-title" }, title),
-    createElement("span", { className: "ui-card-meta" }),
+    createElement("span", { className: "ui-card-meta" }, meta ?? null),
   );
 }
 
@@ -44,6 +54,17 @@ export function SkeletonCard() {
     "div",
     { className: "ui-card ui-card--skeleton", "aria-hidden": true },
     createElement("span", { className: "ui-card-title" }, "\u00a0"),
-    createElement("span", { className: "ui-card-meta" }, "\u00a0"),
+    createElement(
+      "span",
+      { className: "ui-card-meta" },
+      createElement(
+        "span",
+        { className: "ui-facts ui-facts--skeleton" },
+        createElement("span", { className: "ui-facts-slot" }, "\u00a0"),
+        createElement("span", { className: "ui-facts-slot" }, "\u00a0"),
+        createElement("span", { className: "ui-facts-slot" }, "\u00a0"),
+        createElement("span", { className: "ui-facts-slot" }, "\u00a0"),
+      ),
+    ),
   );
 }
