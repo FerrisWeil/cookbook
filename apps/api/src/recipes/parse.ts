@@ -6,6 +6,7 @@ import {
   emptyRecipeFacts,
   isRecipeEffort,
   isRecipeMealType,
+  isUnsetPrimaryProtein,
   type RecipeFacts,
   type RecipeMealType,
 } from "@cookbook/shared";
@@ -219,10 +220,10 @@ function parsePrimaryProtein(value: unknown): string | null {
   if (typeof value !== "string") {
     throw new RecipeError("invalid_protein", MESSAGES.invalidProtein);
   }
-  const trimmed = value.trim();
-  if (trimmed === "") {
+  if (isUnsetPrimaryProtein(value)) {
     return null;
   }
+  const trimmed = value.trim();
   if (trimmed.length > MAX_PRIMARY_PROTEIN_LENGTH) {
     throw new RecipeError("invalid_protein", MESSAGES.invalidProtein);
   }

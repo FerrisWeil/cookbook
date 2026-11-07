@@ -50,6 +50,18 @@ describe("recipe facts", () => {
         }),
       );
       assert.equal(other.facts.primaryProtein, "seitan");
+      const cleared = await store.save(
+        base({
+          id: unset.id,
+          facts: {
+            primaryProtein: "no protein",
+            totalMinutes: null,
+            effort: null,
+            mealTypes: [],
+          },
+        }),
+      );
+      assert.equal(cleared.facts.primaryProtein, null);
     }),
   );
 

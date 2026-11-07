@@ -2,8 +2,11 @@ import type { RecipeFacts } from "@cookbook/shared";
 import { useEffect, useState } from "react";
 
 import { FACTS_SAVE_ERROR, updateRecipeFacts } from "./api";
-import { draftFromFacts, type FactsDraft } from "./facts";
-import type { FactsFormStatus } from "./RecipeFactsForm";
+import {
+  draftFromFacts,
+  type FactsDraft,
+  type FactsFormStatus,
+} from "./facts";
 
 export type RecipeFactsEditor = {
   editing: boolean;

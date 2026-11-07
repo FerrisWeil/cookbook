@@ -18,6 +18,7 @@ import {
   MISSING_PROTEIN,
   draftFromFacts,
   factsAccessibleSummary,
+  proteinExplanation,
   proteinIconKind,
 } from "../src/facts.ts";
 import type { RecipeView } from "../src/api.ts";
@@ -139,6 +140,22 @@ describe("kitchen recipe facts", () => {
       assert.match(unknown, /Primary protein: seitan/);
       assert.equal(proteinIconKind("seitan"), "generic");
       assert.equal(proteinIconKind("chicken"), "chicken");
+      assert.equal(proteinExplanation("no protein"), MISSING_PROTEIN);
+      assert.equal(proteinExplanation("No protein"), MISSING_PROTEIN);
+      const none = html(
+        createElement(RecipeFacts, {
+          facts: {
+            primaryProtein: "no protein",
+            totalMinutes: null,
+            effort: null,
+            mealTypes: [],
+          },
+          explanations: "focusable",
+        }),
+      );
+      assert.match(none, new RegExp(FACTS_DASH));
+      assert.match(none, new RegExp(MISSING_PROTEIN));
+      assert.doesNotMatch(none, />no protein</);
       assert.equal(
         factsAccessibleSummary(emptyRecipeFacts()).includes(MISSING_PROTEIN),
         true,

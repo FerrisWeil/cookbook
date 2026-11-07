@@ -74,4 +74,4 @@ Titles start with `Example:`. Ids are explicit. The same data can show the list,
 
 ## Tags
 
-The data model treats tags as one list ([0019](../decisions/0019-v1-recipe-data-model.md)). The documented API list item is id and title. The read field list has no tags. Tag chips need tags on the list payload. That is an API gap, not a screen invention.
+The data model treats tags as one list ([0019](../decisions/0019-v1-recipe-data-model.md)). The documented API list item is id, title, and facts. The read field list has no tags. Tag chips need tags on the list payload. That is an API gap, not a screen invention.

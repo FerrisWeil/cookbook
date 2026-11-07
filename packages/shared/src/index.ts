@@ -29,6 +29,7 @@ export {
   RECIPE_MEAL_TYPES,
   RECOMMENDED_PROTEINS,
   emptyRecipeFacts,
+  isUnsetPrimaryProtein,
   invalidFieldMessage,
   isRecipeEffort,
   isRecipeField,

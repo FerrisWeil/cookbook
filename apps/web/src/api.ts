@@ -1,4 +1,9 @@
-import { emptyRecipeFacts, type RecipeFacts, type RecipeListItem } from "@cookbook/shared";
+import {
+  emptyRecipeFacts,
+  isUnsetPrimaryProtein,
+  type RecipeFacts,
+  type RecipeListItem,
+} from "@cookbook/shared";
 
 export const LIST_ERROR = "Could not load recipes.";
 export const RECIPE_ERROR = "Could not load this recipe.";
@@ -31,7 +36,10 @@ export function parseRecipeFacts(value: unknown): RecipeFacts {
   const effort = record["effort"];
   const meals = record["mealTypes"];
   return {
-    primaryProtein: typeof protein === "string" && protein.trim() !== "" ? protein : null,
+    primaryProtein:
+      typeof protein === "string" && !isUnsetPrimaryProtein(protein)
+        ? protein.trim()
+        : null,
     totalMinutes:
       typeof minutes === "number" && Number.isFinite(minutes) ? minutes : null,
     effort:

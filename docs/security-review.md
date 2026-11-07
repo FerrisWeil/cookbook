@@ -38,7 +38,7 @@ Recipe HTTP:
 
 Kitchen web proxy:
 
-- The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests. The browser never receives a token.
+- The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests and to a same-origin JSON `PATCH` of `/api/recipes/:id/facts`. The browser never receives a token.
 - Forwarded: list, read, and a same-origin JSON `PATCH` to `/api/recipes/:id/facts`. Not forwarded: a full recipe save from the browser (`PUT` is 405), a cross-origin facts PATCH, or a non-PATCH facts call. Favorite-and-rating write is not in the tree. Liveness stays unauthenticated. The browser cannot choose the upstream URL, path, or `Authorization` header.
 - A response to the browser stays free of the token. Logs and client bundles stay free of the token.
 - The proxy target is the configured API origin. The browser cannot choose an upstream URL.

@@ -11,12 +11,10 @@ import {
   factsFromDraft,
   formatMealType,
   type FactsDraft,
+  type FactsFormStatus,
 } from "./facts";
 
-export type FactsFormStatus =
-  | { kind: "idle" }
-  | { kind: "submitting" }
-  | { kind: "error"; message: string };
+export type { FactsFormStatus };
 
 export function RecipeFactsForm({
   draft,

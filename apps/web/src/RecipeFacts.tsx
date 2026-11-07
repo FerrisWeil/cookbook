@@ -1,4 +1,7 @@
-import type { RecipeFacts as RecipeFactsModel } from "@cookbook/shared";
+import {
+  isUnsetPrimaryProtein,
+  type RecipeFacts as RecipeFactsModel,
+} from "@cookbook/shared";
 import { type ReactNode } from "react";
 
 import {
@@ -22,7 +25,10 @@ export function RecipeFacts({
   facts: RecipeFactsModel;
   explanations: "hover" | "focusable";
 }) {
-  const proteinValue = facts.primaryProtein ?? FACTS_DASH;
+  const specifiedProtein = isUnsetPrimaryProtein(facts.primaryProtein)
+    ? null
+    : facts.primaryProtein;
+  const proteinValue = specifiedProtein ?? FACTS_DASH;
   const timeValue =
     facts.totalMinutes === null ? FACTS_DASH : formatTotalMinutes(facts.totalMinutes);
   const effortValue = facts.effort ? formatEffort(facts.effort) : FACTS_DASH;
@@ -40,7 +46,7 @@ export function RecipeFacts({
       <FactSlot
         explanations={explanations}
         explain={proteinExplanation(facts.primaryProtein)}
-        icon={<ProteinIcon kind={proteinIconKind(facts.primaryProtein)} />}
+        icon={<ProteinIcon kind={proteinIconKind(specifiedProtein)} />}
         value={proteinValue}
       />
       <FactSlot

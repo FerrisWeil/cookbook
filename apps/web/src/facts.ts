@@ -1,6 +1,7 @@
 import {
   RECIPE_MEAL_TYPES,
   RECOMMENDED_PROTEINS,
+  isUnsetPrimaryProtein,
   type RecipeEffort,
   type RecipeFacts,
   type RecipeMealType,
@@ -11,6 +12,11 @@ export const MISSING_TIME = "No total time specified";
 export const MISSING_EFFORT = "No effort specified";
 export const MISSING_MEALS = "No meal types specified";
 export const FACTS_DASH = "—";
+
+export type FactsFormStatus =
+  | { kind: "idle" }
+  | { kind: "submitting" }
+  | { kind: "error"; message: string };
 
 export type ProteinIconKind =
   | (typeof RECOMMENDED_PROTEINS)[number]
@@ -67,7 +73,9 @@ export function formatMealType(meal: RecipeMealType): string {
 }
 
 export function proteinExplanation(name: string | null): string {
-  return name ? `Primary protein: ${name}` : MISSING_PROTEIN;
+  return isUnsetPrimaryProtein(name)
+    ? MISSING_PROTEIN
+    : `Primary protein: ${name}`;
 }
 
 export function timeExplanation(minutes: number | null): string {

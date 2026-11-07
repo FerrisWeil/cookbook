@@ -126,6 +126,14 @@ export function emptyRecipeFacts(): RecipeFacts {
   };
 }
 
+export function isUnsetPrimaryProtein(value: string | null | undefined): boolean {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  const trimmed = value.trim();
+  return trimmed === "" || trimmed.toLowerCase() === "no protein";
+}
+
 export function invalidFieldMessage(field: string): string {
   return `Field "${field}" is invalid.`;
 }

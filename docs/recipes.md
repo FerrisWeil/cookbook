@@ -10,7 +10,7 @@ Optional facts are four explicit slots the caller supplies. The app does not inf
 
 | Field | Stored as | Rules |
 | --- | --- | --- |
-| `primaryProtein` | text or empty | Arbitrary text, trimmed. Empty is unset. Max 80 characters. Recommended names (not enforced): chicken, beef, pork, turkey, fish, shellfish, eggs, tofu/tempeh, beans/lentils, dairy. |
+| `primaryProtein` | text or empty | Arbitrary text, trimmed. Empty is unset. The words `no protein` are also unset. Max 80 characters. Recommended names (not enforced): chicken, beef, pork, turkey, fish, shellfish, eggs, tofu/tempeh, beans/lentils, dairy. |
 | `totalMinutes` | integer or empty | Finite nonnegative whole minutes, 0 through 10080 (seven days). Includes preparation and waiting, not hands-on-only time. |
 | `effort` | `low`, `medium`, `high`, or empty | Exact lowercase names. |
 | `mealTypes` | list | Subset of `breakfast`, `lunch`, `dinner`, `snack`, `dessert`. Stored in that order. Empty is unset. Duplicates and unknown names are refused. |

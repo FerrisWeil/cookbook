@@ -130,6 +130,7 @@ describe("facts mutation proxy", () => {
       ].join("\n");
       assert.match(nginx, /location ~ \^\/api\/recipes\/\(\[\^\/\]\+\)\/facts\$/);
       assert.match(nginx, /if \(\$request_method != PATCH\)/);
+      assert.match(nginx, /rewrite \^ \/recipes\/\$facts_id\/facts break;/);
       assert.match(
         nginx,
         /location \/api\/recipes \{\s*if \(\$request_method !~ \^\(GET\|HEAD\)\$\)/,

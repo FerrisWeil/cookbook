@@ -3,12 +3,9 @@ import { Button, Message } from "@cookbook/ui";
 import type { RecipeFacts } from "@cookbook/shared";
 
 import { RECIPE_ERROR, RECIPE_MISSING, type RecipeView } from "./api";
-import {
-  RecipeFactsForm,
-  type FactsFormStatus,
-} from "./RecipeFactsForm";
+import { RecipeFactsForm } from "./RecipeFactsForm";
 import { RecipeFacts as RecipeFactsDisplay } from "./RecipeFacts";
-import type { FactsDraft } from "./facts";
+import type { FactsDraft, FactsFormStatus } from "./facts";
 
 export type RecipeState =
   | { kind: "loading" }
