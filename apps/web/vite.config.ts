@@ -5,11 +5,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type ProxyOptions } from "vite";
 
 import {
+  browserProxyDecision,
   incomingRecipeApiPath,
   isRecipeFactsPath,
+  isSessionApiPath,
   loadWebToken,
   recipeAuthorization,
-  recipeProxyDecision,
 } from "./dev-proxy.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -18,7 +19,7 @@ const attachWebToken: NonNullable<ProxyOptions["configure"]> = (proxy) => {
   proxy.on("proxyReq", (proxyReq, req) => {
     proxyReq.removeHeader("authorization");
     const url = req.url ?? "";
-    const decision = recipeProxyDecision(req.method ?? "GET", url, {
+    const decision = browserProxyDecision(req.method ?? "GET", url, {
       origin: req.headers.origin,
       host: req.headers.host,
       "content-type": req.headers["content-type"],
@@ -40,11 +41,15 @@ function webTokenProxy(): Plugin {
       loadWebToken(process.env);
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? "").split("?")[0] ?? "";
-        if (!incomingRecipeApiPath(path) && !isRecipeFactsPath(path)) {
+        if (
+          !incomingRecipeApiPath(path) &&
+          !isRecipeFactsPath(path) &&
+          !isSessionApiPath(path)
+        ) {
           next();
           return;
         }
-        const decision = recipeProxyDecision(req.method ?? "GET", path, {
+        const decision = browserProxyDecision(req.method ?? "GET", path, {
           origin: req.headers.origin,
           host: req.headers.host,
           "content-type": req.headers["content-type"],

@@ -112,6 +112,17 @@ export const MESSAGES = {
   invalidEffort: "Effort must be low, medium, or high.",
   invalidMealTypes:
     "Meal types must be breakfast, lunch, dinner, snack, or dessert.",
+  sessionActive: "A cooking session is already active.",
+  sessionEnded: "That cooking session has ended.",
+  sessionMissing: "There is no active cooking session.",
+  sessionNotFound: "That cooking session was not found.",
+  sessionStep: "That step is not in this cooking session.",
+  sessionMutation: "A mutation id is required.",
+  sessionRecipe: "A recipe id is required.",
+  sessionId: "A session id is required.",
+  sessionOfflineStart: "Connect to start a cooking session.",
+  sessionOfflineFinish: "Connect to finish the cooking session.",
+  sessionPayload: "That mutation id was already used with a different payload.",
 } as const;
 
 export const FACTS_SCHEMA_DESCRIPTION =

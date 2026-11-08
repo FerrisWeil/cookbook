@@ -38,5 +38,6 @@ The accessibility floor is WCAG 2.2 AA. System fonts. One wide breakpoint. The p
 * A service worker is recorded in the web doc, not a new ADR.
 * The UI package is [0020](0020-kitchen-design-system.md). How a UI change is shown is [CONTRIBUTING.md](../../CONTRIBUTING.md) and the demo doc.
 * Check-off is not a phone write. Favorite and rating writes stay the phone writes.
+* Amendment: while a cooking session is active, step progress is that shared session and its recipe snapshot. It is not a recipe save. Moving the displayed step does not complete or undo a step. Wake lock is unchanged.
 * Wake Lock is best-effort. A browser that cannot hold the screen still shows the recipe.
 * Real recipes stay in Postgres ([0007](0007-public-repo-secrets.md)).

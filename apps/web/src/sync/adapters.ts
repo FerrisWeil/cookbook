@@ -185,7 +185,10 @@ function openOutboxDb(factory: IDBFactory): Promise<IDBDatabase> {
   });
 }
 
-export function indexedDbStorage(factory: IDBFactory): StoragePort {
+export function indexedDbStorage(
+  factory: IDBFactory,
+  key = OUTBOX_KEY,
+): StoragePort {
   let opened: Promise<IDBDatabase> | undefined;
   const db = () => {
     opened ??= openOutboxDb(factory);
@@ -196,7 +199,7 @@ export function indexedDbStorage(factory: IDBFactory): StoragePort {
       const database = await db();
       return new Promise((resolve, reject) => {
         const tx = database.transaction(OUTBOX_STORE, "readonly");
-        const request = tx.objectStore(OUTBOX_STORE).get(OUTBOX_KEY);
+        const request = tx.objectStore(OUTBOX_STORE).get(key);
         request.onsuccess = () => {
           resolve(Array.isArray(request.result) ? request.result : []);
         };
@@ -212,7 +215,7 @@ export function indexedDbStorage(factory: IDBFactory): StoragePort {
         tx.oncomplete = () => resolve();
         tx.onerror = () =>
           reject(tx.error ?? new Error("Could not write outbox storage"));
-        tx.objectStore(OUTBOX_STORE).put(payload, OUTBOX_KEY);
+        tx.objectStore(OUTBOX_STORE).put(payload, key);
       });
     },
   };

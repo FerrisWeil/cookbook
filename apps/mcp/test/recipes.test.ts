@@ -10,6 +10,7 @@ import { verifies } from "@cookbook/test";
 
 import { listen as listenApi } from "../../api/src/http.ts";
 import { createMemoryRecipeStore } from "../../api/src/recipes/index.ts";
+import { createMemorySessionStore } from "../../api/src/sessions/index.ts";
 import { listen as listenMcp } from "../src/http.ts";
 import { TEST_API_TOKEN, TEST_TOKEN, testConfig } from "./helpers.ts";
 
@@ -82,6 +83,7 @@ describe("mcp recipe tools", () => {
     const api = await listenApi("127.0.0.1", 0, {
       getReady: async () => ({ status: "ok", database: "up", seed: true }),
       recipes: await seedStore(),
+      sessions: createMemorySessionStore(),
       callerTokens: [TEST_API_TOKEN, WEB_TOKEN],
     });
     const mcp = await listenMcp(

@@ -9,6 +9,7 @@ import { invalidFieldMessage, MESSAGES } from "@cookbook/shared";
 
 import { listen, type ApiDeps } from "../src/http.ts";
 import { createMemoryRecipeStore, type RecipeStore } from "../src/recipes/index.ts";
+import { createMemorySessionStore } from "../src/sessions/index.ts";
 
 const MCP_TOKEN = "test-api-mcp-token-xx";
 const WEB_TOKEN = "test-api-web-token-xx";
@@ -161,6 +162,7 @@ describe("HTTP contract", () => {
     const api = await startApi({
       getReady: () => ready(),
       recipes: await seedStore(),
+      sessions: createMemorySessionStore(),
       callerTokens: CALLER_TOKENS,
     });
     baseUrl = api.url;
@@ -554,6 +556,7 @@ describe("HTTP store failures and close", () => {
     const api = await startApi({
       getReady: async () => ({ status: "ok", database: "up", seed: true }),
       recipes: failingStore,
+      sessions: createMemorySessionStore(),
       callerTokens: CALLER_TOKENS,
     });
     try {
@@ -573,6 +576,7 @@ describe("HTTP store failures and close", () => {
     const api = await startApi({
       getReady: async () => ({ status: "ok", database: "up", seed: true }),
       recipes: createMemoryRecipeStore(),
+      sessions: createMemorySessionStore(),
       callerTokens: CALLER_TOKENS,
     });
     await api.close();

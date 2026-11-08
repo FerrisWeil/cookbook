@@ -67,6 +67,8 @@ describe("kitchen session boundaries", () => {
       readWeb("src/ListScreen.tsx"),
       readWeb("src/RecipeScreen.tsx"),
       readWeb("src/useKitchen.tsx"),
+      readWeb("src/useCookingSession.tsx"),
+      readWeb("src/cooking/client.ts"),
       readWeb("src/useRecipeFactsEditor.ts"),
     ];
     for (const source of files) {

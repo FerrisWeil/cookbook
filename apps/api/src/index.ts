@@ -9,8 +9,13 @@ import {
   type ReleasableClient,
   type SqlClient,
 } from "./migrate.js";
-import { createCommitHub, notifyingRecipeStore } from "./commits.js";
+import {
+  createCommitHub,
+  notifyingRecipeStore,
+  notifyingSessionStore,
+} from "./commits.js";
 import { createPgRecipeStore } from "./recipes/index.js";
+import { createPgSessionStore } from "./sessions/index.js";
 
 const { Pool } = pg;
 
@@ -84,6 +89,7 @@ const commits = createCommitHub();
 const api = await listen(config.bindHost, config.port, {
   getReady: () => getReadyStatus(db),
   recipes: notifyingRecipeStore(createPgRecipeStore(appCheckout), commits),
+  sessions: notifyingSessionStore(createPgSessionStore(appCheckout), commits),
   callerTokens: [config.apiAuthTokenMcp, config.apiAuthTokenWeb],
   commits,
 });

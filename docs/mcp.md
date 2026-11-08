@@ -16,6 +16,12 @@ MCP calls the household API with the MCP caller token. It has no database connec
 | `list` | Visible recipes. |
 | `save` | Create or update. |
 | `hello` | Foundation ping. Not a recipe tool. |
+| `session_start` | Start the one active cooking session. |
+| `session_resume` | Read that session, including its snapshot. |
+| `session_finish` | Finish it. |
+| `session_show` | Set the displayed step. Does not complete or undo. |
+| `session_complete` | Mark a step complete. |
+| `session_undo` | Clear a completed step. |
 
 Journal, tag, and search are not registered. Calling one of those names is told that operation is not available.
 
@@ -45,7 +51,15 @@ Optional: nutrition (one per-serving row, source `estimated`, `entered`, or `cop
 
 Given an id, save uses that id. A visible recipe is updated. A hidden id is not found and is not revived. Without an id, save creates a recipe.
 
-Save replaces title, steps, servings, favorite, rating, and ingredients. Actor is recorded on create and does not change. An omitted favorite is off. Nutrition omitted is left as stored; a nutrition object replaces the row; empty nutrition clears it. Facts omitted are left as stored; a facts object replaces the four slots; `facts: null` clears them.
+Save replaces title, steps, servings, favorite, rating, and ingredients. Actor is recorded on create and does not change. An omitted favorite is off. Nutrition omitted is left as stored; a nutrition object replaces the row; empty nutrition clears it.
+
+### Cooking session
+
+`session_start` needs `mutationId` and `recipeId`. The same mutation returns the active session and does not open a second one. A start while another session is active, or a retry after that session has finished, is a sentence: a session is already active, or that session has ended.
+
+`session_resume` returns the active session: snapshot title, ingredient lines, steps, displayed step, and completed steps. When none is active, the agent is told there is no active cooking session.
+
+`session_finish` needs `mutationId` and `sessionId`. `session_show`, `session_complete`, and `session_undo` also need `step` (zero-based). Complete and undo do not move the displayed step. Show does not change which steps are complete. After finish, a later step change is told that the session has ended. Facts omitted are left as stored; a facts object replaces the four slots; `facts: null` clears them.
 
 ## Household API
 

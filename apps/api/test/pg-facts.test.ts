@@ -19,6 +19,8 @@ import {
   type SqlClient,
 } from "../src/migrate.ts";
 import { createPgRecipeStore } from "../src/recipes/pg.ts";
+import { SessionError } from "../src/sessions/error.ts";
+import { createPgSessionStore } from "../src/sessions/pg.ts";
 
 const execFile = promisify(execFileCb);
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -390,5 +392,89 @@ describe("postgres recipe facts", () => {
     );
     const otherRead = await store.read(other.id);
     assert.equal(otherRead.facts.primaryProtein, "chicken");
+  });
+
+  it("stores one active cooking session and keeps its snapshot", async () => {
+    assert.ok(pool);
+    const recipes = createPgRecipeStore(clientFrom(pool).checkout);
+    const sessions = createPgSessionStore(clientFrom(pool).checkout);
+    const created = await recipes.save({
+      id: "pg-session-soup",
+      actor: "chef",
+      title: "Example: Soup",
+      servings: 2,
+      steps: ["Chop.", "Simmer."],
+      ingredients: [{ line: "1 onion" }],
+    });
+    const loadSnapshot = async () => {
+      const recipe = await recipes.read(created.id);
+      return {
+        title: recipe.title,
+        servings: recipe.servings,
+        ingredients: recipe.ingredients.map((item) => item.line),
+        steps: [...recipe.steps],
+      };
+    };
+    const started = await sessions.start({
+      mutationId: "pg-session-start",
+      recipeId: created.id,
+      loadSnapshot,
+    });
+    const retry = await sessions.start({
+      mutationId: "pg-session-start",
+      recipeId: created.id,
+      loadSnapshot,
+    });
+    assert.equal(retry.id, started.id);
+    await assert.rejects(
+      sessions.start({
+        mutationId: "pg-session-other",
+        recipeId: created.id,
+        loadSnapshot,
+      }),
+      (error: unknown) => error instanceof SessionError && error.code === "active",
+    );
+    await recipes.save({
+      id: created.id,
+      actor: "chef",
+      title: "Example: Stew",
+      servings: 4,
+      steps: ["Brown."],
+      ingredients: [{ line: "2 carrots" }],
+    });
+    const active = await sessions.resume();
+    assert.equal(active?.snapshot.title, "Example: Soup");
+    assert.deepEqual(active?.snapshot.steps, ["Chop.", "Simmer."]);
+    assert.deepEqual(active?.snapshot.ingredients, ["1 onion"]);
+    const shown = await sessions.display({
+      mutationId: "pg-session-show",
+      sessionId: started.id,
+      step: 1,
+    });
+    const done = await sessions.complete({
+      mutationId: "pg-session-done",
+      sessionId: started.id,
+      step: 0,
+    });
+    assert.equal(shown.displayedStep, 1);
+    assert.deepEqual(shown.completedSteps, []);
+    assert.equal(done.displayedStep, 1);
+    assert.deepEqual(done.completedSteps, [0]);
+    const again = await sessions.complete({
+      mutationId: "pg-session-done",
+      sessionId: started.id,
+      step: 0,
+    });
+    assert.deepEqual(again.completedSteps, [0]);
+    await sessions.finish({ mutationId: "pg-session-finish", sessionId: started.id });
+    assert.equal(await sessions.resume(), null);
+    await assert.rejects(
+      sessions.complete({
+        mutationId: "pg-session-late",
+        sessionId: started.id,
+        step: 0,
+      }),
+      (error: unknown) => error instanceof SessionError && error.code === "ended",
+    );
   });
 });

@@ -16,11 +16,13 @@ export function ListScreen({
   onOpen,
   onRetry,
   status,
+  resume,
 }: {
   state: ListState;
   onOpen: (href: string) => void;
   onRetry: () => void;
   status?: string;
+  resume?: { title: string; onOpen: () => void };
 }) {
   return (
     <main className="ui-shell">
@@ -28,6 +30,13 @@ export function ListScreen({
       {status ? (
         <p className="sync-status" role="status">
           {status}
+        </p>
+      ) : null}
+      {resume ? (
+        <p className="cooking-resume">
+          <Button variant="primary" onClick={resume.onOpen}>
+            {`Cooking ${resume.title}`}
+          </Button>
         </p>
       ) : null}
       {state.kind === "loading" ? <LoadingList /> : null}

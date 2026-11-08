@@ -106,7 +106,7 @@ requirements:
           - ref: "4"
       - id: "31"
         status: verified
-        text: "The MCP offers only the read, list, and save tools."
+        text: "The MCP offers read, list, save, hello, and cooking-session tools, and refuses journal, tag, and search."
         children:
           - id: "28"
             status: verified
@@ -629,3 +629,46 @@ requirements:
       - id: "196"
         status: accepted
         text: "Given a permanent facts save rejection, the submitted fields stay visible and the save is not retried."
+  - id: "198"
+    status: accepted
+    text: "The household shares one cooking session across devices, with an explicit start, resume, and finish, a fixed recipe snapshot, separate displayed and completed steps, offline replay from an open session, and a visible failure after finish."
+    children:
+      - id: "199"
+        status: accepted
+        text: "At most one cooking session is active, and repeating a start does not open another or revive a finished session."
+      - id: "200"
+        status: accepted
+        text: "The session keeps the recipe title, ingredients, and steps from the moment it started."
+      - id: "201"
+        status: accepted
+        text: "Changing the displayed step does not change which steps are complete, and completing or undoing a step does not change the displayed step."
+      - id: "202"
+        status: accepted
+        text: "Completing a step keeps it complete when repeated, and undoing a step keeps it not complete when repeated."
+      - id: "203"
+        status: accepted
+        text: "Resuming returns the active session, and finishing it leaves no active session when repeated."
+      - id: "204"
+        status: accepted
+        text: "A step change after the session has ended fails and names that the session has ended."
+      - id: "205"
+        status: accepted
+        text: "An open session can record a step change while disconnected and send that change when the connection returns."
+      - id: "206"
+        status: accepted
+        text: "Starting or finishing a session while disconnected fails with a visible error and is not queued."
+      - id: "207"
+        status: accepted
+        text: "Chef can start, resume, and finish the session, can complete, undo, or show a step, and is told when the session has ended."
+      - id: "208"
+        status: accepted
+        text: "A cooking session change is sent on the open recipe event stream."
+      - id: "209"
+        status: accepted
+        text: "A same-origin browser can call cooking-session routes, and a cross-origin session write is refused."
+      - id: "210"
+        status: accepted
+        text: "After the session has ended, an open device shows that error and does not keep the rejected step change."
+      - id: "211"
+        status: accepted
+        text: "An open device applies a cooking session change from the server without a refresh."

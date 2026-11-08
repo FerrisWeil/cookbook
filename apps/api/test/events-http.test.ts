@@ -7,6 +7,7 @@ import {
 } from "../src/commits.ts";
 import { listen } from "../src/http.ts";
 import { createMemoryRecipeStore } from "../src/recipes/index.ts";
+import { createMemorySessionStore } from "../src/sessions/index.ts";
 
 const MCP_TOKEN = "test-api-mcp-token-xx";
 const WEB_TOKEN = "test-api-web-token-xx";
@@ -64,6 +65,7 @@ describe("committed-change stream", () => {
     const api = await listen("127.0.0.1", 0, {
       getReady: async () => ({ status: "ok", database: "up", seed: true }),
       recipes: store,
+      sessions: createMemorySessionStore(),
       callerTokens: [MCP_TOKEN, WEB_TOKEN],
       commits: hub,
       sseHeartbeatMs: 400,

@@ -30,5 +30,6 @@ Install is the browser home-screen flow and a manifest. No service worker.
 ## Consequences
 
 * A leaked web caller secret can use the proxied recipe routes until it is revoked. It is not the MCP secret. Tightening the proxy to favorite and rating writes limits what a browser session can change.
+* Amendment: the proxy also forwards same-origin cooking-session calls. An active session is the step progress on screen. It still does not forward a full recipe save.
 * Header injection and theme storage are in the web doc. Secrets stay in the environment ([0007](0007-public-repo-secrets.md)).
 * How UI work is shown is [CONTRIBUTING.md](../../CONTRIBUTING.md) and the demo doc.

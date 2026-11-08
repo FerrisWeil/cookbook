@@ -21,6 +21,12 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 | `GET` | `/recipes/events` | Authenticated SSE. Heartbeats, then `committed` invalidation events `{ recipeId, op }` after a store save or hide. Clients refetch. Not a recipe snapshot stream. |
 | `PUT` | `/recipes` | Save. Body matches MCP `save`. Omit `facts` to leave stored facts. |
 | `PATCH` | `/recipes/:id/facts` | Apply only the submitted facts fields. Omitted fields stay. Does not change title, ingredients, steps, servings, nutrition, favorite, rating, or actor. |
+| `POST` | `/sessions` | Start the one active cooking session. Body `{ mutationId, recipeId }`. |
+| `GET` | `/sessions/active` | Resume that session. `404` when none is active. |
+| `POST` | `/sessions/:id/finish` | Finish it. Body `{ mutationId }`. |
+| `POST` | `/sessions/:id/display` | Set the displayed step. Body `{ mutationId, step }`. Does not change completion. |
+| `POST` | `/sessions/:id/steps/:step/complete` | Mark that step complete. Body `{ mutationId }`. |
+| `POST` | `/sessions/:id/steps/:step/undo` | Clear that step. Body `{ mutationId }`. |
 
 Facts PATCH body:
 
@@ -48,6 +54,14 @@ Clear all four:
 ```
 
 Success is `{ "facts": { … }, "mutation": { "id": "<mutationId>" } }`. The same id, payload, and recipe returns that success without writing again. The same id with a different payload or recipe is `409 payload_mismatch`. Missing `mutationId` or invalid fields is `400`. Validation is in [recipes.md](recipes.md). The kitchen browser uses this PATCH through the web proxy. MCP `save` still sends a full optional `facts` object or `facts: null`; it does not use this PATCH.
+
+## Cooking session
+
+One household session is active at a time. Start copies the visible recipe's title, servings, ingredient lines, and steps into the session. Later recipe saves do not change that snapshot, and the session does not write the recipe. The displayed step and the completed steps are separate: showing a step never completes or undoes it, and complete or undo never moves the displayed step.
+
+`mutationId` is required on every write. The same id and payload returns the session without applying the effect again. The same id with a different payload or target is `409 payload_mismatch`. A second start while one session is active is `409 session_active` and does not open another. Repeating the start that opened a finished session is `409 session_ended` and does not make it active. Finish is idempotent for its own id. A later complete, undo, display, or finish is `409 session_ended`. Resume of a finished session is the same `404` as no session. These errors include `message` so the caller can show it.
+
+Session commits emit `event: session` on `GET /recipes/events` with `{ sessionId, op }`. Clients refetch `GET /sessions/active`. The event is not a snapshot. Acks live in `session_mutation_acks`. The active row is the only `status = active` row.
 
 Notifications are emitted from the recipe store seam after a successful commit, not only from the browser HTTP handler. Extra store methods pass through the wrapper; `updateFacts` notifies after it commits. Duplicate acks still return the current recipe and notify. The hub is in-process: one API replica. A restart drops the stream; clients reconnect and refetch. Direct SQL does not notify. Keepalive is not the stream timeout.
 
