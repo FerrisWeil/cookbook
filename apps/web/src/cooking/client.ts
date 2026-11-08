@@ -29,13 +29,32 @@ export type CookingStream = {
   ): void;
 };
 
+export type SessionCache = {
+  load(): Promise<CookingSession | null>;
+  save(session: CookingSession | null): Promise<void>;
+};
+
+export function memorySessionCache(initial: CookingSession | null = null): SessionCache {
+  let current = initial ? structuredClone(initial) : null;
+  return {
+    async load() {
+      return current ? structuredClone(current) : null;
+    },
+    async save(next) {
+      current = next && next.status === "active" ? structuredClone(next) : null;
+    },
+  };
+}
+
 export type CookingPorts = {
   storage: StoragePort;
+  sessions: SessionCache;
   lock: LockPort;
   network: CookingNetwork;
   stream: CookingStream;
   now: () => number;
   id: () => string;
+  schedule?: (delayMs: number, run: () => void) => () => void;
 };
 
 export type CookingClient = {
@@ -116,6 +135,15 @@ export function createCookingClient(ports: CookingPorts): CookingClient {
   let opened = false;
   let abort: AbortController | undefined;
   let beginFlight: { recipeId: string; promise: Promise<void> } | null = null;
+  let refreshGeneration = 0;
+  let finishedId: string | null = null;
+  let cancelRetry: (() => void) | undefined;
+  const schedule =
+    ports.schedule ??
+    ((delayMs, run) => {
+      const timer = setTimeout(run, delayMs);
+      return () => clearTimeout(timer);
+    });
 
   function emit(): void {
     for (const listener of listeners) {
@@ -135,8 +163,55 @@ export function createCookingClient(ports: CookingPorts): CookingClient {
     return commandError ?? failed?.failure?.message ?? null;
   }
 
+  function bumpRefresh(): void {
+    refreshGeneration += 1;
+  }
+
+  function clearRetry(): void {
+    cancelRetry?.();
+    cancelRetry = undefined;
+  }
+
+  function armRetry(): void {
+    clearRetry();
+    if (!online) {
+      return;
+    }
+    const wake = outbox.nextRetryAt();
+    if (wake === undefined) {
+      return;
+    }
+    cancelRetry = schedule(Math.max(0, wake - ports.now()), () => {
+      cancelRetry = undefined;
+      if (!online) {
+        return;
+      }
+      void outbox.drain().then(() => {
+        armRetry();
+        emit();
+      });
+    });
+  }
+
+  async function remember(next: CookingSession | null): Promise<void> {
+    session = next && next.status === "active" ? next : null;
+    await ports.sessions.save(session);
+  }
+
+  async function hydrate(): Promise<void> {
+    const cached = await ports.sessions.load();
+    if (cached?.status === "active") {
+      session = cached;
+    }
+    await outbox.hydrate();
+  }
+
   async function refresh(options: { quiet: boolean }): Promise<void> {
+    const generation = (refreshGeneration += 1);
     const result = await ports.network.resume();
+    if (generation !== refreshGeneration) {
+      return;
+    }
     if (!result.ok) {
       if (!options.quiet) {
         commandError = result.message;
@@ -144,62 +219,70 @@ export function createCookingClient(ports: CookingPorts): CookingClient {
       emit();
       return;
     }
-    if (!result.session || result.session.status !== "active") {
-      if (session && !ending) {
-        commandError = MESSAGES.sessionEnded;
+    if (result.session?.status === "active") {
+      if (finishedId && result.session.id === finishedId) {
+        emit();
+        return;
       }
-      session = null;
-    } else {
-      session = result.session;
+      finishedId = null;
+      await remember(result.session);
+      emit();
+      return;
     }
+    if (session && !ending) {
+      commandError = MESSAGES.sessionEnded;
+    }
+    await remember(null);
+    emit();
+  }
+
+  async function syncOnline(): Promise<void> {
+    if (!online) {
+      emit();
+      return;
+    }
+    await outbox.drain();
+    armRetry();
     emit();
   }
 
   async function enqueue(mutation: Mutation): Promise<void> {
     await outbox.enqueue(mutation);
     emit();
-    if (online) {
-      await outbox.drain();
-      emit();
-    }
+    await syncOnline();
   }
 
   const client: CookingClient = {
     async open() {
-      if (opened) {
-        await refresh({ quiet: true });
-        if (online) {
-          await outbox.drain();
-        }
-        emit();
-        return;
+      if (!opened) {
+        opened = true;
+        abort = new AbortController();
+        ports.stream.connect(
+          {
+            onOpen() {
+              online = true;
+              void refresh({ quiet: true }).then(() => syncOnline());
+            },
+            onSession() {
+              void refresh({ quiet: true });
+            },
+            onOffline() {
+              online = false;
+              clearRetry();
+              emit();
+            },
+          },
+          abort.signal,
+        );
       }
-      opened = true;
-      abort = new AbortController();
-      ports.stream.connect(
-        {
-          onOpen() {
-            online = true;
-            void refresh({ quiet: true }).then(() => outbox.drain());
-          },
-          onSession() {
-            void refresh({ quiet: true });
-          },
-          onOffline() {
-            online = false;
-            emit();
-          },
-        },
-        abort.signal,
-      );
-      await refresh({ quiet: true });
-      if (online) {
-        await outbox.drain();
-      }
+      await hydrate();
       emit();
+      await refresh({ quiet: true });
+      await syncOnline();
     },
 
     close() {
+      clearRetry();
       abort?.abort();
       abort = undefined;
       opened = false;
@@ -219,10 +302,12 @@ export function createCookingClient(ports: CookingPorts): CookingClient {
 
     setConnected(next) {
       online = next;
-      if (next) {
-        void outbox.drain().then(() => emit());
+      if (!next) {
+        clearRetry();
+        emit();
+        return;
       }
-      emit();
+      void syncOnline();
     },
 
     async begin(recipeId) {
@@ -256,21 +341,31 @@ export function createCookingClient(ports: CookingPorts): CookingClient {
         emit();
         return;
       }
+      const finishingId = session.id;
       ending = true;
+      bumpRefresh();
       const result = await ports.network.end({
         mutationId: ports.id(),
-        sessionId: session.id,
+        sessionId: finishingId,
       });
+      bumpRefresh();
       ending = false;
       if (!result.ok) {
         commandError = result.message;
-        if (result.session?.status === "finished" || !result.session) {
-          session = null;
+        if (result.session?.status === "finished") {
+          finishedId = result.session.id;
+          await remember(null);
         }
         emit();
         return;
       }
-      session = result.session.status === "active" ? result.session : null;
+      if (result.session.status === "active") {
+        finishedId = null;
+        await remember(result.session);
+      } else {
+        finishedId = finishingId;
+        await remember(null);
+      }
       commandError = null;
       emit();
     },
@@ -313,20 +408,30 @@ export function createCookingClient(ports: CookingPorts): CookingClient {
       emit();
       return;
     }
+    bumpRefresh();
     const result = await ports.network.begin({
       mutationId: ports.id(),
       recipeId,
     });
+    bumpRefresh();
     if (!result.ok) {
       commandError = result.message;
       if (result.session?.status === "active") {
-        session = result.session;
+        finishedId = null;
+        await remember(result.session);
       }
       emit();
       return;
     }
-    session = result.session.status === "active" ? result.session : null;
-    commandError = result.session.status === "active" ? null : MESSAGES.sessionEnded;
+    if (result.session.status === "active") {
+      finishedId = null;
+      await remember(result.session);
+      commandError = null;
+    } else {
+      finishedId = result.session.id;
+      await remember(null);
+      commandError = MESSAGES.sessionEnded;
+    }
     emit();
   }
 

@@ -40,7 +40,7 @@ Kitchen web proxy:
 
 - The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests, `GET /api/recipes/events`, a same-origin JSON `PATCH` of `/api/recipes/:id/facts`, `GET /api/sessions/active`, and same-origin JSON cooking-session `POST`s. The browser never receives a token.
 - Forwarded: list, read, `GET /api/recipes/events`, a same-origin JSON `PATCH` to `/api/recipes/:id/facts`, and same-origin cooking-session reads and writes. Not forwarded: a full recipe save from the browser (`PUT` is 405), a cross-origin facts PATCH or session write, or a disallowed method on those paths. Favorite-and-rating write is not in the tree. Liveness stays unauthenticated. The event stream is same-origin GET; the browser does not attach a bearer. The queues store mutation ids and intended fields only. The browser cannot choose the upstream URL, path, or `Authorization` header.
-- A cooking session stores a snapshot of the recipe title, ingredient lines, and steps. Logs and error strings do not include that snapshot. Session routes use the same caller tokens as recipe routes. There is no separate session secret.
+- A cooking session stores a snapshot of the recipe title, ingredient lines, and steps. The open browser also keeps that confirmed snapshot in IndexedDB, separate from the pending step queue. Logs and error strings do not include that snapshot. Session routes use the same caller tokens as recipe routes. There is no separate session secret.
 - A response to the browser stays free of the token. Logs and client bundles stay free of the token.
 - The proxy target is the configured API origin. The browser cannot choose an upstream URL.
 

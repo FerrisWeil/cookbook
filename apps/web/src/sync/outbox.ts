@@ -73,6 +73,13 @@ export class Outbox {
     this.emit();
   }
 
+  async hydrate(): Promise<void> {
+    await this.lock.withLock(async () => {
+      await this.reload();
+    });
+    this.emit();
+  }
+
   async drain(): Promise<void> {
     await this.lock.withLock(async () => {
       await this.reload();

@@ -476,5 +476,53 @@ describe("postgres recipe facts", () => {
       }),
       (error: unknown) => error instanceof SessionError && error.code === "ended",
     );
+    const raced = await Promise.allSettled([
+      sessions.start({ mutationId: "pg-race-a", recipeId: created.id, loadSnapshot }),
+      sessions.start({ mutationId: "pg-race-b", recipeId: created.id, loadSnapshot }),
+    ]);
+    const won = raced.find((item) => item.status === "fulfilled");
+    const lost = raced.find((item) => item.status === "rejected");
+    assert.equal(won?.status, "fulfilled");
+    assert.equal(lost?.status, "rejected");
+    assert.ok(
+      lost?.status === "rejected" &&
+        lost.reason instanceof SessionError &&
+        lost.reason.code === "active",
+    );
+    const racedSession = won?.status === "fulfilled" ? won.value : null;
+    assert.ok(racedSession);
+    const activeCount = await pool.query(
+      "SELECT count(*)::int AS n FROM cooking_sessions WHERE status = 'active' AND recipe_id = $1",
+      [created.id],
+    );
+    assert.equal(activeCount.rows[0]?.n, 1);
+    const duplicated = await Promise.all([
+      sessions.complete({ mutationId: "pg-race-step", sessionId: racedSession.id, step: 0 }),
+      sessions.complete({ mutationId: "pg-race-step", sessionId: racedSession.id, step: 0 }),
+    ]);
+    assert.deepEqual(duplicated[0]?.completedSteps, [0]);
+    assert.deepEqual(duplicated[1]?.completedSteps, [0]);
+    const stored = await sessions.resume();
+    assert.deepEqual(stored?.completedSteps, [0]);
+    await sessions.finish({ mutationId: "pg-race-finish", sessionId: racedSession.id });
+    const late = await Promise.allSettled([
+      sessions.complete({ mutationId: "pg-race-late", sessionId: racedSession.id, step: 1 }),
+      sessions.start({ mutationId: "pg-race-a", recipeId: created.id, loadSnapshot }),
+    ]);
+    assert.equal(late.length, 2);
+    for (const item of late) {
+      assert.equal(item.status, "rejected");
+      assert.ok(
+        item.status === "rejected" &&
+          item.reason instanceof SessionError &&
+          item.reason.code === "ended",
+      );
+    }
+    assert.equal(await sessions.resume(), null);
+    const after = await pool.query(
+      "SELECT count(*)::int AS n FROM cooking_sessions WHERE status = 'active' AND recipe_id = $1",
+      [created.id],
+    );
+    assert.equal(after.rows[0]?.n, 0);
   });
 });

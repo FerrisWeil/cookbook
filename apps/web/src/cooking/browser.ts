@@ -1,14 +1,16 @@
 import { MESSAGES, type CookingSession, type CookingSnapshot } from "@cookbook/shared";
 
-import { classifyHttpSend, indexedDbStorage, webLock } from "../sync/adapters";
+import { classifyHttpSend, indexedDbStorage, indexedDbValue, webLock } from "../sync/adapters";
 import { memoryLock, memoryStorage } from "../sync/ports";
 import type { Mutation } from "../sync/types";
 import {
   createCookingClient,
+  memorySessionCache,
   type CookingClient,
   type CookingNetwork,
   type CookingStream,
   type CookingWrite,
+  type SessionCache,
 } from "./client";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -215,6 +217,22 @@ function browserCookingStream(): CookingStream {
   };
 }
 
+function browserSessionCache(): SessionCache {
+  if (typeof indexedDB === "undefined") {
+    return memorySessionCache();
+  }
+  const store = indexedDbValue(indexedDB, "cooking-session");
+  return {
+    async load() {
+      const parsed = parseCookingSession(await store.load());
+      return parsed?.status === "active" ? parsed : null;
+    },
+    async save(session) {
+      await store.save(session);
+    },
+  };
+}
+
 export function createBrowserCooking(): CookingClient {
   const storage =
     typeof indexedDB === "undefined"
@@ -222,6 +240,7 @@ export function createBrowserCooking(): CookingClient {
       : indexedDbStorage(indexedDB, "cooking-queue");
   return createCookingClient({
     storage,
+    sessions: browserSessionCache(),
     lock: typeof navigator === "undefined" ? memoryLock() : webLock("cookbook-cooking-outbox"),
     network: browserCookingNetwork(),
     stream: browserCookingStream(),
@@ -233,6 +252,7 @@ export function createBrowserCooking(): CookingClient {
 export function createDetachedCooking(): CookingClient {
   return createCookingClient({
     storage: memoryStorage(),
+    sessions: memorySessionCache(),
     lock: memoryLock(),
     network: {
       async resume() {

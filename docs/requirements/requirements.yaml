@@ -672,3 +672,15 @@ requirements:
       - id: "211"
         status: accepted
         text: "An open device applies a cooking session change from the server without a refresh."
+      - id: "212"
+        status: accepted
+        text: "An already-open cooking session and its queued step changes remain usable after the device reloads while disconnected."
+      - id: "213"
+        status: accepted
+        text: "A step change that fails briefly is sent again while the device stays connected."
+      - id: "214"
+        status: accepted
+        text: "A finish that does not confirm the session has ended keeps the active session and is not queued."
+      - id: "215"
+        status: accepted
+        text: "A slower session refresh does not replace a newer session or restore a session that has finished."

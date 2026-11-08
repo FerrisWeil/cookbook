@@ -185,6 +185,43 @@ function openOutboxDb(factory: IDBFactory): Promise<IDBDatabase> {
   });
 }
 
+export function indexedDbValue(
+  factory: IDBFactory,
+  key: string,
+): { load(): Promise<unknown>; save(value: unknown): Promise<void> } {
+  let opened: Promise<IDBDatabase> | undefined;
+  const db = () => {
+    opened ??= openOutboxDb(factory);
+    return opened;
+  };
+  return {
+    async load() {
+      const database = await db();
+      return new Promise((resolve, reject) => {
+        const tx = database.transaction(OUTBOX_STORE, "readonly");
+        const request = tx.objectStore(OUTBOX_STORE).get(key);
+        request.onsuccess = () => resolve(request.result ?? null);
+        request.onerror = () =>
+          reject(request.error ?? new Error("Could not read outbox storage"));
+      });
+    },
+    async save(value) {
+      const database = await db();
+      await new Promise<void>((resolve, reject) => {
+        const tx = database.transaction(OUTBOX_STORE, "readwrite");
+        tx.oncomplete = () => resolve();
+        tx.onerror = () =>
+          reject(tx.error ?? new Error("Could not write outbox storage"));
+        if (value === null) {
+          tx.objectStore(OUTBOX_STORE).delete(key);
+        } else {
+          tx.objectStore(OUTBOX_STORE).put(value, key);
+        }
+      });
+    },
+  };
+}
+
 export function indexedDbStorage(
   factory: IDBFactory,
   key = OUTBOX_KEY,
