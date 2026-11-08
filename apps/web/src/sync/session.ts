@@ -1,4 +1,9 @@
-import { type RecipeFacts, type RecipeListItem } from "@cookbook/shared";
+import {
+  mergeProteinChoices,
+  type QueryNode,
+  type RecipeFacts,
+  type RecipeListItem,
+} from "@cookbook/shared";
 
 import { overlayList, overlayRecord } from "./overlay";
 import { Outbox } from "./outbox";
@@ -12,8 +17,13 @@ export type RecipeSnapshot = {
   facts: RecipeFacts;
 };
 
+export type RecipeListPayload = {
+  recipes: RecipeListItem[];
+  proteinChoices: string[];
+};
+
 export type RecipeReader = {
-  list(): Promise<RecipeListItem[]>;
+  list(query?: QueryNode | null): Promise<RecipeListPayload>;
   read(id: string): Promise<RecipeSnapshot>;
 };
 
@@ -46,7 +56,7 @@ export type KitchenPorts = {
 export type ListView =
   | { kind: "loading" }
   | { kind: "error"; message: string }
-  | { kind: "ready"; recipes: RecipeListItem[] };
+  | { kind: "ready"; recipes: RecipeListItem[]; updating: boolean };
 
 export type RecipeView =
   | { kind: "loading" }
@@ -132,7 +142,10 @@ export function formatSyncLabel(status: {
   return `${connection} · ${saves}`;
 }
 
-export function createKitchenSession(ports: KitchenPorts) {
+export function createKitchenSession(
+  ports: KitchenPorts,
+  options: { initialListQuery?: QueryNode | null } = {},
+) {
   const outbox = new Outbox({
     storage: ports.storage,
     network: ports.network,
@@ -146,6 +159,9 @@ export function createKitchenSession(ports: KitchenPorts) {
   let listSnapshot: RecipeListItem[] | undefined;
   let listError: string | undefined;
   let listLoading = true;
+  let listQuery: QueryNode | null = options.initialListQuery ?? null;
+  let listUpdating = false;
+  let proteinChoiceValues: string[] = mergeProteinChoices([]);
   let connection: ConnectionState = "connecting";
   let started = false;
   let stopStream: (() => void) | undefined;
@@ -172,16 +188,20 @@ export function createKitchenSession(ports: KitchenPorts) {
   }
 
   function list(): ListView {
-    if (listSnapshot) {
-      return { kind: "ready", recipes: overlayList(listSnapshot, pending()) };
-    }
     if (listError) {
       return { kind: "error", message: listError };
+    }
+    if (listSnapshot) {
+      return {
+        kind: "ready",
+        recipes: overlayList(listSnapshot, pending()),
+        updating: listUpdating,
+      };
     }
     if (listLoading) {
       return { kind: "loading" };
     }
-    return { kind: "ready", recipes: [] };
+    return { kind: "ready", recipes: [], updating: listUpdating };
   }
 
   function recipe(id: string): RecipeView {
@@ -244,22 +264,23 @@ export function createKitchenSession(ports: KitchenPorts) {
     ];
     let ok = true;
     try {
-      const recipes = await ports.recipes.list();
+      const payload = await ports.recipes.list(listQuery);
       if (generation !== fetchGeneration) {
         return false;
       }
-      listSnapshot = recipes;
+      listSnapshot = payload.recipes;
+      proteinChoiceValues = payload.proteinChoices;
       listError = undefined;
       listLoading = false;
+      listUpdating = false;
     } catch (error) {
       if (generation !== fetchGeneration) {
         return false;
       }
       ok = false;
-      if (!listSnapshot) {
-        listError = error instanceof Error ? error.message : "Could not load recipes.";
-        listLoading = false;
-      }
+      listUpdating = false;
+      listError = error instanceof Error ? error.message : "Could not load recipes.";
+      listLoading = false;
     }
     await Promise.all(
       openIds.map(async (id) => {
@@ -387,6 +408,20 @@ export function createKitchenSession(ports: KitchenPorts) {
     list,
     recipe,
     syncStatus,
+    listQuery() {
+      return listQuery;
+    },
+    proteinChoices() {
+      return proteinChoiceValues;
+    },
+    setListQuery(query: QueryNode | null) {
+      listQuery = query;
+      if (listSnapshot) {
+        listUpdating = true;
+        emit();
+      }
+      return track(refetch());
+    },
     async start(): Promise<void> {
       if (started) {
         await refetch();

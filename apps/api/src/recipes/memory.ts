@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { emptyRecipeFacts, type RecipeFacts } from "@cookbook/shared";
+import {
+  emptyRecipeFacts,
+  matchRecipe,
+  mergeProteinChoices,
+  type QueryNode,
+  type RecipeFacts,
+} from "@cookbook/shared";
 
 import { MutationAckError, canonicalFingerprint } from "../mutations.js";
 import { RecipeError } from "./errors.js";
@@ -138,14 +144,29 @@ export class MemoryRecipeStore implements RecipeStore {
     return visible(stored);
   }
 
-  async list(): Promise<RecipeListItem[]> {
+  async list(query: QueryNode | null = null): Promise<RecipeListItem[]> {
     return this.order.flatMap((id) => {
       const stored = this.recipes.get(id);
       if (!stored || stored.hiddenAt) {
         return [];
       }
+      if (!matchRecipe(stored, query)) {
+        return [];
+      }
       return [listItem(stored)];
     });
+  }
+
+  async proteinChoices(): Promise<string[]> {
+    const values: string[] = [];
+    for (const id of this.order) {
+      const stored = this.recipes.get(id);
+      if (!stored || stored.hiddenAt || stored.facts.primaryProtein === null) {
+        continue;
+      }
+      values.push(stored.facts.primaryProtein);
+    }
+    return mergeProteinChoices(values);
   }
 
   async hide(input: HideRecipeInput): Promise<void> {

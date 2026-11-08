@@ -16,7 +16,7 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 
 | Method | Path | Role |
 | --- | --- | --- |
-| `GET` | `/recipes` | List visible recipes as `id`, `title`, and `facts`. |
+| `GET` | `/recipes` | List visible recipes as `id`, `title`, and `facts`. Optional `query` is a JSON AND/OR tree. Response also includes `proteinChoices`. |
 | `GET` | `/recipes/:id` | Read one visible recipe. Query `fields` for the same projection as MCP `read`. `facts` is a valid field. |
 | `GET` | `/recipes/events` | Authenticated SSE. Heartbeats, then `committed` invalidation events `{ recipeId, op }` after a store save or hide. Clients refetch. Not a recipe snapshot stream. |
 | `PUT` | `/recipes` | Save. Body matches MCP `save`. Omit `facts` to leave stored facts. |
@@ -27,6 +27,8 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 | `POST` | `/sessions/:id/display` | Set the displayed step. Body `{ mutationId, step }`. Does not change completion. |
 | `POST` | `/sessions/:id/steps/:step/complete` | Mark that step complete. Body `{ mutationId }`. |
 | `POST` | `/sessions/:id/steps/:step/undo` | Clear that step. Body `{ mutationId }`. |
+
+List `query` is a bounded typed tree owned by the recipe domain: `and`/`or` groups and leaves `title`, `ingredient`, `primaryProtein`, `maxTotalMinutes`, `effort`, and `mealType`. No NOT, code, or SQL. Missing `query` returns the full visible library in saved order. Malformed, unknown, empty, or over-limit trees are `400`. Matching is parameterized; `%`, `_`, and `\` in a phrase are literal. `proteinChoices` is the full library's primary-protein values plus the recommended names, not the current result page. There is no list pagination; the response is the complete match set.
 
 Facts PATCH body:
 

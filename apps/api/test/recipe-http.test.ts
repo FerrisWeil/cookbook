@@ -72,20 +72,30 @@ describe("recipe HTTP", () => {
     });
     assert.equal(mcp.status, 200);
     assert.equal(web.status, 200);
-    assert.deepEqual(await mcp.json(), {
-      recipes: [
-        {
-          id: "alpha",
-          title: "Example: Alpha",
-          facts: {
-            primaryProtein: null,
-            totalMinutes: null,
-            effort: null,
-            mealTypes: [],
-          },
+    const mcpBody = (await mcp.json()) as {
+      recipes: unknown;
+      proteinChoices: unknown;
+    };
+    const webBody = (await web.json()) as {
+      recipes: unknown;
+      proteinChoices: unknown;
+    };
+    const recipes = [
+      {
+        id: "alpha",
+        title: "Example: Alpha",
+        facts: {
+          primaryProtein: null,
+          totalMinutes: null,
+          effort: null,
+          mealTypes: [],
         },
-      ],
-    });
+      },
+    ];
+    assert.deepEqual(mcpBody.recipes, recipes);
+    assert.deepEqual(webBody.recipes, recipes);
+    assert.ok(Array.isArray(mcpBody.proteinChoices));
+    assert.ok((mcpBody.proteinChoices as string[]).includes("chicken"));
   }));
 
   it("reads a visible recipe and treats a hidden id as not found", async () => {

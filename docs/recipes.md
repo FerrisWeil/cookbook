@@ -19,4 +19,6 @@ JSON object `facts` holds those four keys. Omit `facts` on save to leave stored 
 
 Delete sets `hidden_at` and `hidden_by`. The row stays. Save does not revive a hidden id.
 
+List matching uses one domain query tree for memory and Postgres. Title and ingredient phrases are case-insensitive contiguous substrings after trimming and collapsing spaces. An ingredient phrase must sit in one ingredient's name (the stored name, or the written line when name is empty). Facts filters: primary protein is an open phrase; max total minutes is inclusive and drops unknown totals; effort is exact; meal types overlap. Active categories AND; values inside a category OR. Empty query returns the full visible library in stored order.
+
 The API uses `createPgRecipeStore` from `apps/api/src/recipes/`. Domain functions live in the API (`save`, `read`, `list`, `hide`, `updateFacts`). Recipe HTTP is in [api.md](api.md). MCP tools call that HTTP and are in [mcp.md](mcp.md). Columns were added in `0003_recipe_facts.sql`.

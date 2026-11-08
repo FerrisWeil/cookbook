@@ -1,4 +1,5 @@
 import type {
+  QueryNode,
   RecipeEffort,
   RecipeFacts,
   RecipeMealType,
@@ -84,7 +85,8 @@ export type HideRecipeInput = {
 export type RecipeStore = {
   save(input: SaveRecipeInput): Promise<Recipe>;
   read(id: string): Promise<Recipe>;
-  list(): Promise<RecipeListItem[]>;
+  list(query?: QueryNode | null): Promise<RecipeListItem[]>;
+  proteinChoices(): Promise<string[]>;
   hide(input: HideRecipeInput): Promise<void>;
   updateFacts(id: string, facts: unknown): Promise<Recipe>;
 };

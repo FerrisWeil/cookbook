@@ -628,4 +628,45 @@ describe("mcp recipe tools", () => {
       });
     }),
   );
+
+  it(
+    "lists without a query using the existing recipe array and keeps search unavailable",
+    verifies("228", "7f1d7c2acfd22d21", async () => {
+      await withClient(async (client) => {
+        const listed = await client.callTool({ name: "list", arguments: {} });
+        assert.equal(listed.isError, undefined);
+        const body = listed.structuredContent as {
+          recipes: Array<{ id: string; title: string; facts: unknown }>;
+          proteinChoices: string[];
+        };
+        assert.ok(Array.isArray(body.recipes));
+        assert.ok(body.recipes.some((item) => item.id === "alpha"));
+        assert.equal(
+          body.recipes.some((item) => item.id === "hidden"),
+          false,
+        );
+        for (const item of body.recipes) {
+          assert.equal("ingredients" in item, false);
+          assert.equal(typeof item.title, "string");
+          assert.ok("facts" in item);
+        }
+        assert.ok(Array.isArray(body.proteinChoices));
+        const filtered = await client.callTool({
+          name: "list",
+          arguments: { query: { field: "title", phrase: "Alpha" } },
+        });
+        assert.equal(filtered.isError, undefined);
+        const filteredBody = filtered.structuredContent as {
+          recipes: Array<{ id: string }>;
+        };
+        assert.deepEqual(
+          filteredBody.recipes.map((item) => item.id),
+          ["alpha"],
+        );
+        const search = await client.callTool({ name: "search", arguments: {} });
+        assert.equal(search.isError, true);
+        assert.equal(toolText(search), MESSAGES.notAvailable);
+      });
+    }),
+  );
 });

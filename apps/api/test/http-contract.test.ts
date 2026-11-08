@@ -119,6 +119,9 @@ const failingStore: RecipeStore = {
   async list() {
     throw new Error("store failed");
   },
+  async proteinChoices() {
+    throw new Error("store failed");
+  },
   async hide() {
     throw new Error("store failed");
   },
@@ -143,6 +146,7 @@ describe("HTTP adapter stays out of application modules", () => {
       "recipes/memory.ts",
       "recipes/parse.ts",
       "recipes/pg.ts",
+      "recipes/query-sql.ts",
       "recipes/types.ts",
     ];
     for (const file of files) {

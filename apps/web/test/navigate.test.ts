@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { verifies } from "@cookbook/test";
+
 import {
   COOKBOOK_HISTORY,
   leaveRecipe,
+  listScrollFromState,
   pushAppPath,
+  rememberListPosition,
   type CookbookHistory,
 } from "../src/navigate.ts";
 
@@ -49,4 +53,17 @@ describe("in-app Back", () => {
     assert.equal(leaveRecipe(deepLink), "replace");
     assert.deepEqual(deepLink.stack, ["/"]);
   });
+
+  it(
+    "restores list query href and scroll from history",
+    verifies("233", "f6a81c70d242f531", () => {
+    const history = memoryHistory("/");
+    rememberListPosition(history, "/?title=lemon", 240);
+    assert.equal(history.path, "/?title=lemon");
+    assert.equal(listScrollFromState(history.state), 240);
+    pushAppPath("/recipes/lentils", history, { pathname: "/" });
+    assert.equal(leaveRecipe(history), "pop");
+    assert.equal(history.path, "/?title=lemon");
+    }),
+  );
 });

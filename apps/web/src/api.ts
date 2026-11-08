@@ -1,6 +1,9 @@
 import {
   emptyRecipeFacts,
+  encodeListQueryParam,
   isUnsetPrimaryProtein,
+  mergeProteinChoices,
+  type QueryNode,
   type RecipeFacts,
   type RecipeListItem,
 } from "@cookbook/shared";
@@ -150,13 +153,43 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
-export async function fetchRecipeList(signal?: AbortSignal): Promise<RecipeListItem[]> {
+export type RecipeListPayload = {
+  recipes: RecipeListItem[];
+  proteinChoices: string[];
+};
+
+export function parseRecipeListPayload(body: unknown): RecipeListPayload {
+  const recipes = parseRecipeList(body);
+  const record =
+    body !== null && typeof body === "object" && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : null;
+  const raw = record?.["proteinChoices"];
+  const proteinChoices = Array.isArray(raw)
+    ? mergeProteinChoices(raw.filter((item): item is string => typeof item === "string"))
+    : mergeProteinChoices([]);
+  return { recipes, proteinChoices };
+}
+
+export function recipeListUrl(query?: QueryNode | null): string {
+  const encoded = encodeListQueryParam(query ?? null);
+  if (!encoded) {
+    return "/api/recipes";
+  }
+  const params = new URLSearchParams({ query: encoded });
+  return `/api/recipes?${params.toString()}`;
+}
+
+export async function fetchRecipeList(
+  query?: QueryNode | null,
+  signal?: AbortSignal,
+): Promise<RecipeListPayload> {
   try {
-    const response = await fetch("/api/recipes", { signal });
+    const response = await fetch(recipeListUrl(query), { signal });
     if (!response.ok) {
       throw new Error(LIST_ERROR);
     }
-    return parseRecipeList(await response.json());
+    return parseRecipeListPayload(await response.json());
   } catch (error) {
     if (isAbortError(error)) {
       throw error;
