@@ -476,12 +476,14 @@ describe("postgres recipe facts", () => {
       }),
       (error: unknown) => error instanceof SessionError && error.code === "ended",
     );
-    const raced = await Promise.allSettled([
-      sessions.start({ mutationId: "pg-race-a", recipeId: created.id, loadSnapshot }),
-      sessions.start({ mutationId: "pg-race-b", recipeId: created.id, loadSnapshot }),
-    ]);
+    const raceInputs = [
+      { mutationId: "pg-race-a", recipeId: created.id, loadSnapshot },
+      { mutationId: "pg-race-b", recipeId: created.id, loadSnapshot },
+    ];
+    const raced = await Promise.allSettled(raceInputs.map((input) => sessions.start(input)));
     const won = raced.find((item) => item.status === "fulfilled");
     const lost = raced.find((item) => item.status === "rejected");
+    const winningStart = raceInputs[raced.findIndex((item) => item.status === "fulfilled")];
     assert.equal(won?.status, "fulfilled");
     assert.equal(lost?.status, "rejected");
     assert.ok(
@@ -505,9 +507,14 @@ describe("postgres recipe facts", () => {
     const stored = await sessions.resume();
     assert.deepEqual(stored?.completedSteps, [0]);
     await sessions.finish({ mutationId: "pg-race-finish", sessionId: racedSession.id });
+    assert.ok(winningStart);
     const late = await Promise.allSettled([
       sessions.complete({ mutationId: "pg-race-late", sessionId: racedSession.id, step: 1 }),
-      sessions.start({ mutationId: "pg-race-a", recipeId: created.id, loadSnapshot }),
+      sessions.start({
+        mutationId: winningStart.mutationId,
+        recipeId: created.id,
+        loadSnapshot,
+      }),
     ]);
     assert.equal(late.length, 2);
     for (const item of late) {
