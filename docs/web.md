@@ -64,3 +64,4 @@ The designer reviews each UI pull request by running the app locally. [demo](des
 - A proxied recipe request leaves the server with the web `Authorization` header.
 - A full save from the browser is not forwarded.
 - A facts PATCH from the same origin is forwarded; a cross-origin or non-PATCH facts call is not.
+- When Chrome is present, smoke runs `scripts/browser-outbox.mjs`: an offline facts save survives reload in IndexedDB, auto-retry PATCH keeps omitted Chef fields, a 400 shows need-attention with the submitted protein, and a live update keeps scroll and an unsaved draft. GitHub runners skip it.

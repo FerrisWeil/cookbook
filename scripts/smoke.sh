@@ -432,3 +432,15 @@ process.stdout.write("sse-ok\n");
 EOF
 grep -q "sse-ok" /tmp/cookbook-sse.log
 
+# IndexedDB outbox through the live PATCH. GitHub runners have no Chrome.
+if command -v google-chrome-stable >/dev/null 2>&1 \
+  || command -v google-chrome >/dev/null 2>&1 \
+  || command -v chromium >/dev/null 2>&1; then
+  node scripts/browser-outbox.mjs | tee /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-scroll-ok" /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-replay-ok" /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-reject-ok" /tmp/cookbook-browser-outbox.log
+else
+  echo "browser-outbox skipped (no Chrome)"
+fi
+
