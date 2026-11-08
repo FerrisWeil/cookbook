@@ -435,10 +435,18 @@ process.stdout.write("sse-ok\n");
 EOF
 grep -q "sse-ok" /tmp/cookbook-sse.log
 
+# Search list behavior uses Playwright Chromium, including GitHub runners.
+echo "playwright search"
+pnpm --filter @cookbook/web exec playwright install --with-deps chromium
+API_AUTH_TOKEN_MCP="${api_mcp_token}" \
+  WEB_ORIGIN="http://127.0.0.1:8080" \
+  API_ORIGIN="http://127.0.0.1:3000" \
+  pnpm test:search | tee /tmp/cookbook-playwright-search.log
+
 # IndexedDB outbox through the live PATCH. GitHub runners have no Chrome.
 if command -v google-chrome-stable >/dev/null 2>&1 \
-  || command -v google-chrome >/dev/null 2>&1 \
-  || command -v chromium >/dev/null 2>&1; then
+   || command -v google-chrome >/dev/null 2>&1 \
+   || command -v chromium >/dev/null 2>&1; then
   node scripts/browser-outbox.mjs | tee /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-scroll-ok" /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-twotab-ok" /tmp/cookbook-browser-outbox.log
@@ -447,13 +455,6 @@ if command -v google-chrome-stable >/dev/null 2>&1 \
   node scripts/browser-cooking.mjs | tee /tmp/cookbook-browser-cooking.log
   grep -q "browser-cooking-live-ok" /tmp/cookbook-browser-cooking.log
   grep -q "browser-cooking-reload-ok" /tmp/cookbook-browser-cooking.log
-  node scripts/browser-search.mjs | tee /tmp/cookbook-browser-search.log
-  grep -q "browser-search-title-ok" /tmp/cookbook-browser-search.log
-  grep -q "browser-search-focus-ok" /tmp/cookbook-browser-search.log
-  grep -q "browser-search-filters-ok" /tmp/cookbook-browser-search.log
-  grep -q "browser-search-nomatch-ok" /tmp/cookbook-browser-search.log
-  grep -q "browser-search-retry-ok" /tmp/cookbook-browser-search.log
-  grep -q "browser-search-back-ok" /tmp/cookbook-browser-search.log
 else
   echo "browser-outbox skipped (no Chrome)"
 fi
