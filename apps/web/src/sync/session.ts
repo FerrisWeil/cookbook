@@ -153,6 +153,7 @@ export function createKitchenSession(ports: KitchenPorts) {
   let fetchGeneration = 0;
   const recipeReads = new Map<string, number>();
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let held: Mutation[] = [];
 
   function emit(): void {
     for (const listener of listeners) {
@@ -160,8 +161,14 @@ export function createKitchenSession(ports: KitchenPorts) {
     }
   }
 
-  function pending(): Mutation[] {
+  function queuedMutations(): Mutation[] {
     return outbox.snapshot().map((item) => item.mutation);
+  }
+
+  function pending(): Mutation[] {
+    const live = queuedMutations();
+    const liveIds = new Set(live.map((item) => item.id));
+    return [...held.filter((item) => !liveIds.has(item.id)), ...live];
   }
 
   function list(): ListView {
@@ -196,10 +203,13 @@ export function createKitchenSession(ports: KitchenPorts) {
 
   function syncStatus(): SyncStatus {
     const counts = outbox.status();
-    const allSaved = counts.pending === 0 && counts.failed === 0;
+    const liveIds = new Set(queuedMutations().map((item) => item.id));
+    const heldOnly = held.filter((item) => !liveIds.has(item.id)).length;
+    const pendingCount = counts.pending + heldOnly;
+    const allSaved = pendingCount === 0 && counts.failed === 0;
     const status = {
       connection,
-      pending: counts.pending,
+      pending: pendingCount,
       failed: counts.failed,
       allSaved,
       label: "",
@@ -223,7 +233,7 @@ export function createKitchenSession(ports: KitchenPorts) {
     return true;
   }
 
-  async function refetch(): Promise<void> {
+  async function refetch(): Promise<boolean> {
     const generation = (fetchGeneration += 1);
     const openIds = [
       ...new Set([
@@ -232,18 +242,20 @@ export function createKitchenSession(ports: KitchenPorts) {
         ...recipeReads.keys(),
       ]),
     ];
+    let ok = true;
     try {
       const recipes = await ports.recipes.list();
       if (generation !== fetchGeneration) {
-        return;
+        return false;
       }
       listSnapshot = recipes;
       listError = undefined;
       listLoading = false;
     } catch (error) {
       if (generation !== fetchGeneration) {
-        return;
+        return false;
       }
+      ok = false;
       if (!listSnapshot) {
         listError = error instanceof Error ? error.message : "Could not load recipes.";
         listLoading = false;
@@ -255,16 +267,21 @@ export function createKitchenSession(ports: KitchenPorts) {
         try {
           const next = await ports.recipes.read(id);
           if (generation !== fetchGeneration) {
+            ok = false;
             return;
           }
-          commitRecipe(id, seq, next);
+          if (!commitRecipe(id, seq, next)) {
+            ok = false;
+          }
         } catch (error) {
           if (generation !== fetchGeneration) {
+            ok = false;
             return;
           }
           const message =
             error instanceof Error ? error.message : "Could not load this recipe.";
           if (recipeReads.get(id) !== seq) {
+            ok = false;
             return;
           }
           if (message === "The recipe was not found.") {
@@ -272,13 +289,18 @@ export function createKitchenSession(ports: KitchenPorts) {
             recipeErrors.set(id, { kind: "missing" });
             return;
           }
+          ok = false;
           if (!snapshots.has(id)) {
             recipeErrors.set(id, { kind: "error", message });
           }
         }
       }),
     );
+    if (generation !== fetchGeneration) {
+      return false;
+    }
     emit();
+    return ok;
   }
 
   async function openRecipe(id: string): Promise<void> {
@@ -323,19 +345,35 @@ export function createKitchenSession(ports: KitchenPorts) {
   function armRetry(): void {
     clearRetry();
     const wake = outbox.nextRetryAt();
-    if (wake === undefined) {
+    const holdWake = held.length > 0 ? ports.now() + 1000 : undefined;
+    const next =
+      wake === undefined
+        ? holdWake
+        : holdWake === undefined
+          ? wake
+          : Math.min(wake, holdWake);
+    if (next === undefined) {
       return;
     }
     retryTimer = setTimeout(() => {
       retryTimer = undefined;
       void track(drain());
-    }, Math.max(0, wake - ports.now()));
+    }, Math.max(0, next - ports.now()));
   }
 
   async function drain(): Promise<void> {
+    const queued = queuedMutations();
     await outbox.drain();
+    const remaining = new Set(queuedMutations().map((item) => item.id));
+    const applied = queued.filter((item) => !remaining.has(item.id));
+    if (applied.length > 0) {
+      held = applied;
+    }
+    const synced = await refetch();
+    if (synced) {
+      held = [];
+    }
     armRetry();
-    await refetch();
     emit();
   }
 
@@ -351,7 +389,8 @@ export function createKitchenSession(ports: KitchenPorts) {
     syncStatus,
     async start(): Promise<void> {
       if (started) {
-        return refetch();
+        await refetch();
+        return;
       }
       started = true;
       const controller = new AbortController();

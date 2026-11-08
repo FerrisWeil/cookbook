@@ -256,4 +256,35 @@ describe("postgres recipe facts", () => {
     );
     assert.equal(applied.rowCount, 1);
   });
+
+  it("serializes overlapping facts patches so omitted fields are not restored", async () => {
+    assert.ok(pool);
+    const store = createPgRecipeStore(clientFrom(pool).checkout);
+    const created = await store.save({
+      actor: "chef",
+      title: "Example: Concurrent facts",
+      servings: 2,
+      steps: ["Cook."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+    });
+    await Promise.all([
+      store.updateFacts(created.id, {
+        mutationId: "pg-concurrent-protein",
+        fields: { primaryProtein: "seitan" },
+      }),
+      store.updateFacts(created.id, {
+        mutationId: "pg-concurrent-time",
+        fields: { totalMinutes: 40 },
+      }),
+    ]);
+    const read = await store.read(created.id);
+    assert.equal(read.facts.primaryProtein, "seitan");
+    assert.equal(read.facts.totalMinutes, 40);
+    assert.equal(read.facts.effort, "low");
+  });
 });

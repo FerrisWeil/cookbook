@@ -351,6 +351,68 @@ describe("kitchen session", () => {
     session.stop();
   });
 
+  it("keeps a confirmed overlay until a post-drain refetch succeeds", async () => {
+    const harness = makeHarness({
+      async send(mutation) {
+        const protein =
+          typeof mutation.fields["primaryProtein"] === "string"
+            ? mutation.fields["primaryProtein"]
+            : null;
+        harness.setRecipe("r1", {
+          title: "Alpha",
+          ingredients: ["salt"],
+          steps: ["mix"],
+          facts: { ...emptyRecipeFacts(), primaryProtein: protein },
+        });
+        harness.setList([
+          {
+            id: "r1",
+            title: "Alpha",
+            facts: { ...emptyRecipeFacts(), primaryProtein: protein },
+          },
+        ]);
+        return { ok: true, kind: "applied" };
+      },
+    });
+    const list = harness.ports.recipes.list;
+    const read = harness.ports.recipes.read;
+    let down = true;
+    harness.ports.recipes.list = async () => {
+      if (down) {
+        throw new Error("Could not load recipes.");
+      }
+      return list();
+    };
+    harness.ports.recipes.read = async (id) => {
+      if (down) {
+        throw new Error("Could not load this recipe.");
+      }
+      return read(id);
+    };
+    const session = createKitchenSession(harness.ports);
+    down = false;
+    await session.start();
+    await session.openRecipe("r1");
+    down = true;
+    await session.saveFields("r1", { primaryProtein: "seitan" });
+    await session.idle();
+    const pending = session.recipe("r1");
+    assert.equal(pending.kind, "ready");
+    if (pending.kind === "ready") {
+      assert.equal(pending.recipe.facts.primaryProtein, "seitan");
+    }
+    assert.equal(session.syncStatus().allSaved, false);
+    down = false;
+    await session.drain();
+    const confirmed = session.recipe("r1");
+    assert.equal(confirmed.kind, "ready");
+    if (confirmed.kind === "ready") {
+      assert.equal(confirmed.recipe.facts.primaryProtein, "seitan");
+    }
+    assert.equal(session.syncStatus().allSaved, true);
+    session.stop();
+  });
+
   it("does not let a slower open overwrite a newer refetch", async () => {
     const first = deferred<RecipeRow>();
     const second = deferred<RecipeRow>();

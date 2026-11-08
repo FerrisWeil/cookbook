@@ -156,12 +156,13 @@ async function requireActor(client: SqlClient, actor: string): Promise<void> {
 async function loadVisible(
   client: SqlClient,
   id: string,
+  options: { lock?: boolean } = {},
 ): Promise<Recipe | null> {
   const result = await client.query(
     `SELECT id, title, servings, favorite, rating, actor,
             primary_protein, total_minutes, effort, meal_types
      FROM recipes
-     WHERE id = $1 AND hidden_at IS NULL`,
+     WHERE id = $1 AND hidden_at IS NULL${options.lock ? " FOR UPDATE" : ""}`,
     [id],
   );
   const row = result.rows[0] as RecipeRow | undefined;
@@ -427,7 +428,7 @@ export function createPgRecipeStore(
             recipeId: id,
           },
           async () => {
-            const current = await loadVisible(client, id);
+            const current = await loadVisible(client, id, { lock: true });
             if (!current) {
               throw new RecipeError("not_found", "The recipe was not found.");
             }
