@@ -297,6 +297,10 @@ test.describe("recipe search", () => {
     await page.setViewportSize({ width: 390, height: 480 });
     await page.goto("/");
     await searchTitle(page, prefix);
+    await openFilters(page);
+    await page.getByRole("checkbox", { name: "low" }).check();
+    await closeFilters(page);
+    await expect(page.getByRole("button", { name: "Remove low" })).toBeVisible();
     await expect(page.getByRole("link")).toHaveCount(12);
     const targetTitle = titles[9] ?? "";
     const target = recipeLink(page, targetTitle);
@@ -311,9 +315,13 @@ test.describe("recipe search", () => {
 
     await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
     await expect(page.getByLabel("Recipe name")).toHaveValue(prefix);
+    await expect(page.getByRole("button", { name: "Remove low" })).toBeVisible();
     await expect
       .poll(() => new URL(page.url()).searchParams.get("title"))
       .toBe(prefix);
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("effort"))
+      .toBe("low");
     await expect
       .poll(async () => page.evaluate(() => window.scrollY))
       .toBeGreaterThan(scrolled - 80);
@@ -344,15 +352,17 @@ test.describe("recipe search", () => {
   }) => {
     const id = stamp();
     const draft = `draft-${id}`;
+    const live = `Example: PwLive ${id}`;
     await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
     const title = page.getByLabel("Recipe name");
     await title.click();
-    await title.pressSequentially(draft, { delay: 15 });
-    await saveRecipe(`pw-live-${id}`, `Example: PwLive ${id}`);
-    await expect(async () => {
-      await expect(title).toBeFocused();
-      await expect(title).toHaveValue(draft);
-    }).toPass({ timeout: 4000 });
+    const typing = title.pressSequentially(draft, { delay: 40 });
+    await saveRecipe(`pw-live-${id}`, live);
+    await expect(recipeLink(page, live)).toBeVisible();
+    await typing;
+    await expect(title).toBeFocused();
+    await expect(title).toHaveValue(draft);
   });
 
   test("matches a selected primary protein by the exact normalized value", async ({
