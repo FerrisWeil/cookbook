@@ -4,6 +4,7 @@ export {
   MemoryRecipeStore,
 } from "./memory.js";
 export { createPgRecipeStore } from "./pg.js";
+export { compileListSql } from "./query-sql.js";
 export {
   NUTRITION_SOURCES,
   SHIPPED_ACTORS,

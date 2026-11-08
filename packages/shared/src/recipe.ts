@@ -123,6 +123,7 @@ export const MESSAGES = {
   sessionOfflineStart: "Connect to start a cooking session.",
   sessionOfflineFinish: "Connect to finish the cooking session.",
   sessionPayload: "That mutation id was already used with a different payload.",
+  invalidQuery: "That list query is not valid.",
 } as const;
 
 export const FACTS_SCHEMA_DESCRIPTION =

@@ -447,6 +447,13 @@ if command -v google-chrome-stable >/dev/null 2>&1 \
   node scripts/browser-cooking.mjs | tee /tmp/cookbook-browser-cooking.log
   grep -q "browser-cooking-live-ok" /tmp/cookbook-browser-cooking.log
   grep -q "browser-cooking-reload-ok" /tmp/cookbook-browser-cooking.log
+  node scripts/browser-search.mjs | tee /tmp/cookbook-browser-search.log
+  grep -q "browser-search-title-ok" /tmp/cookbook-browser-search.log
+  grep -q "browser-search-focus-ok" /tmp/cookbook-browser-search.log
+  grep -q "browser-search-filters-ok" /tmp/cookbook-browser-search.log
+  grep -q "browser-search-nomatch-ok" /tmp/cookbook-browser-search.log
+  grep -q "browser-search-retry-ok" /tmp/cookbook-browser-search.log
+  grep -q "browser-search-back-ok" /tmp/cookbook-browser-search.log
 else
   echo "browser-outbox skipped (no Chrome)"
 fi

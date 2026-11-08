@@ -3,7 +3,11 @@ import Fastify, {
   type FastifyRequest,
 } from "fastify";
 
-import { MESSAGES, type ReadyStatus } from "@cookbook/shared";
+import {
+  MESSAGES,
+  parseListQuery,
+  type ReadyStatus,
+} from "@cookbook/shared";
 
 import { requestHasValidBearer } from "./auth.js";
 import { createCommitHub, type CommitHub } from "./commits.js";
@@ -322,10 +326,32 @@ function createApp(deps: ApiDeps) {
     openRecipeEventStream(request, reply, commits, sseHeartbeatMs);
   });
 
-  app.get("/recipes", async (_request, reply) => {
+  app.get("/recipes", async (request, reply) => {
     try {
-      const recipes = await deps.recipes.list();
-      return sendJson(reply, 200, { recipes });
+      const url = requestUrl(request);
+      let query = null;
+      if (url.searchParams.has("query")) {
+        let parsedJson: unknown;
+        try {
+          parsedJson = JSON.parse(url.searchParams.get("query") ?? "");
+        } catch {
+          return sendJson(reply, 400, {
+            error: "invalid",
+            message: MESSAGES.invalidQuery,
+          });
+        }
+        const parsed = parseListQuery(parsedJson);
+        if (!parsed.ok) {
+          return sendJson(reply, 400, {
+            error: "invalid",
+            message: MESSAGES.invalidQuery,
+          });
+        }
+        query = parsed.query;
+      }
+      const recipes = await deps.recipes.list(query);
+      const proteinChoices = await deps.recipes.proteinChoices();
+      return sendJson(reply, 200, { recipes, proteinChoices });
     } catch (error) {
       return sendStoreError(reply, error);
     }

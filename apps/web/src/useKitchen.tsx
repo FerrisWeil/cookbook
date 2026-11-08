@@ -1,14 +1,28 @@
 import {
+  compileListCriteria,
+  criteriaIsEmpty,
+  emptyListCriteria,
+  listCriteriaFromSearch,
+  listSearchFromCriteria,
+  normalizePhrase,
+  type ListCriteria,
+} from "@cookbook/shared";
+import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
+import type { ActiveFilterChip } from "./ListScreen";
 import { createDetachedSession } from "./kitchen-runtime";
+import { listScrollFromState, rememberListPosition } from "./navigate";
 import { useRecipeFactsEditor } from "./useRecipeFactsEditor";
 import type { KitchenSession } from "./sync/session";
+
+export const TITLE_DEBOUNCE_MS = 300;
 
 const KitchenContext = createContext<KitchenSession | null>(null);
 
@@ -47,15 +61,251 @@ function useSessionTick(session: KitchenSession): void {
   );
 }
 
+function currentSearch(): string {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  return window.location.search;
+}
+
+function listHref(criteria: ListCriteria): string {
+  const search = listSearchFromCriteria(criteria);
+  return search === "" ? "/" : `/${search}`;
+}
+
+function writeListUrl(criteria: ListCriteria, mode: "push" | "replace"): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const next = listHref(criteria);
+  const current = `${window.location.pathname}${window.location.search}`;
+  if (current === next) {
+    return;
+  }
+  const state = { cookbook: true, scroll: window.scrollY };
+  if (mode === "push") {
+    window.history.pushState(state, "", next);
+  } else {
+    window.history.replaceState(state, "", next);
+  }
+}
+
+export function activeFiltersFrom(criteria: ListCriteria): ActiveFilterChip[] {
+  const chips: ActiveFilterChip[] = [];
+  const title = criteria.title.trim().replace(/ +/g, " ");
+  if (title !== "") {
+    chips.push({ id: "title", label: `Name: ${title}` });
+  }
+  criteria.ingredients.forEach((item, index) => {
+    chips.push({ id: `ingredient:${index}`, label: item });
+  });
+  criteria.proteins.forEach((item, index) => {
+    chips.push({ id: `protein:${index}`, label: item });
+  });
+  if (criteria.maxTotalMinutes !== null) {
+    chips.push({
+      id: "maxMinutes",
+      label: `Up to ${criteria.maxTotalMinutes} min`,
+    });
+  }
+  criteria.efforts.forEach((item) => {
+    chips.push({ id: `effort:${item}`, label: item });
+  });
+  criteria.mealTypes.forEach((item) => {
+    chips.push({ id: `meal:${item}`, label: item });
+  });
+  return chips;
+}
+
+function removeFilter(criteria: ListCriteria, id: string): ListCriteria {
+  if (id === "title") {
+    return { ...criteria, title: "" };
+  }
+  if (id === "maxMinutes") {
+    return { ...criteria, maxTotalMinutes: null };
+  }
+  if (id.startsWith("ingredient:")) {
+    const index = Number(id.slice("ingredient:".length));
+    return {
+      ...criteria,
+      ingredients: criteria.ingredients.filter((_, item) => item !== index),
+    };
+  }
+  if (id.startsWith("protein:")) {
+    const index = Number(id.slice("protein:".length));
+    return {
+      ...criteria,
+      proteins: criteria.proteins.filter((_, item) => item !== index),
+    };
+  }
+  if (id.startsWith("effort:")) {
+    const value = id.slice("effort:".length);
+    return {
+      ...criteria,
+      efforts: criteria.efforts.filter((item) => item !== value),
+    };
+  }
+  if (id.startsWith("meal:")) {
+    const value = id.slice("meal:".length);
+    return {
+      ...criteria,
+      mealTypes: criteria.mealTypes.filter((item) => item !== value),
+    };
+  }
+  return criteria;
+}
+
 export function useRecipeList() {
   const session = useKitchen();
   useSessionTick(session);
+  const [criteria, setCriteria] = useState(() =>
+    listCriteriaFromSearch(currentSearch()),
+  );
+  const [titleDraft, setTitleDraft] = useState(criteria.title);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [customProtein, setCustomProtein] = useState("");
+  const titleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const startScroll = listScrollFromState(window.history.state);
+    if (startScroll !== undefined) {
+      window.scrollTo(0, startScroll);
+    }
+    function onPop() {
+      const next = listCriteriaFromSearch(window.location.search);
+      setCriteria(next);
+      setTitleDraft(next.title);
+      const historyScroll = listScrollFromState(window.history.state);
+      if (historyScroll !== undefined) {
+        window.scrollTo(0, historyScroll);
+      }
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
+    void session.setListQuery(compileListCriteria(criteria));
+  }, [criteria, session]);
+
+  function commitTitle(value: string, mode: "push" | "replace"): void {
+    setCriteria((current) => {
+      const next = { ...current, title: value };
+      writeListUrl(next, mode);
+      return next;
+    });
+  }
+
+  function applyCriteria(next: ListCriteria, mode: "push" | "replace" = "push"): void {
+    const cleaned: ListCriteria = {
+      ...next,
+      ingredients: next.ingredients
+        .map((item) => item.trim().replace(/ +/g, " "))
+        .filter((item) => item !== ""),
+      proteins: next.proteins
+        .map((item) => item.trim().replace(/ +/g, " "))
+        .filter((item) => item !== ""),
+      maxTotalMinutes:
+        next.maxTotalMinutes !== null &&
+        Number.isInteger(next.maxTotalMinutes) &&
+        next.maxTotalMinutes >= 0
+          ? next.maxTotalMinutes
+          : null,
+    };
+    setCriteria(cleaned);
+    setTitleDraft(cleaned.title);
+    writeListUrl(cleaned, mode);
+  }
+
   return {
     state: session.list(),
     retry: () => {
       void session.refetch();
     },
     status: session.syncStatus(),
+    proteinChoices: session.proteinChoices(),
+    search: {
+      title: titleDraft,
+      onTitleChange(value: string) {
+        setTitleDraft(value);
+        if (titleTimer.current) {
+          clearTimeout(titleTimer.current);
+        }
+        titleTimer.current = setTimeout(() => {
+          commitTitle(value, "replace");
+        }, TITLE_DEBOUNCE_MS);
+      },
+      filtersOpen,
+      onOpenFilters() {
+        setFiltersOpen(true);
+      },
+      onCloseFilters() {
+        setFiltersOpen(false);
+      },
+      onClearAll() {
+        applyCriteria(emptyListCriteria(), "push");
+      },
+      activeFilters: activeFiltersFrom(criteria),
+      onRemoveFilter(id: string) {
+        applyCriteria(removeFilter(criteria, id), "push");
+      },
+      criteria,
+      onChangeCriteria(next: ListCriteria) {
+        applyCriteria(next, "push");
+      },
+      proteinChoices: session.proteinChoices(),
+      customProtein,
+      onCustomProteinChange: setCustomProtein,
+      onAddCustomProtein() {
+        const phrase = normalizePhrase(customProtein);
+        if (phrase === null) {
+          return;
+        }
+        const display = customProtein.trim().replace(/ +/g, " ");
+        if (
+          criteria.proteins.some((item) => item.toLowerCase() === display.toLowerCase())
+        ) {
+          setCustomProtein("");
+          return;
+        }
+        applyCriteria(
+          { ...criteria, proteins: [...criteria.proteins, display] },
+          "push",
+        );
+        setCustomProtein("");
+      },
+      onAddIngredient(value: string) {
+        const display = value.trim().replace(/ +/g, " ");
+        if (display === "") {
+          return;
+        }
+        applyCriteria(
+          { ...criteria, ingredients: [...criteria.ingredients, display] },
+          "push",
+        );
+      },
+    },
+    hasCriteria: !criteriaIsEmpty(criteria),
+    rememberScroll() {
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (titleTimer.current) {
+        clearTimeout(titleTimer.current);
+        titleTimer.current = undefined;
+        commitTitle(titleDraft, "replace");
+      }
+      rememberListPosition(
+        window.history,
+        `${window.location.pathname}${window.location.search}`,
+        window.scrollY,
+      );
+    },
   };
 }
 

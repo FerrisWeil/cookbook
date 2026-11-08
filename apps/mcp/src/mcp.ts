@@ -1,8 +1,9 @@
 import {
   FACTS_SCHEMA_DESCRIPTION,
   MESSAGES,
+  QUERY_SCHEMA_DESCRIPTION,
+  parseListQuery,
   type Recipe,
-  type RecipeListItem,
 } from "@cookbook/shared";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
@@ -188,17 +189,22 @@ export function createCookbookMcpServer(api: CookbookApi): McpServer {
     "list",
     {
       title: "List recipes",
-      description: "Return visible recipes as id, title, and facts.",
-      inputSchema: z.object({}),
+      description: `Return visible recipes as id, title, and facts. ${QUERY_SCHEMA_DESCRIPTION}`,
+      inputSchema: z.object({
+        query: z.unknown().optional(),
+      }),
       annotations: readOnly,
     },
-    async () => {
-      const result = await api.list();
+    async ({ query }) => {
+      const parsed = parseListQuery(query);
+      if (!parsed.ok) {
+        return toolError(MESSAGES.invalidQuery);
+      }
+      const result = await api.list(parsed.query);
       if (!result.ok) {
         return toolError(result.message);
       }
-      const body: { recipes: RecipeListItem[] } = { recipes: result.value };
-      return toolOk(body, "Recipe list.");
+      return toolOk(result.value, "Recipe list.");
     },
   );
 

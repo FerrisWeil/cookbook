@@ -49,7 +49,10 @@ function makeHarness(network?: NetworkPort, storage?: StoragePort) {
   let ids = 0;
   const reader: RecipeReader = {
     async list() {
-      return list.map((item) => ({ ...item }));
+      return {
+        recipes: list.map((item) => ({ ...item })),
+        proteinChoices: [],
+      };
     },
     async read(id) {
       const row = recipes.get(id);
@@ -461,4 +464,61 @@ describe("kitchen session", () => {
     }
     session.stop();
   });
+
+  it(
+    "ignores a stale list response and refetches the active query from the stream",
+    verifies("236", "b453dbde2f61d8f0", async () => {
+    const harness = makeHarness();
+    const session = createKitchenSession(harness.ports);
+    await session.start();
+    const original = harness.ports.recipes.list;
+    const gate = deferred<void>();
+    const queries: unknown[] = [];
+    let wave = 0;
+    harness.ports.recipes.list = async (query) => {
+      const current = (wave += 1);
+      queries.push(query ?? null);
+      if (current === 1) {
+        await gate.promise;
+      }
+      const payload = await original(query);
+      return {
+        recipes: payload.recipes.map((item) => ({
+          ...item,
+          title: current === 1 ? "Stale" : "Current",
+        })),
+        proteinChoices: payload.proteinChoices,
+      };
+    };
+    const stale = session.setListQuery({ field: "title", phrase: "alpha" });
+    const listing = session.list();
+    assert.equal(listing.kind, "ready");
+    if (listing.kind === "ready") {
+      assert.equal(listing.updating, true);
+    }
+    const fresh = session.setListQuery({ field: "title", phrase: "beta" });
+    gate.resolve();
+    await stale;
+    await fresh;
+    const ready = session.list();
+    assert.equal(ready.kind, "ready");
+    if (ready.kind === "ready") {
+      assert.equal(ready.updating, false);
+      assert.equal(ready.recipes[0]?.title, "Current");
+    }
+    harness.handlers()?.onEvent({ recipeId: "r1", op: "saved" });
+    await session.idle();
+    assert.equal(
+      queries.some(
+        (item) =>
+          item !== null &&
+          typeof item === "object" &&
+          "phrase" in item &&
+          (item as { phrase: string }).phrase === "beta",
+      ),
+      true,
+    );
+    session.stop();
+    }),
+  );
 });

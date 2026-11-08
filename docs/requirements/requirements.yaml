@@ -684,3 +684,70 @@ requirements:
       - id: "215"
         status: accepted
         text: "A slower session refresh does not replace a newer session or restore a session that has finished."
+  - id: "216"
+    status: implemented
+    text: "A user or agent can narrow the visible library by title, ingredients, and facts filters over the whole saved library using one validated query."
+    children:
+      - id: "217"
+        status: implemented
+        text: "Title, ingredient, and facts matching agree in memory and Postgres over the saved library."
+        children:
+          - id: "218"
+            status: implemented
+            text: "Title search matches a case-insensitive contiguous phrase in the title and does not search ingredients."
+          - id: "219"
+            status: implemented
+            text: "An ingredient phrase matches inside one ingredient name and does not match by splitting across two ingredients."
+          - id: "220"
+            status: implemented
+            text: "Every ingredient entry is required, and extra ingredients may remain."
+          - id: "221"
+            status: implemented
+            text: "Selected values in one facts category match by OR, and title, ingredients, and active categories combine by AND, including nested mixed groups."
+          - id: "222"
+            status: implemented
+            text: "A max total-minutes filter includes that many minutes and excludes unknown totals, and an active filter does not match a missing value while an inactive filter does not hide missing data."
+          - id: "223"
+            status: implemented
+            text: "Empty criteria return the full visible library in the current list order."
+          - id: "224"
+            status: implemented
+            text: "Matching applies the same whitespace and case normalization to the query and to stored text."
+          - id: "225"
+            status: implemented
+            text: "A title or ingredient phrase treats percent, underscore, and backslash as literal characters."
+      - id: "226"
+        status: implemented
+        text: "The list accepts one bounded typed query tree and keeps the existing unfiltered list contract."
+        children:
+          - id: "227"
+            status: implemented
+            text: "The list query is a bounded typed AND/OR tree of known fields and refuses malformed, unknown, empty, or over-limit queries."
+          - id: "228"
+            status: implemented
+            text: "List without a query keeps the existing recipe array, and a separate search tool stays unavailable."
+          - id: "229"
+            status: implemented
+            text: "Matching runs on the server against the whole saved library and does not filter only loaded cards or fetch each card to match."
+          - id: "230"
+            status: implemented
+            text: "Protein filter choices are the full library's values plus the recommended names."
+      - id: "231"
+        status: implemented
+        text: "The kitchen list offers title search and filters without changing the current cards, and it restores query, scroll, and live updates."
+        children:
+          - id: "232"
+            status: implemented
+            text: "The list has a labeled title search and a compact Filters control, keeps the current cards and order, and lets the user remove a filter or clear title and filters."
+          - id: "233"
+            status: implemented
+            text: "Query and scroll restore after opening a recipe and using Back, and Back and Forward restore the criteria."
+          - id: "234"
+            status: implemented
+            text: "Empty library, no matches, pending, and failure are distinct; retry keeps the criteria; no matches offers removal or clear."
+          - id: "235"
+            status: implemented
+            text: "The filters sheet closes from keyboard, touch, or Escape and returns focus, and a settled result count is announced once."
+          - id: "236"
+            status: implemented
+            text: "A stale list response is ignored; live updates refetch the active criteria without dropping focus, drafts, or scroll; prior results show as updating."
