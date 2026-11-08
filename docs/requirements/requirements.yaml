@@ -19,11 +19,11 @@ requirements:
         status: verified
         text: "Given a liveness check, the agent is not given recipe data."
   - id: "32"
-    status: verified
+    status: accepted
     text: "Agents can read, list, and save recipes through MCP with the shared secret, and those are the only recipe tools."
     children:
       - id: "13"
-        status: verified
+        status: accepted
         text: "Agents can retrieve the details of one recipe."
         children:
           - id: "6"
@@ -47,11 +47,17 @@ requirements:
           - id: "12"
             status: verified
             text: "Without fields, the agent receives the title, steps in saved order, servings, and nutrition when present."
+          - id: "174"
+            status: accepted
+            text: "Given facts in the field list, the agent receives those facts."
       - id: "14"
         status: verified
         text: "Given a deleted recipe, the list does not include it."
+      - id: "176"
+        status: accepted
+        text: "The recipe list includes each recipe's facts."
       - id: "26"
-        status: verified
+        status: accepted
         text: "Agents can save a recipe."
         children:
           - id: "15"
@@ -87,6 +93,9 @@ requirements:
           - id: "25"
             status: verified
             text: "Given a rating, the saved recipe records that rating."
+          - id: "175"
+            status: accepted
+            text: "Given facts, the saved recipe records those facts."
       - id: "27"
         status: verified
         text: "Recipe calls require the shared secret."
@@ -175,6 +184,24 @@ requirements:
           - id: "51"
             status: implemented
             text: "The list includes a recipe whose favorite is off."
+          - id: "177"
+            status: accepted
+            text: "The list shows each recipe's facts."
+          - id: "178"
+            status: accepted
+            text: "The recipe screen shows the recipe's facts."
+          - id: "180"
+            status: accepted
+            text: "Missing facts show a dash and an accessible explanation."
+          - id: "181"
+            status: accepted
+            text: "The recipe screen offers a form to edit that recipe's facts."
+          - id: "182"
+            status: accepted
+            text: "Given a failed facts save, the draft stays and the stored facts are unchanged."
+          - id: "183"
+            status: accepted
+            text: "Canceling the facts form leaves the stored facts unchanged."
       - id: "58"
         status: accepted
         text: "The three screens meet WCAG 2.2 AA, with large primary targets, click or tap, keyboard, visible focus, press feedback, reduced motion, zoom, and no overlap on the recipe."
@@ -306,9 +333,18 @@ requirements:
       - id: "83"
         status: accepted
         text: "Given an API call, the caller is not asked for a shared secret."
+      - id: "187"
+        status: accepted
+        text: "The browser can update a recipe's facts from the same origin and cannot save a full recipe."
+      - id: "188"
+        status: accepted
+        text: "A facts update from a different origin is refused."
+      - id: "189"
+        status: accepted
+        text: "A facts update that is not PATCH with a JSON body is refused."
   - id: "135"
     status: accepted
-    text: "A recipe stores ingredient lines, favorite, rating, optional nutrition, title, steps, servings, and a stable id, and delete hides it."
+    text: "A recipe stores ingredient lines, favorite, rating, optional nutrition, optional facts, title, steps, servings, and a stable id, and delete hides it."
     children:
       - id: "90"
         status: verified
@@ -470,6 +506,46 @@ requirements:
           - id: "133"
             status: verified
             text: "Given a changed title, the recipe keeps its id."
+      - id: "179"
+        status: accepted
+        text: "A recipe may have optional explicit facts for primary protein, total elapsed time, effort, and meal types."
+        children:
+          - id: "165"
+            status: accepted
+            text: "A primary protein is arbitrary text, or unset."
+          - id: "166"
+            status: accepted
+            text: "Total elapsed time is finite nonnegative whole minutes including preparation and waiting, or unset."
+          - id: "167"
+            status: accepted
+            text: "Effort is low, medium, or high, or unset."
+          - id: "168"
+            status: accepted
+            text: "Meal types are a subset of breakfast, lunch, dinner, snack, and dessert, or unset."
+          - id: "169"
+            status: accepted
+            text: "Given a save that omits facts, the stored facts stay."
+          - id: "170"
+            status: accepted
+            text: "Given a save or facts update that clears facts, those facts are unset."
+          - id: "171"
+            status: accepted
+            text: "Invalid facts are refused and the stored recipe is unchanged."
+          - id: "172"
+            status: accepted
+            text: "A facts-only update leaves the title, ingredient lines, steps, servings, nutrition, favorite, rating, and actor unchanged."
+          - id: "173"
+            status: accepted
+            text: "Facts persist in Postgres."
+          - id: "190"
+            status: accepted
+            text: "A facts-only update applies only the submitted fields and leaves omitted facts unchanged."
+          - id: "191"
+            status: accepted
+            text: "Given a facts update whose mutation id was already applied with the same payload, stored facts are unchanged."
+          - id: "192"
+            status: accepted
+            text: "Given a facts update whose mutation id was already applied with a different payload, the update is refused and stored facts are unchanged."
   - id: "147"
     status: accepted
     text: "A local compose stack runs the apps, the home page reports readiness, health needs no secret, MCP requires the bearer, and Postgres applies the schema."
@@ -537,3 +613,19 @@ requirements:
           - id: "152"
             status: accepted
             text: "Given a selected theme, that component uses the theme's colors."
+  - id: "197"
+    status: accepted
+    text: "The kitchen shows committed recipe changes without a refresh, queues facts saves on the device, and reports stream health separately from pending and failed saves."
+    children:
+      - id: "193"
+        status: accepted
+        text: "A committed recipe change updates the list and the open recipe without a refresh."
+      - id: "194"
+        status: accepted
+        text: "A facts save is visible before the server confirms it and remains queued across a reload."
+      - id: "195"
+        status: accepted
+        text: "The status line names stream health and pending or failed saves and does not say all saved while a save is pending or failed."
+      - id: "196"
+        status: accepted
+        text: "Given a permanent facts save rejection, the submitted fields stay visible and the save is not retried."

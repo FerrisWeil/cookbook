@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { emptyRecipeFacts } from "@cookbook/shared";
 import { verifies } from "@cookbook/test";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
@@ -12,6 +13,7 @@ import { App } from "../src/App.tsx";
 import { LIST_ERROR } from "../src/api.ts";
 import { ListScreen } from "../src/ListScreen.tsx";
 import { RecipeScreen } from "../src/RecipeScreen.tsx";
+import type { RecipeView } from "../src/api.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +24,59 @@ function html(node: ReturnType<typeof createElement>): string {
 function readWeb(...parts: string[]): string {
   return readFileSync(join(root, "..", ...parts), "utf8");
 }
+
+const screenIdle = {
+  editing: false,
+  draft: null,
+  formStatus: { kind: "idle" as const },
+  onEditFacts() {},
+  onDraftChange() {},
+  onSaveFacts() {},
+  onCancelFacts() {},
+};
+
+function listItem(id: string, title: string) {
+  return { id, title, facts: emptyRecipeFacts() };
+}
+
+function view(overrides: Partial<RecipeView> = {}): RecipeView {
+  return {
+    title: "Example: Tomato lentils",
+    ingredients: ["1 cup lentils"],
+    steps: ["Simmer."],
+    facts: emptyRecipeFacts(),
+    ...overrides,
+  };
+}
+
+function recipeHtml(state: Parameters<typeof RecipeScreen>[0]["state"]): string {
+  return html(
+    createElement(RecipeScreen, {
+      state,
+      onBack() {},
+      onRetry() {},
+      ...screenIdle,
+    }),
+  );
+}
+
+describe("kitchen session boundaries", () => {
+  it("keeps fetch, EventSource, and storage out of screens and hooks", () => {
+    const files = [
+      readWeb("src/App.tsx"),
+      readWeb("src/ListScreen.tsx"),
+      readWeb("src/RecipeScreen.tsx"),
+      readWeb("src/useKitchen.tsx"),
+      readWeb("src/useRecipeFactsEditor.ts"),
+    ];
+    for (const source of files) {
+      assert.doesNotMatch(source, /\bfetch\s*\(/);
+      assert.doesNotMatch(source, /EventSource/);
+      assert.doesNotMatch(source, /indexedDB/);
+      assert.doesNotMatch(source, /localStorage/);
+    }
+  });
+});
 
 describe("home page", () => {
   it(
@@ -47,13 +102,10 @@ describe("kitchen list and recipe", () => {
       );
       assert.match(list, /Could not load recipes\./);
       assert.match(list, /Try again/);
-      const recipe = html(
-        createElement(RecipeScreen, {
-          state: { kind: "error", message: "Could not load this recipe." },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const recipe = recipeHtml({
+        kind: "error",
+        message: "Could not load this recipe.",
+      });
       assert.match(recipe, /Could not load this recipe\./);
       assert.match(recipe, /Try again/);
     }),
@@ -67,8 +119,8 @@ describe("kitchen list and recipe", () => {
           state: {
             kind: "ready",
             recipes: [
-              { id: "lentils", title: "Example: Tomato lentils" },
-              { id: "oats", title: "Example: Weeknight oats" },
+              listItem("lentils", "Example: Tomato lentils"),
+              listItem("oats", "Example: Weeknight oats"),
             ],
           },
           onOpen() {},
@@ -95,7 +147,7 @@ describe("kitchen list and recipe", () => {
         createElement(ListScreen, {
           state: {
             kind: "ready",
-            recipes: [{ id: stored.id, title: stored.title }],
+            recipes: [listItem(stored.id, stored.title)],
           },
           onOpen() {},
           onRetry() {},
@@ -109,20 +161,7 @@ describe("kitchen list and recipe", () => {
   it(
     "shows the recipe title",
     verifies("45", "63b0704835d62e20", () => {
-      const page = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup lentils"],
-              steps: ["Simmer."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const page = recipeHtml({ kind: "ready", recipe: view() });
       assert.match(page, /<h1>Example: Tomato lentils<\/h1>/);
     }),
   );
@@ -130,32 +169,16 @@ describe("kitchen list and recipe", () => {
   it(
     "shows the ingredient lines",
     verifies("46", "a80761f7e25d25cc", () => {
-      const page = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup lentils", "salt to taste"],
-              steps: ["Simmer."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const page = recipeHtml({
+        kind: "ready",
+        recipe: view({ ingredients: ["1 cup lentils", "salt to taste"] }),
+      });
       assert.match(page, /1 cup lentils/);
       assert.match(page, /salt to taste/);
-      const missing = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: { title: "Example: Tomato lentils", ingredients: [], steps: ["Simmer."] },
-          },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const missing = recipeHtml({
+        kind: "ready",
+        recipe: view({ ingredients: [] }),
+      });
       assert.doesNotMatch(missing, /Ingredients/);
     }),
   );
@@ -163,20 +186,12 @@ describe("kitchen list and recipe", () => {
   it(
     "shows the steps in saved order",
     verifies("47", "9fd0756aa0cd0917", () => {
-      const page = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup lentils"],
-              steps: ["Rinse the lentils.", "Simmer until soft."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
+      const page = recipeHtml({
+        kind: "ready",
+        recipe: view({
+          steps: ["Rinse the lentils.", "Simmer until soft."],
         }),
-      );
+      });
       const first = page.indexOf("Rinse the lentils.");
       const second = page.indexOf("Simmer until soft.");
       assert.ok(first >= 0 && second > first);
@@ -187,20 +202,12 @@ describe("kitchen list and recipe", () => {
   it(
     "shows each ingredient as one written line",
     verifies("50", "6ab37b8ba835bea5", () => {
-      const page = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup red lentils", "2 tbsp olive oil"],
-              steps: ["Simmer."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
+      const page = recipeHtml({
+        kind: "ready",
+        recipe: view({
+          ingredients: ["1 cup red lentils", "2 tbsp olive oil"],
         }),
-      );
+      });
       assert.match(page, /<li>1 cup red lentils<\/li>/);
       assert.match(page, /<li>2 tbsp olive oil<\/li>/);
       assert.doesNotMatch(page, /amount/);
@@ -211,20 +218,7 @@ describe("kitchen list and recipe", () => {
   it(
     "does not overlap recipe text with controls",
     verifies("57", "16224c80a4c906e2", () => {
-      const page = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup lentils"],
-              steps: ["Simmer."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const page = recipeHtml({ kind: "ready", recipe: view() });
       const back = page.indexOf(">Back<");
       const title = page.indexOf("<h1>Example: Tomato lentils</h1>");
       const ingredient = page.indexOf("1 cup lentils");
@@ -242,26 +236,13 @@ describe("kitchen list and recipe", () => {
         createElement(ListScreen, {
           state: {
             kind: "ready",
-            recipes: [{ id: "lentils", title: "Example: Tomato lentils" }],
+            recipes: [listItem("lentils", "Example: Tomato lentils")],
           },
           onOpen() {},
           onRetry() {},
         }),
       );
-      const recipe = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup lentils"],
-              steps: ["Simmer."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const recipe = recipeHtml({ kind: "ready", recipe: view() });
       const failed = html(
         createElement(ListScreen, {
           state: { kind: "error", message: LIST_ERROR },
@@ -290,26 +271,13 @@ describe("kitchen list and recipe", () => {
         createElement(ListScreen, {
           state: {
             kind: "ready",
-            recipes: [{ id: "lentils", title: "Example: Tomato lentils" }],
+            recipes: [listItem("lentils", "Example: Tomato lentils")],
           },
           onOpen() {},
           onRetry() {},
         }),
       );
-      const recipe = html(
-        createElement(RecipeScreen, {
-          state: {
-            kind: "ready",
-            recipe: {
-              title: "Example: Tomato lentils",
-              ingredients: ["1 cup lentils"],
-              steps: ["Simmer."],
-            },
-          },
-          onBack() {},
-          onRetry() {},
-        }),
-      );
+      const recipe = recipeHtml({ kind: "ready", recipe: view() });
       const failed = html(
         createElement(ListScreen, {
           state: { kind: "error", message: LIST_ERROR },

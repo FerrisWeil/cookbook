@@ -4,13 +4,19 @@ Current state for [0023](decisions/0023-kitchen-web-implementation.md). Design i
 
 `/` is the recipe list. `/recipes/:id` is one recipe. Settings and `/guide` are not in this slice. `@cookbook/ui` holds the tokens, Button, Card, and read/error copy used by those screens. Controls are native elements styled with the semantic variables. Radix is still the allowed primitive kit; this slice does not install it.
 
-List cards are title only. The list API returns `id` and `title`. The kitchen does not fetch each card's detail.
+List cards show the title and the four facts slots from the list payload (`id`, `title`, `facts`). The kitchen does not fetch each card's detail.
 
 ## Rendering
 
 Client-rendered React. The web image serves static files. `/` falls back to `index.html`.
 
-The recipe screen requests `fields=title,ingredients,steps`. Default read omits ingredients. Empty ingredient or step lists omit that section. Back pops when the recipe was opened from the list, and replaces the current entry with `/` when the recipe was opened directly.
+The recipe screen requests `fields=title,ingredients,steps,facts`. Default read omits ingredients and facts. Empty ingredient or step lists omit that section. Facts always show four slots. Back pops when the recipe was opened from the list, and replaces the current entry with `/` when the recipe was opened directly.
+
+The recipe screen has a small **Edit recipe facts** form. It is not a full editor. Submit sends only the fields the user changed. The list and recipe show those fields immediately from the device queue; the server ack confirms them. A transient failure retries. A permanent rejection keeps the submitted values visible and does not retry. Unsaved form drafts stay separate from that queue and from a refetch. The form talks to `useRecipe`; the hook talks to the session. Components do not issue the PATCH themselves.
+
+List and recipe screens subscribe to `GET /api/recipes/events`, then refetch the current list and any open recipe. A refetch does not return the screen to loading. Connection health and pending/failed save counts sit under the title, distinct from "All saved". Screens use `useRecipeList` / `useRecipe`; they do not call `fetch`, `EventSource`, or storage.
+
+Pending field writes live in a per-device outbox (IndexedDB when present). Queue order, overlay, and retry are independent of React and HTTP. Last-save-wins is server application order, not a client clock. Arrays are whole fields.
 
 | Route | Screen |
 | --- | --- |
@@ -21,22 +27,24 @@ The recipe screen requests `fields=title,ingredients,steps`. Default read omits 
 
 ## Proxy
 
-Nginx (Compose and the NAS skeleton) and the Vite dev server attach `Authorization: Bearer` for `GET`/`HEAD` `/api/recipes` and `/api/recipes/:id` only. Other methods on those paths return 405. Health stays unauthenticated. The proxy target is the API origin from config, not a URL the browser supplies.
+Nginx (Compose and the NAS skeleton) and the Vite dev server attach `Authorization: Bearer` for `GET`/`HEAD` `/api/recipes`, `/api/recipes/:id`, `GET` `/api/recipes/events`, and `PATCH` `/api/recipes/:id/facts`. The facts PATCH must be same-origin (`Origin` matches `Host`) with `Content-Type: application/json`. Other methods on recipe paths return 405. A cross-origin facts PATCH is 403. Health stays unauthenticated. The proxy target is the API origin from config, not a URL the browser supplies. Incoming `Authorization` from the browser is stripped.
 
 The web token is not in the JavaScript bundle, not in a cookie, and not in a browser response body. Incoming `Authorization` from the browser is stripped. Vite refuses to start the dev server if the token is missing, short, or a placeholder. Nginx substitutes `API_AUTH_TOKEN_WEB` at container start.
 
 | Browser request | Forwarded | Notes |
 | --- | --- | --- |
 | `GET /api/health`, `GET /api/health/ready` | yes | Unauthenticated. |
-| `GET /api/recipes` | yes | List. |
+| `GET /api/recipes` | yes | List, including facts. |
 | `GET /api/recipes/:id` | yes | Read. |
+| `GET /api/recipes/events` | yes | SSE. Nginx buffering off, 1h read timeout. Vite proxy timeout 0. |
+| `PATCH /api/recipes/:id/facts` | yes | Facts only. Same-origin JSON. |
 | Favorite and rating write | no | Path is not in the tree. |
 | Full recipe save | no | `PUT /api/recipes` is 405. |
 | Step check-off | no | Device only. Not an API call. |
 
 ## What the list and recipe need
 
-The documented list item is `id` and `title`. Favorite, tags, and rating on cards wait on the list payload. The documented read field list has no `tags`.
+The documented list item is `id`, `title`, and `facts`. Favorite, tags, and rating on cards wait on those fields in the list payload. The documented read field list has no `tags`.
 
 ## Theme
 
@@ -55,3 +63,5 @@ The designer reviews each UI pull request by running the app locally. [demo](des
 - The web token is not present in a document or a client bundle.
 - A proxied recipe request leaves the server with the web `Authorization` header.
 - A full save from the browser is not forwarded.
+- A facts PATCH from the same origin is forwarded; a cross-origin or non-PATCH facts call is not.
+- When Chrome is present, smoke runs `scripts/browser-outbox.mjs`: an offline facts save survives reload in IndexedDB, two tabs keep both pending edits, auto-retry PATCH keeps omitted Chef fields, a 400 is not retried, and a live update keeps scroll and an unsaved draft. GitHub runners skip it.

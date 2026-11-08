@@ -16,9 +16,44 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 
 | Method | Path | Role |
 | --- | --- | --- |
-| `GET` | `/recipes` | List visible recipes. |
-| `GET` | `/recipes/:id` | Read one visible recipe. Query `fields` for the same projection as MCP `read`. |
-| `PUT` | `/recipes` | Save. Body matches MCP `save`. |
+| `GET` | `/recipes` | List visible recipes as `id`, `title`, and `facts`. |
+| `GET` | `/recipes/:id` | Read one visible recipe. Query `fields` for the same projection as MCP `read`. `facts` is a valid field. |
+| `GET` | `/recipes/events` | Authenticated SSE. Heartbeats, then `committed` invalidation events `{ recipeId, op }` after a store save or hide. Clients refetch. Not a recipe snapshot stream. |
+| `PUT` | `/recipes` | Save. Body matches MCP `save`. Omit `facts` to leave stored facts. |
+| `PATCH` | `/recipes/:id/facts` | Apply only the submitted facts fields. Omitted fields stay. Does not change title, ingredients, steps, servings, nutrition, favorite, rating, or actor. |
+
+Facts PATCH body:
+
+```json
+{
+  "mutationId": "3b8c1e2a-7f4d-4c2a-9a11-0f6d2c8e91aa",
+  "fields": {
+    "primaryProtein": "seitan"
+  }
+}
+```
+
+`mutationId` is required. `fields` is a partial facts object, or `null` to clear all four slots. Omitted keys are unchanged. `null` on one key clears that slot. `mealTypes` is replaced as a whole array. Unknown keys are refused.
+
+Clear one field:
+
+```json
+{ "mutationId": "…", "fields": { "primaryProtein": null } }
+```
+
+Clear all four:
+
+```json
+{ "mutationId": "…", "fields": null }
+```
+
+Success is `{ "facts": { … }, "mutation": { "id": "<mutationId>" } }`. The same id, payload, and recipe returns that success without writing again. The same id with a different payload or recipe is `409 payload_mismatch`. Missing `mutationId` or invalid fields is `400`. Validation is in [recipes.md](recipes.md). The kitchen browser uses this PATCH through the web proxy. MCP `save` still sends a full optional `facts` object or `facts: null`; it does not use this PATCH.
+
+Notifications are emitted from the recipe store seam after a successful commit, not only from the browser HTTP handler. Extra store methods pass through the wrapper; `updateFacts` notifies after it commits. Duplicate acks still return the current recipe and notify. The hub is in-process: one API replica. A restart drops the stream; clients reconnect and refetch. Direct SQL does not notify. Keepalive is not the stream timeout.
+
+`keepAliveTimeout` stays 5s. An open SSE socket sets its own timeout to 0. Nginx `proxy_buffering off` and a 1h read timeout apply only to `/api/recipes/events`.
+
+Mutation ids are stored in `recipe_mutation_acks`. `applyWithAck` must run on a client already inside the effect's transaction. An advisory lock serializes first use of an id. Then it locks the ack row, applies the effect, and inserts the id, payload fingerprint, and recipe. Same id, fingerprint, and recipe is a duplicate ack. Same id with a different fingerprint or recipe is rejected. Concurrent same-id first writes become one effect and 200. The facts PATCH sends `mutationId` and records the ack in the same transaction as the facts write.
 
 ## Callers
 

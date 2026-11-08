@@ -1,15 +1,22 @@
-import type { RecipeListItem } from "@cookbook/shared";
+import {
+  emptyRecipeFacts,
+  isUnsetPrimaryProtein,
+  type RecipeFacts,
+  type RecipeListItem,
+} from "@cookbook/shared";
 
 export const LIST_ERROR = "Could not load recipes.";
 export const RECIPE_ERROR = "Could not load this recipe.";
 export const RECIPE_MISSING = "The recipe was not found.";
+export const FACTS_SAVE_ERROR = "Could not save recipe facts.";
 
-export const RECIPE_READ_FIELDS = "title,ingredients,steps";
+export const RECIPE_READ_FIELDS = "title,ingredients,steps,facts";
 
 export type RecipeView = {
   title: string;
   ingredients: string[];
   steps: string[];
+  facts: RecipeFacts;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -17,6 +24,37 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     return null;
   }
   return value as Record<string, unknown>;
+}
+
+export function parseRecipeFacts(value: unknown): RecipeFacts {
+  const record = asRecord(value);
+  if (!record) {
+    return emptyRecipeFacts();
+  }
+  const protein = record["primaryProtein"];
+  const minutes = record["totalMinutes"];
+  const effort = record["effort"];
+  const meals = record["mealTypes"];
+  return {
+    primaryProtein:
+      typeof protein === "string" && !isUnsetPrimaryProtein(protein)
+        ? protein.trim()
+        : null,
+    totalMinutes:
+      typeof minutes === "number" && Number.isFinite(minutes) ? minutes : null,
+    effort:
+      effort === "low" || effort === "medium" || effort === "high" ? effort : null,
+    mealTypes: Array.isArray(meals)
+      ? meals.filter(
+          (item): item is RecipeFacts["mealTypes"][number] =>
+            item === "breakfast" ||
+            item === "lunch" ||
+            item === "dinner" ||
+            item === "snack" ||
+            item === "dessert",
+        )
+      : [],
+  };
 }
 
 export function parseRecipeList(body: unknown): RecipeListItem[] {
@@ -30,10 +68,19 @@ export function parseRecipeList(body: unknown): RecipeListItem[] {
     const item = asRecord(entry);
     const id = item?.["id"];
     const title = item?.["title"];
-    if (typeof id !== "string" || id.trim() === "" || typeof title !== "string") {
+    if (
+      !item ||
+      typeof id !== "string" ||
+      id.trim() === "" ||
+      typeof title !== "string"
+    ) {
       throw new Error(LIST_ERROR);
     }
-    items.push({ id, title });
+    items.push({
+      id,
+      title,
+      facts: parseRecipeFacts(item["facts"]),
+    });
   }
   return items;
 }
@@ -52,6 +99,7 @@ export function parseRecipeView(body: unknown): RecipeView {
     title,
     ingredients: ingredientLines(recipe["ingredients"]),
     steps: stepLines(recipe["steps"]),
+    facts: parseRecipeFacts(recipe["facts"]),
   };
 }
 
@@ -92,6 +140,10 @@ function stepLines(value: unknown): string[] {
 export function recipeReadUrl(id: string): string {
   const params = new URLSearchParams({ fields: RECIPE_READ_FIELDS });
   return `/api/recipes/${encodeURIComponent(id)}?${params.toString()}`;
+}
+
+export function recipeFactsUrl(id: string): string {
+  return `/api/recipes/${encodeURIComponent(id)}/facts`;
 }
 
 function isAbortError(error: unknown): boolean {
@@ -136,3 +188,4 @@ export async function fetchRecipeView(
     throw new Error(RECIPE_ERROR);
   }
 }
+

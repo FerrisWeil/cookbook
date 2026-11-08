@@ -134,6 +134,37 @@ if [[ "$code" != "405" ]]; then
   exit 1
 fi
 
+code=$(curl -sS -o /tmp/cookbook-web-events-put.json -w '%{http_code}' \
+  -X PUT http://127.0.0.1:8080/api/recipes/events)
+if [[ "$code" != "405" ]]; then
+  echo "web proxy forwarded a write to the event stream: ${code}" >&2
+  cat /tmp/cookbook-web-events-put.json >&2
+  exit 1
+fi
+
+acks_table="$(docker compose exec -T db psql -U postgres -d cookbook -tAc "SELECT to_regclass('public.recipe_mutation_acks')" | tr -d '[:space:]')"
+if [[ "$acks_table" != "recipe_mutation_acks" ]]; then
+  echo "recipe_mutation_acks was not applied" >&2
+  exit 1
+fi
+if docker compose exec -T -e PGPASSWORD="$POSTGRES_APP_PASSWORD" db \
+  psql -U cookbook_app -d cookbook -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO recipe_mutation_acks (mutation_id, payload_fingerprint, recipe_id) VALUES ('smoke-mut', 'fp-a', 'smoke-recipe');" \
+  >/tmp/cookbook-mut-ack-insert.txt 2>&1; then
+  :
+else
+  echo "cookbook_app could not insert a mutation ack" >&2
+  cat /tmp/cookbook-mut-ack-insert.txt >&2
+  exit 1
+fi
+if docker compose exec -T -e PGPASSWORD="$POSTGRES_APP_PASSWORD" db \
+  psql -U cookbook_app -d cookbook -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO recipe_mutation_acks (mutation_id, payload_fingerprint, recipe_id) VALUES ('smoke-mut', 'fp-b', 'smoke-recipe');" \
+  >/tmp/cookbook-mut-ack-dup.txt 2>&1; then
+  echo "duplicate mutation_id was accepted" >&2
+  exit 1
+fi
+
 web_token="${API_AUTH_TOKEN_WEB:-local-dev-api-web-token-not-for-nas}"
 if grep -Fq "$web_token" /tmp/cookbook-web-recipes.json; then
   echo "web token leaked in a browser-facing payload" >&2
@@ -220,16 +251,197 @@ curl -fsS http://127.0.0.1:8080/api/recipes | tee /tmp/cookbook-web-recipes-afte
 grep -q '"recipes":' /tmp/cookbook-web-recipes-after.json
 grep -q "Example:" /tmp/cookbook-web-recipes-after.json
 recipe_id="$(node -e 'const fs=require("fs"); const body=JSON.parse(fs.readFileSync("/tmp/cookbook-web-recipes-after.json","utf8")); const row=body.recipes.find((item)=>item.title.startsWith("Example:")); if(!row) process.exit(1); process.stdout.write(row.id)')"
-curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,ingredients,steps" \
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,ingredients,steps,facts" \
   | tee /tmp/cookbook-web-recipe.json
 grep -q '"title"' /tmp/cookbook-web-recipe.json
 grep -q '"steps"' /tmp/cookbook-web-recipe.json
 grep -q "1 cup water" /tmp/cookbook-web-recipe.json
+grep -q '"facts"' /tmp/cookbook-web-recipe.json
 if grep -Fq "$web_token" /tmp/cookbook-web-recipes-after.json /tmp/cookbook-web-recipe.json; then
   echo "web token leaked in a recipe payload" >&2
+  exit 1
+fi
+
+code=$(curl -sS -o /tmp/cookbook-web-facts.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-1","fields":{"primaryProtein":"chicken","totalMinutes":30,"effort":"low","mealTypes":["dinner"]}}')
+if [[ "$code" != "200" ]]; then
+  echo "web proxy did not accept a same-origin facts PATCH: ${code}" >&2
+  cat /tmp/cookbook-web-facts.json >&2
+  exit 1
+fi
+grep -q '"primaryProtein":"chicken"' /tmp/cookbook-web-facts.json
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-cross.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: https://evil.example' \
+  -d '{"mutationId":"smoke-facts-cross","fields":{"primaryProtein":"beef","totalMinutes":10,"effort":"high","mealTypes":["lunch"]}}')
+if [[ "$code" != "403" ]]; then
+  echo "web proxy allowed a cross-origin facts write: ${code}" >&2
+  cat /tmp/cookbook-web-facts-cross.json >&2
+  exit 1
+fi
+
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,facts" \
+  | tee /tmp/cookbook-web-facts-read.json
+grep -q '"primaryProtein":"chicken"' /tmp/cookbook-web-facts-read.json
+if grep -Fq '"primaryProtein":"beef"' /tmp/cookbook-web-facts-read.json; then
+  echo "cross-origin facts PATCH mutated the recipe" >&2
+  exit 1
+fi
+if grep -Fq "$web_token" /tmp/cookbook-web-facts.json /tmp/cookbook-web-facts-read.json; then
+  echo "web token leaked in a facts payload" >&2
+  exit 1
+fi
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-omit.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-protein","fields":{"primaryProtein":"seitan"}}')
+if [[ "$code" != "200" ]]; then
+  echo "web proxy did not accept a partial facts PATCH: ${code}" >&2
+  cat /tmp/cookbook-web-facts-omit.json >&2
+  exit 1
+fi
+grep -q '"primaryProtein":"seitan"' /tmp/cookbook-web-facts-omit.json
+grep -q '"totalMinutes":30' /tmp/cookbook-web-facts-omit.json
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-replay.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-protein","fields":{"primaryProtein":"seitan"}}')
+if [[ "$code" != "200" ]]; then
+  echo "duplicate facts mutation was not acknowledged: ${code}" >&2
+  cat /tmp/cookbook-web-facts-replay.json >&2
+  exit 1
+fi
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-mismatch.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-protein","fields":{"primaryProtein":"beef"}}')
+if [[ "$code" != "409" ]]; then
+  echo "mismatched facts mutation was not rejected: ${code}" >&2
+  cat /tmp/cookbook-web-facts-mismatch.json >&2
+  exit 1
+fi
+grep -q '"primaryProtein":"seitan"' /tmp/cookbook-web-facts-read.json || true
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,facts" \
+  | tee /tmp/cookbook-web-facts-after-mismatch.json
+grep -q '"primaryProtein":"seitan"' /tmp/cookbook-web-facts-after-mismatch.json
+if grep -Fq '"primaryProtein":"beef"' /tmp/cookbook-web-facts-after-mismatch.json; then
+  echo "mismatched facts mutation overwrote stored facts" >&2
   exit 1
 fi
 
 curl -fsS http://127.0.0.1:8080/api/health/ready | tee /tmp/cookbook-web-api.json
 grep -q '"database":"up"' /tmp/cookbook-web-api.json
 grep -q '"status":"ok"' /tmp/cookbook-web-api.json
+
+code=$(curl -sS -o /tmp/cookbook-api-events-unauth.txt -w '%{http_code}' \
+  http://127.0.0.1:3000/recipes/events)
+test "$code" = "401"
+
+SMOKE_RECIPE_ID="$recipe_id" node --input-type=module <<'EOF' | tee /tmp/cookbook-sse.log
+const apiToken = process.env.API_AUTH_TOKEN_MCP ?? "local-dev-api-mcp-token-not-for-nas";
+const webToken = process.env.API_AUTH_TOKEN_WEB ?? "local-dev-api-web-token-not-for-nas";
+const recipeId = process.env.SMOKE_RECIPE_ID ?? "";
+
+async function readUntil(url, headers, match, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const response = await fetch(url, { headers, signal: controller.signal });
+  if (!response.ok) {
+    throw new Error(`${url} status ${response.status}`);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let text = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
+      if (match(text)) return text;
+    }
+    throw new Error(`no match: ${text}`);
+  } finally {
+    clearTimeout(timer);
+    await reader.cancel().catch(() => undefined);
+    controller.abort();
+  }
+}
+
+const apiStream = readUntil(
+  "http://127.0.0.1:3000/recipes/events",
+  { authorization: `Bearer ${apiToken}` },
+  (chunk) => chunk.includes("event: committed"),
+  8000,
+);
+const webStream = readUntil(
+  "http://127.0.0.1:8080/api/recipes/events",
+  {},
+  (chunk) => chunk.includes("event: committed"),
+  8000,
+);
+await new Promise((resolve) => setTimeout(resolve, 300));
+const patched = await fetch(
+  "http://127.0.0.1:3000/recipes/" + encodeURIComponent(recipeId) + "/facts",
+  {
+    method: "PATCH",
+    headers: {
+      authorization: `Bearer ${apiToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      mutationId: "smoke-facts-sse",
+      fields: { effort: "medium" },
+    }),
+  },
+);
+if (!patched.ok) {
+  throw new Error(`facts patch failed ${patched.status}`);
+}
+const saved = await fetch("http://127.0.0.1:3000/recipes", {
+  method: "PUT",
+  headers: {
+    authorization: `Bearer ${apiToken}`,
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({
+    title: "Example: Live stream",
+    steps: ["listen"],
+    servings: 1,
+    actor: "chef",
+  }),
+});
+if (!saved.ok) {
+  throw new Error(`save failed ${saved.status}`);
+}
+const [apiText, webText] = await Promise.all([apiStream, webStream]);
+if (apiText.includes(apiToken) || webText.includes(webToken)) {
+  throw new Error("token leaked on the event stream");
+}
+process.stdout.write("sse-ok\n");
+EOF
+grep -q "sse-ok" /tmp/cookbook-sse.log
+
+# IndexedDB outbox through the live PATCH. GitHub runners have no Chrome.
+if command -v google-chrome-stable >/dev/null 2>&1 \
+  || command -v google-chrome >/dev/null 2>&1 \
+  || command -v chromium >/dev/null 2>&1; then
+  node scripts/browser-outbox.mjs | tee /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-scroll-ok" /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-twotab-ok" /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-replay-ok" /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-reject-ok" /tmp/cookbook-browser-outbox.log
+else
+  echo "browser-outbox skipped (no Chrome)"
+fi
+

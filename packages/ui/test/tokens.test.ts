@@ -123,6 +123,10 @@ describe("tokens", () => {
     verifies("162", "0e4301b59f95d35d", () => {
       assert.match(components, /\.ui-button:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/);
       assert.match(components, /\.ui-card:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/);
+      assert.match(
+        components,
+        /button\.ui-facts-slot:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/,
+      );
     }),
   );
 

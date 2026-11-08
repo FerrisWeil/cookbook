@@ -23,29 +23,51 @@ function html(node: ReturnType<typeof createElement>): string {
 }
 
 describe("kitchen API mapping", () => {
-  it("requests title, ingredient lines, and steps from the read API", () => {
-    assert.equal(RECIPE_READ_FIELDS, "title,ingredients,steps");
+  it("requests title, ingredient lines, steps, and facts from the read API", () => {
+    assert.equal(RECIPE_READ_FIELDS, "title,ingredients,steps,facts");
     assert.equal(
       recipeReadUrl("alpha"),
-      "/api/recipes/alpha?fields=title%2Cingredients%2Csteps",
+      "/api/recipes/alpha?fields=title%2Cingredients%2Csteps%2Cfacts",
     );
     const viewed = parseRecipeView({
       recipe: {
         title: "Example: Tomato lentils",
         ingredients: [{ line: "1 cup lentils", amount: 1, unit: "cup", name: "lentils" }],
         steps: ["Simmer.", "Salt."],
+        facts: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
       },
     });
     assert.deepEqual(viewed, {
       title: "Example: Tomato lentils",
       ingredients: ["1 cup lentils"],
       steps: ["Simmer.", "Salt."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
     });
     assert.deepEqual(
       parseRecipeView({
         recipe: { title: "Example: Plain", steps: ["Stir."] },
       }),
-      { title: "Example: Plain", ingredients: [], steps: ["Stir."] },
+      {
+        title: "Example: Plain",
+        ingredients: [],
+        steps: ["Stir."],
+        facts: {
+          primaryProtein: null,
+          totalMinutes: null,
+          effort: null,
+          mealTypes: [],
+        },
+      },
     );
     assert.throws(() => parseRecipeList({}), new Error(LIST_ERROR));
     assert.throws(() => parseRecipeView({}), new Error(RECIPE_ERROR));
@@ -91,6 +113,7 @@ describe("kitchen API mapping", () => {
     } finally {
       globalThis.fetch = original;
     }
+
   });
 
   it("shows empty, missing, and retry states", () => {
@@ -105,8 +128,15 @@ describe("kitchen API mapping", () => {
     const missing = html(
       createElement(RecipeScreen, {
         state: { kind: "missing" },
+        editing: false,
+        draft: null,
+        formStatus: { kind: "idle" },
         onBack() {},
         onRetry() {},
+        onEditFacts() {},
+        onDraftChange() {},
+        onSaveFacts() {},
+        onCancelFacts() {},
       }),
     );
     assert.match(missing, new RegExp(RECIPE_MISSING));

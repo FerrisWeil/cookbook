@@ -152,5 +152,5 @@ The first paint follows the system setting unless a stored choice exists. The se
 Not decided.
 
 - Theme control placement on settings
-- Icons and home-screen icons
+- Home-screen icons
 

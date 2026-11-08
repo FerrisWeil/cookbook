@@ -1,3 +1,16 @@
+import {
+  MAX_PRIMARY_PROTEIN_LENGTH,
+  MAX_TOTAL_MINUTES,
+  MESSAGES,
+  RECIPE_MEAL_TYPES,
+  emptyRecipeFacts,
+  isRecipeEffort,
+  isRecipeMealType,
+  isUnsetPrimaryProtein,
+  type RecipeFacts,
+  type RecipeMealType,
+} from "@cookbook/shared";
+
 import { RecipeError } from "./errors.js";
 import {
   NUTRITION_SOURCES,
@@ -20,6 +33,7 @@ export type ParsedSave = {
   ingredients: Ingredient[] | undefined;
   steps: string[] | undefined;
   nutrition: Nutrition | null | undefined;
+  facts: RecipeFacts | null | undefined;
 };
 
 export type ParsedHide = {
@@ -128,6 +142,7 @@ export function parseSave(input: SaveRecipeInput): ParsedSave {
   const ingredients = parseIngredients(input.ingredients);
   const steps = parseSteps(input.steps);
   const nutrition = parseNutritionField(input.nutrition);
+  const facts = parseFactsField(input.facts);
 
   return {
     id,
@@ -139,6 +154,7 @@ export function parseSave(input: SaveRecipeInput): ParsedSave {
     ingredients,
     steps,
     nutrition,
+    facts,
   };
 }
 
@@ -150,6 +166,181 @@ export function parseHide(input: HideRecipeInput): ParsedHide {
     "An actor is required.",
   );
   return { id, actor };
+}
+
+export function parseFactsField(value: unknown): RecipeFacts | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
+  return parseFacts(value);
+}
+
+const FACT_KEYS = [
+  "primaryProtein",
+  "totalMinutes",
+  "effort",
+  "mealTypes",
+] as const;
+
+export type FactsPatch = {
+  mutationId: string;
+  fields: Partial<RecipeFacts> | null;
+};
+
+export function parseFactsPatch(value: unknown): FactsPatch {
+  if (!isObject(value)) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  const mutationId = value["mutationId"];
+  if (typeof mutationId !== "string" || mutationId.trim() === "") {
+    throw new RecipeError("invalid_facts", "A mutation id is required.");
+  }
+  if (!("fields" in value)) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  if (value["fields"] === null) {
+    return { mutationId: mutationId.trim(), fields: null };
+  }
+  if (!isObject(value["fields"])) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  const raw = value["fields"];
+  for (const key of Object.keys(raw)) {
+    if (!FACT_KEYS.includes(key as (typeof FACT_KEYS)[number])) {
+      throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+    }
+  }
+  const fields: Partial<RecipeFacts> = {};
+  if ("primaryProtein" in raw) {
+    fields.primaryProtein = parsePrimaryProtein(raw["primaryProtein"]);
+  }
+  if ("totalMinutes" in raw) {
+    fields.totalMinutes = parseTotalMinutes(raw["totalMinutes"]);
+  }
+  if ("effort" in raw) {
+    fields.effort = parseEffort(raw["effort"]);
+  }
+  if ("mealTypes" in raw) {
+    fields.mealTypes = parseMealTypes(raw["mealTypes"]);
+  }
+  return { mutationId: mutationId.trim(), fields };
+}
+
+export function applyFactsPatch(
+  current: RecipeFacts,
+  fields: Partial<RecipeFacts> | null,
+): RecipeFacts {
+  if (fields === null) {
+    return emptyRecipeFacts();
+  }
+  return {
+    primaryProtein:
+      "primaryProtein" in fields
+        ? (fields.primaryProtein ?? null)
+        : current.primaryProtein,
+    totalMinutes:
+      "totalMinutes" in fields
+        ? (fields.totalMinutes ?? null)
+        : current.totalMinutes,
+    effort: "effort" in fields ? (fields.effort ?? null) : current.effort,
+    mealTypes:
+      "mealTypes" in fields
+        ? [...(fields.mealTypes ?? [])]
+        : [...current.mealTypes],
+  };
+}
+
+export function parseFacts(value: unknown): RecipeFacts {
+  if (!isObject(value)) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  const allowed = new Set<string>(FACT_KEYS);
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) {
+      throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+    }
+  }
+  return {
+    primaryProtein: parsePrimaryProtein(value.primaryProtein),
+    totalMinutes: parseTotalMinutes(value.totalMinutes),
+    effort: parseEffort(value.effort),
+    mealTypes: parseMealTypes(value.mealTypes),
+  };
+}
+
+export function factsOrEmpty(facts: RecipeFacts | null | undefined): RecipeFacts {
+  if (facts === undefined || facts === null) {
+    return emptyRecipeFacts();
+  }
+  return {
+    primaryProtein: facts.primaryProtein,
+    totalMinutes: facts.totalMinutes,
+    effort: facts.effort,
+    mealTypes: [...facts.mealTypes],
+  };
+}
+
+function parsePrimaryProtein(value: unknown): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new RecipeError("invalid_protein", MESSAGES.invalidProtein);
+  }
+  if (isUnsetPrimaryProtein(value)) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length > MAX_PRIMARY_PROTEIN_LENGTH) {
+    throw new RecipeError("invalid_protein", MESSAGES.invalidProtein);
+  }
+  return trimmed;
+}
+
+function parseTotalMinutes(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value < 0 ||
+    value > MAX_TOTAL_MINUTES
+  ) {
+    throw new RecipeError("invalid_duration", MESSAGES.invalidDuration);
+  }
+  return value;
+}
+
+function parseEffort(value: unknown): RecipeFacts["effort"] {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (typeof value !== "string" || !isRecipeEffort(value)) {
+    throw new RecipeError("invalid_effort", MESSAGES.invalidEffort);
+  }
+  return value;
+}
+
+function parseMealTypes(value: unknown): RecipeMealType[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new RecipeError("invalid_meal_types", MESSAGES.invalidMealTypes);
+  }
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== "string" || !isRecipeMealType(item) || seen.has(item)) {
+      throw new RecipeError("invalid_meal_types", MESSAGES.invalidMealTypes);
+    }
+    seen.add(item);
+  }
+  return RECIPE_MEAL_TYPES.filter((item) => seen.has(item));
 }
 
 function parseIngredients(value: unknown): Ingredient[] | undefined {

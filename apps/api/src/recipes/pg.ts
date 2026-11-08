@@ -1,7 +1,21 @@
 import { randomUUID } from "node:crypto";
 
+import type { RecipeFacts } from "@cookbook/shared";
+
+import {
+  applyWithAck,
+  canonicalFingerprint,
+} from "../mutations.js";
 import { RecipeError } from "./errors.js";
-import { parseHide, parseSave, type ParsedSave } from "./parse.js";
+import {
+  applyFactsPatch,
+  factsOrEmpty,
+  parseFactsField,
+  parseFactsPatch,
+  parseHide,
+  parseSave,
+  type ParsedSave,
+} from "./parse.js";
 import type {
   HideRecipeInput,
   Ingredient,
@@ -20,6 +34,10 @@ type RecipeRow = {
   favorite: unknown;
   rating: unknown;
   actor: unknown;
+  primary_protein?: unknown;
+  total_minutes?: unknown;
+  effort?: unknown;
+  meal_types?: unknown;
 };
 
 type IngredientRow = {
@@ -98,6 +116,34 @@ function asNullableInt(value: unknown): number | null {
   return parsed === null ? null : Math.trunc(parsed);
 }
 
+function asNullableText(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return asString(value);
+}
+
+function factsFromRow(row: RecipeRow): RecipeFacts {
+  const mealTypes = row.meal_types;
+  return {
+    primaryProtein: asNullableText(row.primary_protein),
+    totalMinutes: asNullableInt(row.total_minutes),
+    effort: asNullableText(row.effort) as RecipeFacts["effort"],
+    mealTypes: Array.isArray(mealTypes)
+      ? (mealTypes.map((item) => asString(item)) as RecipeFacts["mealTypes"])
+      : [],
+  };
+}
+
+function factsParams(facts: RecipeFacts): unknown[] {
+  return [
+    facts.primaryProtein,
+    facts.totalMinutes,
+    facts.effort,
+    facts.mealTypes,
+  ];
+}
+
 async function requireActor(client: SqlClient, actor: string): Promise<void> {
   const result = await client.query("SELECT 1 FROM actors WHERE name = $1", [
     actor,
@@ -110,11 +156,13 @@ async function requireActor(client: SqlClient, actor: string): Promise<void> {
 async function loadVisible(
   client: SqlClient,
   id: string,
+  options: { lock?: boolean } = {},
 ): Promise<Recipe | null> {
   const result = await client.query(
-    `SELECT id, title, servings, favorite, rating, actor
+    `SELECT id, title, servings, favorite, rating, actor,
+            primary_protein, total_minutes, effort, meal_types
      FROM recipes
-     WHERE id = $1 AND hidden_at IS NULL`,
+     WHERE id = $1 AND hidden_at IS NULL${options.lock ? " FOR UPDATE" : ""}`,
     [id],
   );
   const row = result.rows[0] as RecipeRow | undefined;
@@ -170,6 +218,7 @@ async function assemble(client: SqlClient, row: RecipeRow): Promise<Recipe> {
           carbs: asNullableNumber(nutritionRow.carbs),
         } satisfies Nutrition)
       : null,
+    facts: factsFromRow(row),
   };
 }
 
@@ -229,6 +278,19 @@ async function replaceChildren(
   }
 }
 
+async function writeFacts(
+  client: SqlClient,
+  id: string,
+  facts: RecipeFacts,
+): Promise<void> {
+  await client.query(
+    `UPDATE recipes
+     SET primary_protein = $2, total_minutes = $3, effort = $4, meal_types = $5
+     WHERE id = $1 AND hidden_at IS NULL`,
+    [id, ...factsParams(facts)],
+  );
+}
+
 export function createPgRecipeStore(
   checkout: () => Promise<ReleasableClient>,
 ): RecipeStore {
@@ -270,6 +332,9 @@ export function createPgRecipeStore(
               ],
             );
             await replaceChildren(client, requestedId, parsed);
+            if (parsed.facts !== undefined) {
+              await writeFacts(client, requestedId, factsOrEmpty(parsed.facts));
+            }
             const updated = await loadVisible(client, requestedId);
             if (!updated) {
               throw new RecipeError("not_found", "The recipe was not found.");
@@ -279,9 +344,13 @@ export function createPgRecipeStore(
         }
 
         const id = requestedId ?? randomUUID();
+        const facts = factsOrEmpty(parsed.facts);
         await client.query(
-          `INSERT INTO recipes (id, title, servings, favorite, rating, actor)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+          `INSERT INTO recipes (
+             id, title, servings, favorite, rating, actor,
+             primary_protein, total_minutes, effort, meal_types
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             id,
             parsed.title,
@@ -289,6 +358,7 @@ export function createPgRecipeStore(
             parsed.favorite ?? false,
             parsed.rating ?? null,
             parsed.actor,
+            ...factsParams(facts),
           ],
         );
         await replaceChildren(client, id, parsed);
@@ -313,15 +383,19 @@ export function createPgRecipeStore(
     async list(): Promise<RecipeListItem[]> {
       return transaction(checkout, async (client) => {
         const result = await client.query(
-          `SELECT id, title
+          `SELECT id, title, primary_protein, total_minutes, effort, meal_types
            FROM recipes
            WHERE hidden_at IS NULL
            ORDER BY created_at ASC, id ASC`,
         );
-        return result.rows.map((row) => ({
-          id: asString(row["id"]),
-          title: asString(row["title"]),
-        }));
+        return result.rows.map((row) => {
+          const item = row as RecipeRow;
+          return {
+            id: asString(item.id),
+            title: asString(item.title),
+            facts: factsFromRow(item),
+          };
+        });
       });
     },
 
@@ -338,6 +412,49 @@ export function createPgRecipeStore(
         if ((result.rowCount ?? 0) === 0) {
           throw new RecipeError("not_found", "The recipe was not found.");
         }
+      });
+    },
+
+    async updateFacts(id: string, facts: unknown): Promise<Recipe> {
+      const patch = parseFactsPatch(facts);
+      const fingerprint = canonicalFingerprint(patch.fields);
+      return transaction(checkout, async (client) => {
+        let updated: Recipe | undefined;
+        const ack = await applyWithAck(
+          client,
+          {
+            mutationId: patch.mutationId,
+            payloadFingerprint: fingerprint,
+            recipeId: id,
+          },
+          async () => {
+            const current = await loadVisible(client, id, { lock: true });
+            if (!current) {
+              throw new RecipeError("not_found", "The recipe was not found.");
+            }
+            await writeFacts(
+              client,
+              id,
+              applyFactsPatch(current.facts, patch.fields),
+            );
+            const next = await loadVisible(client, id);
+            if (!next) {
+              throw new RecipeError("not_found", "The recipe was not found.");
+            }
+            updated = next;
+          },
+        );
+        if (ack.kind === "duplicate") {
+          const current = await loadVisible(client, id);
+          if (!current) {
+            throw new RecipeError("not_found", "The recipe was not found.");
+          }
+          return current;
+        }
+        if (!updated) {
+          throw new RecipeError("not_found", "The recipe was not found.");
+        }
+        return updated;
       });
     },
   };
