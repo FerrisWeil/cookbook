@@ -199,6 +199,23 @@ async function evaluate(send, expression, awaitPromise = false) {
   return JSON.parse(raw).v;
 }
 
+async function setSearch(send, value) {
+  await evaluate(
+    send,
+    `(() => {
+      const input = document.querySelector("input[type=search]");
+      const setter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      ).set;
+      setter.call(input, ${JSON.stringify(value)});
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      return input.value;
+    })()`,
+  );
+}
+
 async function waitFor(send, expression, timeoutMs = 12_000) {
   const deadline = Date.now() + timeoutMs;
   let last;
@@ -292,12 +309,6 @@ async function main() {
         process.stderr.write(`${error instanceof Error ? error.message : error}\n`);
       });
     });
-    await send("Fetch.enable", {
-      patterns: [
-        { urlPattern: "*/api/recipes", requestStage: "Request" },
-        { urlPattern: "*/api/recipes?*", requestStage: "Request" },
-      ],
-    });
     await send("Page.navigate", { url: WEB });
     await waitFor(send, `document.querySelector("h1")?.textContent === "Recipes"`);
     await waitFor(
@@ -305,10 +316,7 @@ async function main() {
       `Array.from(document.querySelectorAll("a")).some((a) => a.textContent.includes("Chicken breast bake"))`,
     );
 
-    await evaluate(
-      send,
-      `(document.querySelector("input[type=search]").value = "chicken breast", document.querySelector("input[type=search]").dispatchEvent(new Event("input", { bubbles: true })), true)`,
-    );
+    await setSearch(send, "chicken breast");
     await sleep(1100);
     await waitFor(
       send,
@@ -355,10 +363,7 @@ async function main() {
     );
     process.stdout.write("browser-search-filters-ok\n");
 
-    await evaluate(
-      send,
-      `(document.querySelector("input[type=search]").value = "zzzz-no-match", document.querySelector("input[type=search]").dispatchEvent(new Event("input", { bubbles: true })), true)`,
-    );
+    await setSearch(send, "zzzz-no-match");
     await sleep(1100);
     await waitFor(
       send,
@@ -366,6 +371,12 @@ async function main() {
     );
     process.stdout.write("browser-search-nomatch-ok\n");
 
+    await send("Fetch.enable", {
+      patterns: [
+        { urlPattern: "*/api/recipes", requestStage: "Request" },
+        { urlPattern: "*/api/recipes?*", requestStage: "Request" },
+      ],
+    });
     gate.failNext = true;
     await evaluate(
       send,
