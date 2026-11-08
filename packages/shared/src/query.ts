@@ -113,13 +113,23 @@ export function omitBlankPhrases(values: readonly string[]): string[] {
   return phrases;
 }
 
+function boundedNormalizedPhrase(value: string): string | null {
+  const phrase = normalizePhrase(value);
+  if (phrase === null) {
+    return null;
+  }
+  return phrase.slice(0, QUERY_LIMITS.maxPhraseLength);
+}
+
 export function compileListCriteria(criteria: ListCriteria): QueryNode | null {
   const children: QueryNode[] = [];
-  const title = normalizePhrase(criteria.title);
+  const title = boundedNormalizedPhrase(criteria.title);
   if (title !== null) {
     children.push({ field: "title", phrase: title });
   }
-  const ingredients = omitBlankPhrases(criteria.ingredients);
+  const ingredients = omitBlankPhrases(criteria.ingredients).map(
+    (phrase) => phrase.slice(0, QUERY_LIMITS.maxPhraseLength),
+  );
   if (ingredients.length === 1) {
     children.push({ field: "ingredient", phrase: ingredients[0] ?? "" });
   } else if (ingredients.length > 1) {
@@ -131,7 +141,9 @@ export function compileListCriteria(criteria: ListCriteria): QueryNode | null {
       })),
     });
   }
-  const proteins = omitBlankPhrases(criteria.proteins);
+  const proteins = omitBlankPhrases(criteria.proteins).map((phrase) =>
+    phrase.slice(0, QUERY_LIMITS.maxPhraseLength),
+  );
   if (proteins.length === 1) {
     children.push({ field: "primaryProtein", phrase: proteins[0] ?? "" });
   } else if (proteins.length > 1) {
@@ -144,10 +156,16 @@ export function compileListCriteria(criteria: ListCriteria): QueryNode | null {
     });
   }
   if (criteria.maxTotalMinutes !== null) {
-    children.push({
-      field: "maxTotalMinutes",
-      minutes: criteria.maxTotalMinutes,
-    });
+    const minutes = Math.min(
+      Math.max(criteria.maxTotalMinutes, 0),
+      MAX_TOTAL_MINUTES,
+    );
+    if (Number.isInteger(criteria.maxTotalMinutes)) {
+      children.push({
+        field: "maxTotalMinutes",
+        minutes,
+      });
+    }
   }
   if (criteria.efforts.length === 1) {
     const value = criteria.efforts[0];

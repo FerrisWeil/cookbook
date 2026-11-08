@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  MAX_TOTAL_MINUTES,
   QUERY_LIMITS,
   compileListCriteria,
   emptyListCriteria,
@@ -313,6 +314,20 @@ describe("list criteria", () => {
       }),
       null,
     );
+    const long = "x".repeat(QUERY_LIMITS.maxPhraseLength + 20);
+    const bounded = compileListCriteria({
+      ...emptyListCriteria(),
+      title: long,
+      maxTotalMinutes: MAX_TOTAL_MINUTES + 5,
+    });
+    assert.deepEqual(bounded, {
+      op: "and",
+      children: [
+        { field: "title", phrase: "x".repeat(QUERY_LIMITS.maxPhraseLength) },
+        { field: "maxTotalMinutes", minutes: MAX_TOTAL_MINUTES },
+      ],
+    });
+    assert.equal(parseListQuery(bounded).ok, true);
     const query = compileListCriteria({
       ...emptyListCriteria(),
       title: " Soup ",

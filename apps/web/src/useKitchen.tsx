@@ -1,4 +1,6 @@
 import {
+  MAX_TOTAL_MINUTES,
+  QUERY_LIMITS,
   compileListCriteria,
   criteriaIsEmpty,
   emptyListCriteria,
@@ -177,6 +179,10 @@ export function useRecipeList() {
       window.scrollTo(0, startScroll);
     }
     function onPop() {
+      if (titleTimer.current) {
+        clearTimeout(titleTimer.current);
+        titleTimer.current = undefined;
+      }
       const next = listCriteriaFromSearch(window.location.search);
       setCriteria(next);
       setTitleDraft(next.title);
@@ -193,29 +199,47 @@ export function useRecipeList() {
     void session.setListQuery(compileListCriteria(criteria));
   }, [criteria, session]);
 
+  function cancelTitleTimer(): void {
+    if (titleTimer.current) {
+      clearTimeout(titleTimer.current);
+      titleTimer.current = undefined;
+    }
+  }
+
+  function boundedPhrase(value: string): string {
+    return value.trim().replace(/ +/g, " ").slice(0, QUERY_LIMITS.maxPhraseLength);
+  }
+
   function commitTitle(value: string, mode: "push" | "replace"): void {
     setCriteria((current) => {
-      const next = { ...current, title: value };
+      const next = { ...current, title: boundedPhrase(value) };
       writeListUrl(next, mode);
       return next;
     });
   }
 
   function applyCriteria(next: ListCriteria, mode: "push" | "replace" = "push"): void {
+    cancelTitleTimer();
+    let maxTotalMinutes = next.maxTotalMinutes;
+    if (
+      maxTotalMinutes === null ||
+      !Number.isInteger(maxTotalMinutes) ||
+      maxTotalMinutes < 0
+    ) {
+      maxTotalMinutes = null;
+    } else if (maxTotalMinutes > MAX_TOTAL_MINUTES) {
+      maxTotalMinutes = MAX_TOTAL_MINUTES;
+    }
     const cleaned: ListCriteria = {
       ...next,
+      title: boundedPhrase(next.title),
       ingredients: next.ingredients
-        .map((item) => item.trim().replace(/ +/g, " "))
+        .map((item) => boundedPhrase(item))
         .filter((item) => item !== ""),
       proteins: next.proteins
-        .map((item) => item.trim().replace(/ +/g, " "))
+        .map((item) => boundedPhrase(item))
         .filter((item) => item !== ""),
-      maxTotalMinutes:
-        next.maxTotalMinutes !== null &&
-        Number.isInteger(next.maxTotalMinutes) &&
-        next.maxTotalMinutes >= 0
-          ? next.maxTotalMinutes
-          : null,
+      maxTotalMinutes,
     };
     setCriteria(cleaned);
     setTitleDraft(cleaned.title);
@@ -252,11 +276,11 @@ export function useRecipeList() {
       },
       activeFilters: activeFiltersFrom(criteria),
       onRemoveFilter(id: string) {
-        applyCriteria(removeFilter(criteria, id), "push");
+        applyCriteria(removeFilter({ ...criteria, title: titleDraft }, id), "push");
       },
       criteria,
       onChangeCriteria(next: ListCriteria) {
-        applyCriteria(next, "push");
+        applyCriteria({ ...next, title: titleDraft }, "push");
       },
       proteinChoices: session.proteinChoices(),
       customProtein,
@@ -274,7 +298,11 @@ export function useRecipeList() {
           return;
         }
         applyCriteria(
-          { ...criteria, proteins: [...criteria.proteins, display] },
+          {
+            ...criteria,
+            title: titleDraft,
+            proteins: [...criteria.proteins, display],
+          },
           "push",
         );
         setCustomProtein("");
@@ -285,7 +313,11 @@ export function useRecipeList() {
           return;
         }
         applyCriteria(
-          { ...criteria, ingredients: [...criteria.ingredients, display] },
+          {
+            ...criteria,
+            title: titleDraft,
+            ingredients: [...criteria.ingredients, display],
+          },
           "push",
         );
       },

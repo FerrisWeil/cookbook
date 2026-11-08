@@ -1,4 +1,5 @@
 import {
+  QUERY_LIMITS,
   RECIPE_EFFORTS,
   RECIPE_MEAL_TYPES,
   criteriaIsEmpty,
@@ -194,6 +195,7 @@ function ListSearchControls({ search }: { search?: ListSearchProps }) {
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
+            maxLength={QUERY_LIMITS.maxPhraseLength}
             value=""
             onChange={() => {}}
           />
@@ -216,6 +218,7 @@ function ListSearchControls({ search }: { search?: ListSearchProps }) {
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
+          maxLength={QUERY_LIMITS.maxPhraseLength}
           value={search.title}
           onChange={(event) => search.onTitleChange(event.target.value)}
         />

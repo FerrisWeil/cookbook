@@ -173,10 +173,7 @@ async function attachPage(browser) {
     deviceScaleFactor: 1,
     mobile: true,
   });
-  await send("Fetch.enable", {
-    patterns: [{ urlPattern: "*/api/recipes*", requestStage: "Request" }],
-  });
-  return { send };
+  return { send, sessionId };
 }
 
 async function evaluate(send, expression, awaitPromise = false) {
@@ -267,31 +264,40 @@ async function main() {
   const port = await freePort();
   const { chrome, browser } = await connectChrome(userDataDir, port);
   const gate = { failNext: false };
-  browser.on("Fetch.requestPaused", (params, sessionId) => {
-    const url = params.request?.url ?? "";
-    const reply = (name, args) => browser.send(name, args, sessionId);
-    const handle = async () => {
-      const listGet =
-        url.includes("/api/recipes") &&
-        !url.includes("/api/recipes/events") &&
-        !url.includes("/api/recipes/");
-      if (gate.failNext && listGet) {
-        gate.failNext = false;
-        await reply("Fetch.failRequest", {
-          requestId: params.requestId,
-          errorReason: "Failed",
-        });
-        return;
-      }
-      await reply("Fetch.continueRequest", { requestId: params.requestId });
-    };
-    handle().catch((error) => {
-      process.stderr.write(`${error instanceof Error ? error.message : error}\n`);
-    });
-  });
+  let pageSessionId;
 
   try {
-    const { send } = await attachPage(browser);
+    const attached = await attachPage(browser);
+    const send = attached.send;
+    pageSessionId = attached.sessionId;
+    browser.on("Fetch.requestPaused", (params, eventSessionId) => {
+      const url = params.request?.url ?? "";
+      const sessionId = eventSessionId ?? pageSessionId;
+      const reply = (name, args) => browser.send(name, args, sessionId);
+      const handle = async () => {
+        const listGet =
+          /\/api\/recipes\/?(\?|$)/.test(url) &&
+          !url.includes("/api/recipes/events");
+        if (gate.failNext && listGet) {
+          gate.failNext = false;
+          await reply("Fetch.failRequest", {
+            requestId: params.requestId,
+            errorReason: "Failed",
+          });
+          return;
+        }
+        await reply("Fetch.continueRequest", { requestId: params.requestId });
+      };
+      handle().catch((error) => {
+        process.stderr.write(`${error instanceof Error ? error.message : error}\n`);
+      });
+    });
+    await send("Fetch.enable", {
+      patterns: [
+        { urlPattern: "*/api/recipes", requestStage: "Request" },
+        { urlPattern: "*/api/recipes?*", requestStage: "Request" },
+      ],
+    });
     await send("Page.navigate", { url: WEB });
     await waitFor(send, `document.querySelector("h1")?.textContent === "Recipes"`);
     await waitFor(
@@ -397,8 +403,18 @@ async function main() {
     await waitFor(send, `document.querySelector("h1")?.textContent === "Recipes"`);
     process.stdout.write("browser-search-back-ok\n");
   } finally {
-    chrome.kill("SIGKILL");
-    await rm(userDataDir, { recursive: true, force: true });
+    try {
+      chrome.kill("SIGKILL");
+    } catch {
+      // Chrome may already have exited.
+    }
+    await sleep(400);
+    await rm(userDataDir, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 150,
+    }).catch(() => undefined);
   }
 }
 
