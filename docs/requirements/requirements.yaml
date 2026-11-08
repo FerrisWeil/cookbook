@@ -537,6 +537,15 @@ requirements:
           - id: "173"
             status: accepted
             text: "Facts persist in Postgres."
+          - id: "190"
+            status: accepted
+            text: "A facts-only update applies only the submitted fields and leaves omitted facts unchanged."
+          - id: "191"
+            status: accepted
+            text: "Given a facts update whose mutation id was already applied with the same payload, stored facts are unchanged."
+          - id: "192"
+            status: accepted
+            text: "Given a facts update whose mutation id was already applied with a different payload, the update is refused and stored facts are unchanged."
   - id: "147"
     status: accepted
     text: "A local compose stack runs the apps, the home page reports readiness, health needs no secret, MCP requires the bearer, and Postgres applies the schema."
@@ -604,3 +613,19 @@ requirements:
           - id: "152"
             status: accepted
             text: "Given a selected theme, that component uses the theme's colors."
+  - id: "197"
+    status: accepted
+    text: "The kitchen shows committed recipe changes without a refresh, queues facts saves on the device, and reports stream health separately from pending and failed saves."
+    children:
+      - id: "193"
+        status: accepted
+        text: "A committed recipe change updates the list and the open recipe without a refresh."
+      - id: "194"
+        status: accepted
+        text: "A facts save is visible before the server confirms it and remains queued across a reload."
+      - id: "195"
+        status: accepted
+        text: "The status line names stream health and pending or failed saves and does not say all saved while a save is pending or failed."
+      - id: "196"
+        status: accepted
+        text: "Given a permanent facts save rejection, the submitted fields stay visible and the save is not retried."

@@ -16,6 +16,7 @@ import { RecipeScreen } from "../src/RecipeScreen.tsx";
 import {
   FACTS_DASH,
   MISSING_PROTEIN,
+  changedFacts,
   draftFromFacts,
   factsAccessibleSummary,
   proteinExplanation,
@@ -61,6 +62,32 @@ const filledFacts = {
 };
 
 describe("kitchen recipe facts", () => {
+  it("computes only the facts fields the user changed", () => {
+    assert.deepEqual(
+      changedFacts(filledFacts, {
+        ...filledFacts,
+        primaryProtein: "seitan",
+      }),
+      { primaryProtein: "seitan" },
+    );
+    assert.deepEqual(
+      changedFacts(filledFacts, {
+        ...filledFacts,
+        primaryProtein: null,
+      }),
+      { primaryProtein: null },
+    );
+    assert.deepEqual(
+      changedFacts(filledFacts, {
+        ...filledFacts,
+        mealTypes: ["lunch", "dinner"],
+      }),
+      { mealTypes: ["lunch", "dinner"] },
+    );
+    assert.deepEqual(changedFacts(filledFacts, filledFacts), {});
+  });
+
+
   it(
     "shows each recipe's facts on the list",
     verifies("177", "58e706f6a8e651f9", () => {
@@ -247,6 +274,7 @@ describe("kitchen recipe facts", () => {
             effort: "high",
             mealTypes: ["breakfast"],
           }),
+          baseline: filledFacts,
           status: { kind: "idle" },
           onDraftChange() {},
           onSave() {},
@@ -269,9 +297,10 @@ describe("kitchen recipe facts", () => {
       assert.equal(source.includes("updateRecipeFacts"), false, file);
       assert.equal(source.includes("fetch("), false, file);
     }
-    assert.match(readSrc("useRecipeFactsEditor.ts"), /updateRecipeFacts/);
+    assert.match(readSrc("useRecipeFactsEditor.ts"), /saveFields/);
     assert.equal(readSrc("useRecipeFactsEditor.ts").includes("fetch("), false);
-    assert.match(readSrc("api.ts"), /method: "PATCH"/);
-    assert.match(readSrc("api.ts"), /updateRecipeFacts/);
+    assert.match(readSrc("sync/adapters.ts"), /method: "PATCH"/);
+    assert.match(readSrc("sync/adapters.ts"), /mutationId/);
+    assert.doesNotMatch(readSrc("api.ts"), /updateRecipeFacts/);
   });
 });

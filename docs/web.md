@@ -12,7 +12,7 @@ Client-rendered React. The web image serves static files. `/` falls back to `ind
 
 The recipe screen requests `fields=title,ingredients,steps,facts`. Default read omits ingredients and facts. Empty ingredient or step lists omit that section. Facts always show four slots. Back pops when the recipe was opened from the list, and replaces the current entry with `/` when the recipe was opened directly.
 
-The recipe screen has a small **Edit recipe facts** form. It is not a full editor. Submit waits for the server result, then updates the displayed facts. Failed saves keep the draft. The form talks to an application hook; the hook calls the facts adapter. Components do not issue the PATCH themselves.
+The recipe screen has a small **Edit recipe facts** form. It is not a full editor. Submit sends only the fields the user changed. The list and recipe show those fields immediately from the device queue; the server ack confirms them. A transient failure retries. A permanent rejection keeps the submitted values visible and does not retry. Unsaved form drafts stay separate from that queue and from a refetch. The form talks to `useRecipe`; the hook talks to the session. Components do not issue the PATCH themselves.
 
 List and recipe screens subscribe to `GET /api/recipes/events`, then refetch the current list and any open recipe. A refetch does not return the screen to loading. Connection health and pending/failed save counts sit under the title, distinct from "All saved". Screens use `useRecipeList` / `useRecipe`; they do not call `fetch`, `EventSource`, or storage.
 

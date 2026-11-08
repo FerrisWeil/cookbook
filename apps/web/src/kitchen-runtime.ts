@@ -1,8 +1,8 @@
 import { fetchRecipeList, fetchRecipeView } from "./api";
 import {
   eventSourceStream,
+  factsPatchNetwork,
   indexedDbStorage,
-  unavailableMutationNetwork,
   webLock,
 } from "./sync/adapters";
 import { memoryLock, memoryStorage } from "./sync/ports";
@@ -16,7 +16,7 @@ export function createBrowserSession(): KitchenSession {
   return createKitchenSession({
     storage,
     lock: typeof navigator === "undefined" ? memoryLock() : webLock(),
-    network: unavailableMutationNetwork(),
+    network: factsPatchNetwork(),
     stream: eventSourceStream("/api/recipes/events"),
     recipes: {
       list: () => fetchRecipeList(),
@@ -31,7 +31,15 @@ export function createDetachedSession(): KitchenSession {
   return createKitchenSession({
     storage: memoryStorage(),
     lock: memoryLock(),
-    network: unavailableMutationNetwork(),
+    network: {
+      async send() {
+        return {
+          ok: false,
+          kind: "unavailable" as const,
+          message: "This screen is not connected.",
+        };
+      },
+    },
     stream: { connect() {} },
     recipes: {
       async list() {

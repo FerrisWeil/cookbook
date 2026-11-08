@@ -5,7 +5,6 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 
 import {
-  FACTS_SAVE_ERROR,
   fetchRecipeList,
   fetchRecipeView,
   LIST_ERROR,
@@ -15,7 +14,6 @@ import {
   RECIPE_MISSING,
   recipeReadUrl,
   RECIPE_READ_FIELDS,
-  updateRecipeFacts,
 } from "../src/api.ts";
 import { ListScreen } from "../src/ListScreen.tsx";
 import { RecipeScreen } from "../src/RecipeScreen.tsx";
@@ -116,21 +114,6 @@ describe("kitchen API mapping", () => {
       globalThis.fetch = original;
     }
 
-    globalThis.fetch = async () =>
-      new Response(JSON.stringify({ error: "invalid" }), { status: 400 });
-    try {
-      await assert.rejects(
-        updateRecipeFacts("alpha", {
-          primaryProtein: "chicken",
-          totalMinutes: 30,
-          effort: "low",
-          mealTypes: ["dinner"],
-        }),
-        new Error(FACTS_SAVE_ERROR),
-      );
-    } finally {
-      globalThis.fetch = original;
-    }
   });
 
   it("shows empty, missing, and retry states", () => {
@@ -145,8 +128,15 @@ describe("kitchen API mapping", () => {
     const missing = html(
       createElement(RecipeScreen, {
         state: { kind: "missing" },
+        editing: false,
+        draft: null,
+        formStatus: { kind: "idle" },
         onBack() {},
         onRetry() {},
+        onEditFacts() {},
+        onDraftChange() {},
+        onSaveFacts() {},
+        onCancelFacts() {},
       }),
     );
     assert.match(missing, new RegExp(RECIPE_MISSING));

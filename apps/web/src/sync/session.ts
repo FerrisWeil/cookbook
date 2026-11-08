@@ -335,6 +335,7 @@ export function createKitchenSession(ports: KitchenPorts) {
   async function drain(): Promise<void> {
     await outbox.drain();
     armRetry();
+    await refetch();
     emit();
   }
 
@@ -360,7 +361,6 @@ export function createKitchenSession(ports: KitchenPorts) {
           onOpen() {
             connection = "online";
             emit();
-            void track(refetch());
             void track(drain());
           },
           onConnecting() {
@@ -399,6 +399,9 @@ export function createKitchenSession(ports: KitchenPorts) {
       emit();
     },
     async saveFields(recipeId: string, fields: FieldPatch): Promise<void> {
+      if (Object.keys(fields).length === 0) {
+        return;
+      }
       const current = drafts.get(recipeId);
       if (current) {
         const next: { [key: string]: JsonValue } = { ...current };

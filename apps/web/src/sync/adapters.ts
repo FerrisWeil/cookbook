@@ -1,3 +1,4 @@
+import { recipeFactsUrl } from "../api";
 import type { QueueItem } from "./types";
 import { memoryLock, type LockPort, type NetworkPort, type SendResult, type StoragePort } from "./ports";
 import type { StreamHandlers, StreamPort } from "./session";
@@ -51,17 +52,32 @@ export function classifyHttpSend(status: number, message: string): SendResult {
   return { ok: false, kind: "transient", message };
 }
 
+const FACT_FIELD_KEYS = [
+  "primaryProtein",
+  "totalMinutes",
+  "effort",
+  "mealTypes",
+] as const;
+
 export function factsPatchNetwork(): NetworkPort {
   return {
     async send(mutation) {
-      const facts = mutation.fields["facts"] ?? null;
+      const fields: { [key: string]: unknown } = {};
+      for (const key of FACT_FIELD_KEYS) {
+        if (key in mutation.fields) {
+          fields[key] = mutation.fields[key];
+        }
+      }
+      const body = {
+        mutationId: mutation.id,
+        fields,
+      };
       try {
-        const response = await fetch(
-          `/api/recipes/${encodeURIComponent(mutation.recipeId)}/facts`,
+        const response = await fetch(recipeFactsUrl(mutation.recipeId),
           {
             method: "PATCH",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify(facts),
+            body: JSON.stringify(body),
           },
         );
         const text = await response.text();

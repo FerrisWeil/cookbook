@@ -131,3 +131,33 @@ export function factsFromDraft(draft: FactsDraft): RecipeFacts {
     mealTypes: RECIPE_MEAL_TYPES.filter((item) => draft.mealTypes.includes(item)),
   };
 }
+
+function sameMeals(
+  left: readonly RecipeMealType[],
+  right: readonly RecipeMealType[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((item) => right.includes(item))
+  );
+}
+
+export function changedFacts(
+  baseline: RecipeFacts,
+  next: RecipeFacts,
+): Partial<RecipeFacts> {
+  const fields: Partial<RecipeFacts> = {};
+  if (baseline.primaryProtein !== next.primaryProtein) {
+    fields.primaryProtein = next.primaryProtein;
+  }
+  if (baseline.totalMinutes !== next.totalMinutes) {
+    fields.totalMinutes = next.totalMinutes;
+  }
+  if (baseline.effort !== next.effort) {
+    fields.effort = next.effort;
+  }
+  if (!sameMeals(baseline.mealTypes, next.mealTypes)) {
+    fields.mealTypes = [...next.mealTypes];
+  }
+  return fields;
+}

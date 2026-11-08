@@ -103,14 +103,6 @@ export function parseRecipeView(body: unknown): RecipeView {
   };
 }
 
-export function parseFactsResponse(body: unknown): RecipeFacts {
-  const record = asRecord(body);
-  if (!record) {
-    throw new Error(FACTS_SAVE_ERROR);
-  }
-  return parseRecipeFacts(record["facts"]);
-}
-
 function ingredientLines(value: unknown): string[] {
   if (value === undefined) {
     return [];
@@ -197,24 +189,3 @@ export async function fetchRecipeView(
   }
 }
 
-export async function updateRecipeFacts(
-  id: string,
-  facts: RecipeFacts | null,
-): Promise<RecipeFacts> {
-  try {
-    const response = await fetch(recipeFactsUrl(id), {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(facts),
-    });
-    if (!response.ok) {
-      throw new Error(FACTS_SAVE_ERROR);
-    }
-    return parseFactsResponse(await response.json());
-  } catch (error) {
-    if (error instanceof Error && error.message === FACTS_SAVE_ERROR) {
-      throw error;
-    }
-    throw new Error(FACTS_SAVE_ERROR);
-  }
-}

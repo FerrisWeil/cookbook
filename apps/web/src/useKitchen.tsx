@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { createDetachedSession } from "./kitchen-runtime";
+import { useRecipeFactsEditor } from "./useRecipeFactsEditor";
 import type { KitchenSession } from "./sync/session";
 
 const KitchenContext = createContext<KitchenSession | null>(null);
@@ -64,12 +65,20 @@ export function useRecipe(id: string) {
   useEffect(() => {
     void session.openRecipe(id);
   }, [session, id]);
+  const state = session.recipe(id);
+  const facts = state.kind === "ready" ? state.recipe.facts : null;
+  const editor = useRecipeFactsEditor({
+    recipeId: id,
+    facts,
+    saveFields: (recipeId, fields) => session.saveFields(recipeId, fields),
+  });
   return {
-    state: session.recipe(id),
+    state,
     retry: () => {
       void session.openRecipe(id);
     },
     status: session.syncStatus(),
+    editor,
   };
 }
 

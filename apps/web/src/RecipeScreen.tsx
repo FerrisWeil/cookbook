@@ -17,6 +17,7 @@ export function RecipeScreen({
   state,
   editing,
   draft,
+  baseline,
   formStatus,
   onBack,
   onRetry,
@@ -29,13 +30,14 @@ export function RecipeScreen({
   state: RecipeState;
   editing: boolean;
   draft: FactsDraft | null;
+  baseline?: RecipeFacts | null;
   formStatus: FactsFormStatus;
   onBack: () => void;
   onRetry: () => void;
   status?: string;
   onEditFacts: () => void;
   onDraftChange: (draft: FactsDraft) => void;
-  onSaveFacts: (next: RecipeFacts) => void;
+  onSaveFacts: (fields: Partial<RecipeFacts>) => void;
   onCancelFacts: () => void;
 }) {
   return (
@@ -63,6 +65,7 @@ export function RecipeScreen({
           recipe={state.recipe}
           editing={editing}
           draft={draft}
+          baseline={baseline ?? state.recipe.facts}
           formStatus={formStatus}
           onEditFacts={onEditFacts}
           onDraftChange={onDraftChange}
@@ -88,6 +91,7 @@ export function RecipeArticle({
   recipe,
   editing,
   draft,
+  baseline,
   formStatus,
   onEditFacts,
   onDraftChange,
@@ -97,10 +101,11 @@ export function RecipeArticle({
   recipe: RecipeView;
   editing: boolean;
   draft: FactsDraft | null;
+  baseline: RecipeFacts;
   formStatus: FactsFormStatus;
   onEditFacts: () => void;
   onDraftChange: (draft: FactsDraft) => void;
-  onSaveFacts: (next: RecipeFacts) => void;
+  onSaveFacts: (fields: Partial<RecipeFacts>) => void;
   onCancelFacts: () => void;
 }) {
   return (
@@ -111,6 +116,7 @@ export function RecipeArticle({
         {editing && draft ? (
           <RecipeFactsForm
             draft={draft}
+            baseline={baseline}
             status={formStatus}
             onDraftChange={onDraftChange}
             onSave={onSaveFacts}

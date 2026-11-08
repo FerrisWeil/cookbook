@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { emptyRecipeFacts } from "@cookbook/shared";
+import { verifies } from "@cookbook/test";
 
-import { memoryLock, memoryStorage, type NetworkPort } from "../src/sync/ports.ts";
+import { memoryLock, memoryStorage, type NetworkPort, type StoragePort } from "../src/sync/ports.ts";
 import {
   createKitchenSession,
   type KitchenPorts,
@@ -26,7 +27,7 @@ function deferred<T>(): {
   return { promise, resolve };
 }
 
-function makeHarness(network?: NetworkPort) {
+function makeHarness(network?: NetworkPort, storage?: StoragePort) {
   const recipes = new Map<string, RecipeRow>([
     [
       "r1",
@@ -45,6 +46,7 @@ function makeHarness(network?: NetworkPort) {
       handlers = next;
     },
   };
+  let ids = 0;
   const reader: RecipeReader = {
     async list() {
       return list.map((item) => ({ ...item }));
@@ -63,7 +65,7 @@ function makeHarness(network?: NetworkPort) {
     },
   };
   const ports: KitchenPorts = {
-    storage: memoryStorage(),
+    storage: storage ?? memoryStorage(),
     lock: memoryLock(),
     network: network ?? {
       async send() {
@@ -73,7 +75,10 @@ function makeHarness(network?: NetworkPort) {
     stream,
     recipes: reader,
     now: () => 0,
-    id: () => "mut-1",
+    id: () => {
+      ids += 1;
+      return `mut-${ids}`;
+    },
   };
   return {
     ports,
@@ -139,49 +144,88 @@ describe("kitchen session", () => {
     }
   });
 
-  it("shows pending titles on the list until they confirm", async () => {
-    const gate = deferred<void>();
-    const harness = makeHarness({
-      async send() {
-        await gate.promise;
-        return { ok: true, kind: "applied" };
-      },
-    });
-    const session = createKitchenSession(harness.ports);
-    await session.start();
-    const saving = session.saveFields("r1", { title: "Pending title" });
-    await saving;
-    const list = session.list();
-    assert.equal(list.kind, "ready");
-    if (list.kind === "ready") {
-      assert.equal(list.recipes[0]?.title, "Pending title");
-    }
-    gate.resolve();
-    await saving;
-  });
+  it(
+    "shows a facts save before confirm and replays it from storage after reload",
+    verifies("194", "6a1db171a1875073", async () => {
+      const storage = memoryStorage();
+      const gate = deferred<void>();
+      const network: NetworkPort = {
+        async send() {
+          await gate.promise;
+          return { ok: true, kind: "applied" };
+        },
+      };
+      const harness = makeHarness(network, storage);
+      const session = createKitchenSession(harness.ports);
+      await session.start();
+      await session.openRecipe("r1");
+      await session.saveFields("r1", { primaryProtein: "seitan" });
+      const view = session.recipe("r1");
+      const list = session.list();
+      assert.equal(view.kind, "ready");
+      if (view.kind === "ready") {
+        assert.equal(view.recipe.facts.primaryProtein, "seitan");
+      }
+      assert.equal(list.kind, "ready");
+      if (list.kind === "ready") {
+        assert.equal(list.recipes[0]?.facts.primaryProtein, "seitan");
+      }
+      assert.equal(session.syncStatus().pending > 0, true);
+      const snapshot = await storage.load();
+      assert.equal(snapshot[0]?.mutation.fields["primaryProtein"], "seitan");
+      gate.resolve();
+      await session.idle();
+      session.stop();
+      const reopened = createKitchenSession(
+        makeHarness(
+          {
+            async send() {
+              return { ok: false, kind: "unavailable", message: "offline" };
+            },
+          },
+          memoryStorage(snapshot),
+        ).ports,
+      );
+      await reopened.start();
+      await reopened.openRecipe("r1");
+      const restored = reopened.recipe("r1");
+      assert.equal(restored.kind, "ready");
+      if (restored.kind === "ready") {
+        assert.equal(restored.recipe.facts.primaryProtein, "seitan");
+      }
+      assert.equal(reopened.syncStatus().pending > 0, true);
+      reopened.stop();
+    }),
+  );
 
-  it("does not loop a permanent reject and keeps the failed fields visible", async () => {
+  it(
+    "does not loop a permanent reject and keeps the failed fields visible",
+    verifies("196", "1dd370ab8f5727c1", async () => {
     let calls = 0;
     const harness = makeHarness({
       async send() {
         calls += 1;
-        return { ok: false, kind: "permanent", message: "A title is required." };
+        return { ok: false, kind: "permanent", message: "Could not save recipe facts." };
       },
     });
     const session = createKitchenSession(harness.ports);
     await session.start();
-    await session.saveFields("r1", { title: "" });
+    await session.openRecipe("r1");
+    await session.saveFields("r1", { primaryProtein: "seitan" });
     await session.idle();
-    const list = session.list();
+    const view = session.recipe("r1");
     assert.equal(calls, 1);
     assert.equal(session.syncStatus().failed, 1);
-    assert.equal(list.kind, "ready");
-    if (list.kind === "ready") {
-      assert.equal(list.recipes[0]?.title, "");
+    assert.equal(view.kind, "ready");
+    if (view.kind === "ready") {
+      assert.equal(view.recipe.facts.primaryProtein, "seitan");
     }
-  });
+    }),
+  );
 
-  it("refetches on stream events and on reconnect without dropping drafts", async () => {
+  it(
+    "refetches on stream events and on reconnect without dropping drafts",
+    verifies("193", "ffe022007107c585", async () => {
     const harness = makeHarness();
     const session = createKitchenSession(harness.ports);
     await session.start();
@@ -211,9 +255,12 @@ describe("kitchen session", () => {
       assert.equal(list.recipes[0]?.title, "After reconnect");
     }
     assert.equal(session.syncStatus().connection, "online");
-  });
+    }),
+  );
 
-  it("reports connection health separately from save counts", async () => {
+  it(
+    "reports connection health separately from save counts",
+    verifies("195", "352a6b35957bbf8e", async () => {
     const harness = makeHarness({
       async send() {
         return { ok: false, kind: "unavailable", message: "no route" };
@@ -236,6 +283,71 @@ describe("kitchen session", () => {
     assert.equal(offline.connection, "offline");
     assert.match(offline.label, /Offline/);
     assert.match(offline.label, /1 pending/);
+    session.stop();
+    }),
+  );
+
+  it("keeps an unrelated chef field and applies later writes to the same field", async () => {
+    const harness = makeHarness({
+      async send() {
+        return { ok: false, kind: "unavailable", message: "offline" };
+      },
+    });
+    const session = createKitchenSession(harness.ports);
+    await session.start();
+    await session.openRecipe("r1");
+    await session.saveFields("r1", { primaryProtein: "chicken" });
+    await session.saveFields("r1", { primaryProtein: "seitan" });
+    await session.idle();
+    harness.setRecipe("r1", {
+      title: "Chef title",
+      ingredients: ["salt"],
+      steps: ["mix"],
+      facts: emptyRecipeFacts(),
+    });
+    await session.refetch();
+    const view = session.recipe("r1");
+    assert.equal(view.kind, "ready");
+    if (view.kind === "ready") {
+      assert.equal(view.recipe.title, "Chef title");
+      assert.equal(view.recipe.facts.primaryProtein, "seitan");
+    }
+    session.stop();
+  });
+
+  it("refetches after a confirmed send so a reconnect snapshot is not stale", async () => {
+    const harness = makeHarness({
+      async send() {
+        harness.setRecipe("r1", {
+          title: "Alpha",
+          ingredients: ["salt"],
+          steps: ["mix"],
+          facts: {
+            ...emptyRecipeFacts(),
+            primaryProtein: "seitan",
+          },
+        });
+        harness.setList([
+          {
+            id: "r1",
+            title: "Alpha",
+            facts: { ...emptyRecipeFacts(), primaryProtein: "seitan" },
+          },
+        ]);
+        return { ok: true, kind: "applied" };
+      },
+    });
+    const session = createKitchenSession(harness.ports);
+    await session.start();
+    await session.openRecipe("r1");
+    await session.saveFields("r1", { primaryProtein: "seitan" });
+    await session.idle();
+    const view = session.recipe("r1");
+    assert.equal(view.kind, "ready");
+    if (view.kind === "ready") {
+      assert.equal(view.recipe.facts.primaryProtein, "seitan");
+    }
+    assert.equal(session.syncStatus().pending, 0);
     session.stop();
   });
 

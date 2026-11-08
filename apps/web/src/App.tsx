@@ -6,7 +6,6 @@ import { leaveRecipe, pushAppPath } from "./navigate";
 import { parseRoute } from "./route";
 import { RecipeScreen } from "./RecipeScreen";
 import { KitchenProvider, useRecipe, useRecipeList } from "./useKitchen";
-import { useRecipeFactsEditor } from "./useRecipeFactsEditor";
 import type { KitchenSession } from "./sync/session";
 
 export function App({
@@ -86,28 +85,21 @@ function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
 }
 
 function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
-  const { state, retry, status } = useRecipe(id);
-  const facts = state.kind === "ready" ? state.recipe.facts : null;
-  const editor = useRecipeFactsEditor({
-    recipeId: id,
-    facts,
-    onCommitted() {
-      void retry();
-    },
-  });
+  const { state, retry, status, editor } = useRecipe(id);
   return (
     <RecipeScreen
       state={state}
       editing={editor.editing}
       draft={editor.draft}
+      baseline={editor.baseline}
       formStatus={editor.status}
       onBack={onBack}
       onRetry={retry}
       status={status.label}
       onEditFacts={editor.open}
       onDraftChange={editor.changeDraft}
-      onSaveFacts={(next) => {
-        void editor.save(next);
+      onSaveFacts={(fields) => {
+        void editor.save(fields);
       }}
       onCancelFacts={editor.cancel}
     />

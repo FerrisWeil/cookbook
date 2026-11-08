@@ -266,7 +266,7 @@ code=$(curl -sS -o /tmp/cookbook-web-facts.json -w '%{http_code}' \
   -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
   -H 'content-type: application/json' \
   -H 'Origin: http://127.0.0.1:8080' \
-  -d '{"primaryProtein":"chicken","totalMinutes":30,"effort":"low","mealTypes":["dinner"]}')
+  -d '{"mutationId":"smoke-facts-1","fields":{"primaryProtein":"chicken","totalMinutes":30,"effort":"low","mealTypes":["dinner"]}}')
 if [[ "$code" != "200" ]]; then
   echo "web proxy did not accept a same-origin facts PATCH: ${code}" >&2
   cat /tmp/cookbook-web-facts.json >&2
@@ -278,7 +278,7 @@ code=$(curl -sS -o /tmp/cookbook-web-facts-cross.json -w '%{http_code}' \
   -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
   -H 'content-type: application/json' \
   -H 'Origin: https://evil.example' \
-  -d '{"primaryProtein":"beef","totalMinutes":10,"effort":"high","mealTypes":["lunch"]}')
+  -d '{"mutationId":"smoke-facts-cross","fields":{"primaryProtein":"beef","totalMinutes":10,"effort":"high","mealTypes":["lunch"]}}')
 if [[ "$code" != "403" ]]; then
   echo "web proxy allowed a cross-origin facts write: ${code}" >&2
   cat /tmp/cookbook-web-facts-cross.json >&2
@@ -297,6 +297,49 @@ if grep -Fq "$web_token" /tmp/cookbook-web-facts.json /tmp/cookbook-web-facts-re
   exit 1
 fi
 
+code=$(curl -sS -o /tmp/cookbook-web-facts-omit.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-protein","fields":{"primaryProtein":"seitan"}}')
+if [[ "$code" != "200" ]]; then
+  echo "web proxy did not accept a partial facts PATCH: ${code}" >&2
+  cat /tmp/cookbook-web-facts-omit.json >&2
+  exit 1
+fi
+grep -q '"primaryProtein":"seitan"' /tmp/cookbook-web-facts-omit.json
+grep -q '"totalMinutes":30' /tmp/cookbook-web-facts-omit.json
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-replay.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-protein","fields":{"primaryProtein":"seitan"}}')
+if [[ "$code" != "200" ]]; then
+  echo "duplicate facts mutation was not acknowledged: ${code}" >&2
+  cat /tmp/cookbook-web-facts-replay.json >&2
+  exit 1
+fi
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-mismatch.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"mutationId":"smoke-facts-protein","fields":{"primaryProtein":"beef"}}')
+if [[ "$code" != "409" ]]; then
+  echo "mismatched facts mutation was not rejected: ${code}" >&2
+  cat /tmp/cookbook-web-facts-mismatch.json >&2
+  exit 1
+fi
+grep -q '"primaryProtein":"seitan"' /tmp/cookbook-web-facts-read.json || true
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,facts" \
+  | tee /tmp/cookbook-web-facts-after-mismatch.json
+grep -q '"primaryProtein":"seitan"' /tmp/cookbook-web-facts-after-mismatch.json
+if grep -Fq '"primaryProtein":"beef"' /tmp/cookbook-web-facts-after-mismatch.json; then
+  echo "mismatched facts mutation overwrote stored facts" >&2
+  exit 1
+fi
+
 curl -fsS http://127.0.0.1:8080/api/health/ready | tee /tmp/cookbook-web-api.json
 grep -q '"database":"up"' /tmp/cookbook-web-api.json
 grep -q '"status":"ok"' /tmp/cookbook-web-api.json
@@ -305,9 +348,10 @@ code=$(curl -sS -o /tmp/cookbook-api-events-unauth.txt -w '%{http_code}' \
   http://127.0.0.1:3000/recipes/events)
 test "$code" = "401"
 
-node --input-type=module <<'EOF' | tee /tmp/cookbook-sse.log
+SMOKE_RECIPE_ID="$recipe_id" node --input-type=module <<'EOF' | tee /tmp/cookbook-sse.log
 const apiToken = process.env.API_AUTH_TOKEN_MCP ?? "local-dev-api-mcp-token-not-for-nas";
 const webToken = process.env.API_AUTH_TOKEN_WEB ?? "local-dev-api-web-token-not-for-nas";
+const recipeId = process.env.SMOKE_RECIPE_ID ?? "";
 
 async function readUntil(url, headers, match, timeoutMs) {
   const controller = new AbortController();
@@ -347,6 +391,23 @@ const webStream = readUntil(
   8000,
 );
 await new Promise((resolve) => setTimeout(resolve, 300));
+const patched = await fetch(
+  "http://127.0.0.1:3000/recipes/" + encodeURIComponent(recipeId) + "/facts",
+  {
+    method: "PATCH",
+    headers: {
+      authorization: `Bearer ${apiToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      mutationId: "smoke-facts-sse",
+      fields: { effort: "medium" },
+    }),
+  },
+);
+if (!patched.ok) {
+  throw new Error(`facts patch failed ${patched.status}`);
+}
 const saved = await fetch("http://127.0.0.1:3000/recipes", {
   method: "PUT",
   headers: {

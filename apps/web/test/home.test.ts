@@ -67,6 +67,7 @@ describe("kitchen session boundaries", () => {
       readWeb("src/ListScreen.tsx"),
       readWeb("src/RecipeScreen.tsx"),
       readWeb("src/useKitchen.tsx"),
+      readWeb("src/useRecipeFactsEditor.ts"),
     ];
     for (const source of files) {
       assert.doesNotMatch(source, /\bfetch\s*\(/);

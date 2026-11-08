@@ -15,7 +15,7 @@ Optional facts are four explicit slots the caller supplies. The app does not inf
 | `effort` | `low`, `medium`, `high`, or empty | Exact lowercase names. |
 | `mealTypes` | list | Subset of `breakfast`, `lunch`, `dinner`, `snack`, `dessert`. Stored in that order. Empty is unset. Duplicates and unknown names are refused. |
 
-JSON object `facts` holds those four keys. Omit `facts` on save to leave stored values. Send `facts: null` or a facts object with empty slots to clear. A facts-only update (`updateFacts` / `PATCH …/facts`) writes only those columns.
+JSON object `facts` holds those four keys. Omit `facts` on save to leave stored values. Send `facts: null` or a facts object with empty slots to clear all four. A facts-only update (`updateFacts` / `PATCH …/facts`) takes `{ mutationId, fields }`. `fields` is a partial object: only listed keys change, omitted keys stay, a listed key of `null` (or empty `mealTypes`) clears that slot, and `fields: null` clears all four. `mealTypes` is one field. The write and the mutation ack commit together. Replaying the same id and payload is a no-op. A different payload for that id is refused.
 
 Delete sets `hidden_at` and `hidden_by`. The row stays. Save does not revive a hidden id.
 

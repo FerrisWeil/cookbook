@@ -8,6 +8,7 @@ import { Button } from "@cookbook/ui";
 import { type FormEvent } from "react";
 
 import {
+  changedFacts,
   factsFromDraft,
   formatMealType,
   type FactsDraft,
@@ -18,15 +19,17 @@ export type { FactsFormStatus };
 
 export function RecipeFactsForm({
   draft,
+  baseline,
   status,
   onDraftChange,
   onSave,
   onCancel,
 }: {
   draft: FactsDraft;
+  baseline: RecipeFacts;
   status: FactsFormStatus;
   onDraftChange: (draft: FactsDraft) => void;
-  onSave: (next: RecipeFacts) => void;
+  onSave: (fields: Partial<RecipeFacts>) => void;
   onCancel: () => void;
 }) {
   const submitting = status.kind === "submitting";
@@ -36,7 +39,7 @@ export function RecipeFactsForm({
     if (submitting) {
       return;
     }
-    onSave(factsFromDraft(draft));
+    onSave(changedFacts(baseline, factsFromDraft(draft)));
   }
 
   function toggleMeal(meal: RecipeMealType) {
