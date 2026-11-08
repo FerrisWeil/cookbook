@@ -5,6 +5,8 @@ const PLACEHOLDER_TOKENS = new Set([
 ]);
 const DEV_TOKEN = "local-dev-api-web-token-not-for-nas";
 const RECIPE_FACTS_PATH = /^\/(?:api\/)?recipes\/[^/]+\/facts$/;
+const SESSION_WRITE_PATH =
+  /^\/api\/sessions\/[^/]+\/(?:finish|display|steps\/(?:0|[1-9]\d*)\/(?:complete|undo))$/;
 
 export type WebTokenEnv = {
   API_AUTH_TOKEN_WEB?: string;
@@ -48,6 +50,10 @@ export function incomingRecipeApiPath(urlPath: string): boolean {
 export function upstreamRecipePath(urlPath: string): boolean {
   const path = pathOnly(urlPath);
   return path === "/recipes" || path.startsWith("/recipes/");
+}
+
+export function isSessionApiPath(urlPath: string): boolean {
+  return pathOnly(urlPath).startsWith("/api/sessions");
 }
 
 export function isRecipeFactsPath(urlPath: string): boolean {
@@ -112,6 +118,68 @@ export function isSameOriginFactsRequest(headers: {
     return false;
   }
   return originMatchesHost(headers.origin, headers.host);
+}
+
+export function sessionProxyDecision(
+  method: string,
+  urlPath: string,
+  headers: {
+    origin?: string | string[];
+    host?: string | string[];
+    "content-type"?: string | string[];
+    "sec-fetch-site"?: string | string[];
+  },
+):
+  | { allow: true; attachToken: boolean }
+  | { allow: false; status: number; error: string; allowHeader?: string } {
+  const path = pathOnly(urlPath);
+  if (path === "/api/sessions/active") {
+    if (method.toUpperCase() !== "GET") {
+      return {
+        allow: false,
+        status: 405,
+        error: "method_not_allowed",
+        allowHeader: "GET",
+      };
+    }
+    return { allow: true, attachToken: true };
+  }
+  if (path === "/api/sessions" || SESSION_WRITE_PATH.test(path)) {
+    if (method.toUpperCase() !== "POST") {
+      return {
+        allow: false,
+        status: 405,
+        error: "method_not_allowed",
+        allowHeader: "POST",
+      };
+    }
+    if (!isJsonContentType(headers["content-type"])) {
+      return { allow: false, status: 415, error: "unsupported_media_type" };
+    }
+    if (!isSameOriginFactsRequest(headers)) {
+      return { allow: false, status: 403, error: "forbidden" };
+    }
+    return { allow: true, attachToken: true };
+  }
+  return { allow: false, status: 404, error: "not_found" };
+}
+
+export function browserProxyDecision(
+  method: string,
+  urlPath: string,
+  headers: {
+    origin?: string | string[];
+    host?: string | string[];
+    "content-type"?: string | string[];
+    "sec-fetch-site"?: string | string[];
+  },
+):
+  | { allow: true; attachToken: boolean }
+  | { allow: false; status: number; error: string; allowHeader?: string } {
+  if (isSessionApiPath(urlPath)) {
+    return sessionProxyDecision(method, urlPath, headers);
+  }
+  return recipeProxyDecision(method, urlPath, headers);
 }
 
 export function recipeProxyDecision(

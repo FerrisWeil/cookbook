@@ -44,7 +44,7 @@ Reserve the meta line even when there are no tags, so heights stay stable. Skele
 
 ### Recipe
 
-Reading and cooking help. One `h1`, the example title. Ingredients and steps sit side by side from the wide breakpoint up, and stack on the phone. Each ingredient is one written line. Steps stay in saved order. Each step can be checked off. That check-off stays on this browser for that recipe. It is not written through the API.
+Reading and cooking help. One `h1`, the example title. Ingredients and steps sit side by side from the wide breakpoint up, and stack on the phone. Each ingredient is one written line. Steps stay in saved order. A cooking session shows the snapshot from when it started. The displayed step and completed steps are separate controls. That session is shared. A device-local check-off, when no session is active, stays on this browser and is not written through the API.
 
 While this screen is open, the app asks the OS to keep the display awake. If the browser cannot, the recipe still shows.
 

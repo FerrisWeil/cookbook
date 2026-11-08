@@ -1,23 +1,29 @@
 import { Message } from "@cookbook/ui";
 import { useEffect, useState } from "react";
 
+import type { CookingClient } from "./cooking/client";
 import { ListScreen } from "./ListScreen";
 import { leaveRecipe, pushAppPath } from "./navigate";
 import { parseRoute } from "./route";
 import { RecipeScreen } from "./RecipeScreen";
+import { CookingProvider, cookingPanel, useCookingSession } from "./useCookingSession";
 import { KitchenProvider, useRecipe, useRecipeList } from "./useKitchen";
 import type { KitchenSession } from "./sync/session";
 
 export function App({
   initialPath,
   session,
+  cooking,
 }: {
   initialPath?: string;
   session?: KitchenSession;
+  cooking?: CookingClient;
 } = {}) {
   return (
     <KitchenProvider session={session}>
-      <AppRoutes initialPath={initialPath} />
+      <CookingProvider client={cooking}>
+        <AppRoutes initialPath={initialPath} />
+      </CookingProvider>
     </KitchenProvider>
   );
 }
@@ -53,7 +59,7 @@ function AppRoutes({ initialPath }: { initialPath?: string }) {
 
   const route = parseRoute(path);
   if (route.name === "recipe") {
-    return <RecipeRoute id={route.id} onBack={backToList} />;
+    return <RecipeRoute id={route.id} onBack={backToList} onOpen={go} />;
   }
   if (route.name === "list") {
     return <ListRoute onOpen={go} />;
@@ -74,18 +80,36 @@ function currentPath(): string {
 
 function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
   const { state, retry, status } = useRecipeList();
+  const cooking = useCookingSession();
   return (
     <ListScreen
       state={state}
       onOpen={onOpen}
       onRetry={retry}
       status={status.label}
+      resume={
+        cooking.resume
+          ? {
+              title: cooking.resume.title,
+              onOpen: () => onOpen(cooking.resume ? cooking.resume.href : "/"),
+            }
+          : undefined
+      }
     />
   );
 }
 
-function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
+function RecipeRoute({
+  id,
+  onBack,
+  onOpen,
+}: {
+  id: string;
+  onBack: () => void;
+  onOpen: (href: string) => void;
+}) {
   const { state, retry, status, editor } = useRecipe(id);
+  const cooking = useCookingSession();
   return (
     <RecipeScreen
       state={state}
@@ -102,6 +126,7 @@ function RecipeRoute({ id, onBack }: { id: string; onBack: () => void }) {
         void editor.save(fields);
       }}
       onCancelFacts={editor.cancel}
+      cooking={cookingPanel(id, cooking, onOpen)}
     />
   );
 }

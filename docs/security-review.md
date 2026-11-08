@@ -31,15 +31,16 @@ MCP today:
 
 Recipe HTTP:
 
-- Recipe routes (`GET /recipes`, `GET /recipes/:id`, `PUT /recipes`, `PATCH /recipes/:id/facts`) require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not.
+- Recipe routes (`GET /recipes`, `GET /recipes/:id`, `PUT /recipes`, `PATCH /recipes/:id/facts`) and cooking-session routes (`POST /sessions`, `GET /sessions/active`, `POST /sessions/:id/finish`, `POST /sessions/:id/display`, `POST /sessions/:id/steps/:step/complete`, `POST /sessions/:id/steps/:step/undo`) require a bearer. Liveness (`GET /health`, `GET /health/ready`) does not. MCP session tools require `MCP_AUTH_TOKEN` and then present the MCP caller token to those routes.
 - Two caller tokens, from the environment: `API_AUTH_TOKEN_MCP` (the MCP process presents it) and `API_AUTH_TOKEN_WEB` (the web app's server presents it). The API process holds both. MCP holds only the MCP caller token. The web server holds only the web token and injects it on `/api/recipes`. The browser never receives a token.
 - Each token is required at API boot. Fewer than 16 characters refuses to boot. Placeholders (`replace-me`, `replace-with-a-long-random-token`) are refused. The two caller tokens must differ from each other and from `MCP_AUTH_TOKEN`. Local compose may use `local-dev-api-mcp-token-not-for-nas` and `local-dev-api-web-token-not-for-nas` with `API_ALLOW_DEV_TOKEN=1`, the same exception [0007](decisions/0007-public-repo-secrets.md) allows for MCP. The NAS file does not set that flag.
 - Compare with SHA-256 and `timingSafeEqual`. Missing or wrong token: `401` and `WWW-Authenticate: Bearer`. Rejected recipe bodies stay status-only.
 
 Kitchen web proxy:
 
-- The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests, `GET /api/recipes/events`, and a same-origin JSON `PATCH` of `/api/recipes/:id/facts`. The browser never receives a token.
-- Forwarded: list, read, `GET /api/recipes/events`, and a same-origin JSON `PATCH` to `/api/recipes/:id/facts`. Not forwarded: a full recipe save from the browser (`PUT` is 405), a cross-origin facts PATCH, or a non-PATCH facts call. Favorite-and-rating write is not in the tree. Liveness stays unauthenticated. The event stream is same-origin GET; the browser does not attach a bearer. The queue stores mutation ids and intended fields only. The browser cannot choose the upstream URL, path, or `Authorization` header.
+- The web process holds `API_AUTH_TOKEN_WEB` only. Nginx and the Vite dev server attach it to recipe `GET`/`HEAD` requests, `GET /api/recipes/events`, a same-origin JSON `PATCH` of `/api/recipes/:id/facts`, `GET /api/sessions/active`, and same-origin JSON cooking-session `POST`s. The browser never receives a token.
+- Forwarded: list, read, `GET /api/recipes/events`, a same-origin JSON `PATCH` to `/api/recipes/:id/facts`, and same-origin cooking-session reads and writes. Not forwarded: a full recipe save from the browser (`PUT` is 405), a cross-origin facts PATCH or session write, or a disallowed method on those paths. Favorite-and-rating write is not in the tree. Liveness stays unauthenticated. The event stream is same-origin GET; the browser does not attach a bearer. The queues store mutation ids and intended fields only. The browser cannot choose the upstream URL, path, or `Authorization` header.
+- A cooking session stores a snapshot of the recipe title, ingredient lines, and steps. The open browser also keeps that confirmed snapshot in IndexedDB, separate from the pending step queue. Logs and error strings do not include that snapshot. Session routes use the same caller tokens as recipe routes. There is no separate session secret.
 - A response to the browser stays free of the token. Logs and client bundles stay free of the token.
 - The proxy target is the configured API origin. The browser cannot choose an upstream URL.
 

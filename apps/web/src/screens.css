@@ -1,3 +1,27 @@
+.cooking-session,
+.cooking-actions,
+.cooking-resume {
+  grid-column: 1 / -1;
+}
+
+.cooking-actions,
+.cooking-resume {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cooking-steps {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.step-current {
+  font-weight: 700;
+  outline: 2px solid var(--border);
+  outline-offset: 4px;
+}
+
 .sync-status {
   margin: 0.5rem 0 0;
   color: var(--text-muted);

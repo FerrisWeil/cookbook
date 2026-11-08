@@ -61,7 +61,7 @@ Do not add new ADR files. Existing files stay `docs/decisions/NNNN-slug.md`. Ret
 | Root `package.json` scripts | No per-feature script. New checks join `pnpm check`. |
 | `packages/shared` | Cross-app types only. Feature types live in the feature folder. |
 | App entry files | One glob loader each, added once. Features do not edit these. The loaders are not in the tree yet. |
-| `docker/nginx.conf` | One `/api/` proxy and the SPA fallback. New screens are client routes. |
+| `docker/nginx.conf` | Recipe and cooking-session proxy locations, plus the SPA fallback. New screens are client routes. |
 | `db/seed.sql` | Platform seed only. Feature rows go in `features/<slug>/seed.sql`, applied in slug order. |
 | NAS Compose | Not edited per feature. A new container is recorded in the Unraid doc, not a new ADR. The production file is not in the tree. The skeleton is `deploy/nas/docker-compose.yml`. |
 | `.env.example` | Append a key. Leave existing lines in place. |

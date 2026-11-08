@@ -16,6 +16,7 @@ import {
   loadWebToken,
   recipeAuthorization,
   recipeProxyDecision,
+  sessionProxyDecision,
   shouldAttachWebToken,
   upstreamRecipePath,
 } from "../dev-proxy.ts";
@@ -139,6 +140,47 @@ describe("read-only recipe proxy", () => {
       assert.equal(text.includes("Bearer "), false, file);
     }
   });
+});
+
+describe("cooking session proxy", () => {
+  it(
+    "forwards a same-origin session call and refuses a cross-origin write",
+    verifies("209", "d8381f0354b89484", () => {
+      const headers = {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin" as const,
+      };
+      assert.deepEqual(sessionProxyDecision("POST", "/api/sessions", headers), {
+        allow: true,
+        attachToken: true,
+      });
+      assert.deepEqual(sessionProxyDecision("GET", "/api/sessions/active", headers), {
+        allow: true,
+        attachToken: true,
+      });
+      assert.deepEqual(
+        sessionProxyDecision("POST", "/api/sessions/soup/steps/0/complete", headers),
+        { allow: true, attachToken: true },
+      );
+      const cross = sessionProxyDecision("POST", "/api/sessions/soup/finish", {
+        origin: "https://evil.example",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+        "sec-fetch-site": "cross-site",
+      });
+      assert.equal(cross.allow, false);
+      assert.equal(cross.status, 403);
+      const nginx = [
+        readFileSync(join(repoRoot, "docker/nginx.conf"), "utf8"),
+        readFileSync(join(repoRoot, "deploy/nas/nginx.conf"), "utf8"),
+      ].join("\n");
+      assert.match(nginx, /location = \/api\/sessions \{/);
+      assert.match(nginx, /location = \/api\/sessions\/active/);
+      assert.match(nginx, /steps\/\[0-9\]\+\/\(complete\|undo\)/);
+    }),
+  );
 });
 
 describe("facts mutation proxy", () => {

@@ -13,6 +13,8 @@ export type HelloResult = {
   message: string;
 };
 
+export type { CookingSession, CookingSessionStatus, CookingSnapshot } from "./cooking.js";
+
 export function isStackReady(ready: ReadyStatus): boolean {
   return ready.status === "ok" && ready.database === "up" && ready.seed;
 }

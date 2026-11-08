@@ -202,7 +202,10 @@ try {
   process.stdout.write(`${helloBody}\n`);
   const listed = await client.listTools();
   const names = listed.tools.map((tool) => tool.name).sort().join(",");
-  if (names !== "hello,list,read,save") {
+  if (
+    names !==
+    "hello,list,read,save,session_complete,session_finish,session_resume,session_show,session_start,session_undo"
+  ) {
     console.error(names);
     process.exit(1);
   }
@@ -441,6 +444,9 @@ if command -v google-chrome-stable >/dev/null 2>&1 \
   grep -q "browser-outbox-twotab-ok" /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-replay-ok" /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-reject-ok" /tmp/cookbook-browser-outbox.log
+  node scripts/browser-cooking.mjs | tee /tmp/cookbook-browser-cooking.log
+  grep -q "browser-cooking-live-ok" /tmp/cookbook-browser-cooking.log
+  grep -q "browser-cooking-reload-ok" /tmp/cookbook-browser-cooking.log
 else
   echo "browser-outbox skipped (no Chrome)"
 fi

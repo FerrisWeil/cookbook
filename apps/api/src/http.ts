@@ -11,10 +11,12 @@ import { MutationAckError } from "./mutations.js";
 import { parseFieldList, projectRecipe } from "./recipe-fields.js";
 import { parseFactsPatch } from "./recipes/parse.js";
 import { isRecipeError, type RecipeStore } from "./recipes/index.js";
+import { isSessionError, snapshotFromRecipe, type SessionStore } from "./sessions/index.js";
 
 export type ApiDeps = {
   getReady: () => Promise<ReadyStatus>;
   recipes: RecipeStore;
+  sessions: SessionStore;
   callerTokens: readonly string[];
   commits?: CommitHub;
   sseHeartbeatMs?: number;
@@ -86,6 +88,29 @@ function stepsError(body: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+function sendSessionError(reply: FastifyReply, error: unknown): FastifyReply {
+  if (isSessionError(error)) {
+    const status =
+      error.code === "not_found" ? 404 : error.code === "invalid" ? 400 : 409;
+    const name =
+      error.code === "active"
+        ? "session_active"
+        : error.code === "ended"
+          ? "session_ended"
+          : error.code === "mismatch"
+            ? "payload_mismatch"
+            : error.code === "not_found"
+              ? "not_found"
+              : "invalid";
+    return sendJson(reply, status, {
+      error: name,
+      message: error.message,
+      ...(error.session ? { session: error.session } : {}),
+    });
+  }
+  return sendStoreError(reply, error);
+}
+
 function sendStoreError(reply: FastifyReply, error: unknown): FastifyReply {
   if (error instanceof MutationAckError) {
     return sendJson(reply, 409, {
@@ -101,6 +126,28 @@ function sendStoreError(reply: FastifyReply, error: unknown): FastifyReply {
     });
   }
   return sendJson(reply, 503, { error: "unavailable" });
+}
+
+function recordBody(parsed: unknown): Record<string, unknown> | "invalid" {
+  if (parsed === INVALID_JSON) {
+    return "invalid";
+  }
+  const body: unknown = parsed === undefined ? {} : parsed;
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return "invalid";
+  }
+  return body as Record<string, unknown>;
+}
+
+function mutationIdFrom(body: Record<string, unknown>): string {
+  return typeof body["mutationId"] === "string" ? body["mutationId"].trim() : "";
+}
+
+function pathStep(raw: string): number | null {
+  if (!/^(0|[1-9]\d*)$/.test(raw)) {
+    return null;
+  }
+  return Number(raw);
 }
 
 function parseJsonBody(raw: string | Buffer): unknown {
@@ -148,6 +195,7 @@ function openRecipeEventStream(
     closed = true;
     clearInterval(timer);
     unsubscribe();
+    unsubscribeSession();
     request.raw.off("close", cleanup);
     httpServer.off("close", cleanup);
     if (!raw.writableEnded && !raw.destroyed) {
@@ -165,6 +213,9 @@ function openRecipeEventStream(
   };
   const unsubscribe = hub.subscribe((commit) => {
     write(`event: committed\ndata: ${JSON.stringify(commit)}\n\n`);
+  });
+  const unsubscribeSession = hub.subscribeSession((commit) => {
+    write(`event: session\ndata: ${JSON.stringify(commit)}\n\n`);
   });
   const timer = setInterval(() => {
     write(": keepalive\n\n");
@@ -341,6 +392,132 @@ function createApp(deps: ApiDeps) {
       return sendStoreError(reply, error);
     }
   });
+
+  app.post("/sessions", async (request, reply) => {
+    const body = recordBody(request.body);
+    if (body === "invalid") {
+      return sendJson(reply, 400, {
+        error: "invalid",
+        message: MESSAGES.sessionMutation,
+      });
+    }
+    try {
+      const session = await deps.sessions.start({
+        mutationId: body["mutationId"],
+        recipeId: body["recipeId"],
+        loadSnapshot: async () => {
+          const recipeId =
+            typeof body["recipeId"] === "string" ? body["recipeId"].trim() : "";
+          const recipe = await deps.recipes.read(recipeId);
+          return snapshotFromRecipe(recipe);
+        },
+      });
+      return sendJson(reply, 200, {
+        session,
+        mutation: { id: mutationIdFrom(body) },
+      });
+    } catch (error) {
+      return sendSessionError(reply, error);
+    }
+  });
+
+  app.get("/sessions/active", async (_request, reply) => {
+    try {
+      const session = await deps.sessions.resume();
+      if (!session) {
+        return sendJson(reply, 404, {
+          error: "not_found",
+          message: MESSAGES.sessionMissing,
+        });
+      }
+      return sendJson(reply, 200, { session });
+    } catch (error) {
+      return sendSessionError(reply, error);
+    }
+  });
+
+  app.post("/sessions/:id/finish", async (request, reply) => {
+    return sessionWrite(request, reply, /^\/sessions\/([^/]+)\/finish$/, (id, body) =>
+      deps.sessions.finish({
+        mutationId: body["mutationId"],
+        sessionId: id,
+      }),
+    );
+  });
+
+  app.post("/sessions/:id/display", async (request, reply) => {
+    return sessionWrite(request, reply, /^\/sessions\/([^/]+)\/display$/, (id, body) =>
+      deps.sessions.display({
+        mutationId: body["mutationId"],
+        sessionId: id,
+        step: body["step"],
+      }),
+    );
+  });
+
+  app.post("/sessions/:id/steps/:step/complete", async (request, reply) => {
+    return sessionStepWrite(request, reply, "complete");
+  });
+
+  app.post("/sessions/:id/steps/:step/undo", async (request, reply) => {
+    return sessionStepWrite(request, reply, "undo");
+  });
+
+  async function sessionStepWrite(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    op: "complete" | "undo",
+  ): Promise<FastifyReply> {
+    const match = /^\/sessions\/([^/]+)\/steps\/([^/]+)\/(complete|undo)$/.exec(
+      requestUrl(request).pathname,
+    );
+    if (!match || match[3] !== op) {
+      return sendJson(reply, 404, { error: "not_found" });
+    }
+    const step = pathStep(match[2] ?? "");
+    if (step === null) {
+      return sendJson(reply, 400, { error: "invalid", message: MESSAGES.sessionStep });
+    }
+    return sessionWrite(request, reply, /^\/sessions\/([^/]+)\/steps\/[^/]+\/(?:complete|undo)$/, (id, body) =>
+      deps.sessions[op]({
+        mutationId: body["mutationId"],
+        sessionId: id,
+        step,
+      }),
+    );
+  }
+
+  async function sessionWrite(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    pattern: RegExp,
+    run: (sessionId: string, body: Record<string, unknown>) => Promise<unknown>,
+  ): Promise<FastifyReply> {
+    const match = pattern.exec(requestUrl(request).pathname);
+    const sessionId = recipeIdFromPath(match?.[1] ?? "");
+    if (!match || !sessionId) {
+      return sendJson(reply, 404, {
+        error: "not_found",
+        message: MESSAGES.sessionNotFound,
+      });
+    }
+    const body = recordBody(request.body);
+    if (body === "invalid") {
+      return sendJson(reply, 400, {
+        error: "invalid",
+        message: MESSAGES.sessionMutation,
+      });
+    }
+    try {
+      const session = await run(sessionId, body);
+      return sendJson(reply, 200, {
+        session,
+        mutation: { id: mutationIdFrom(body) },
+      });
+    } catch (error) {
+      return sendSessionError(reply, error);
+    }
+  }
 
   app.patch("/recipes/:id/facts", async (request, reply) => {
     const pathname = requestUrl(request).pathname;

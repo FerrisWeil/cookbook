@@ -9,7 +9,18 @@ import * as z from "zod/v4";
 
 import type { CookbookApi } from "./api.js";
 
-const OFFERED_TOOLS = new Set(["hello", "read", "list", "save"]);
+const OFFERED_TOOLS = new Set([
+  "hello",
+  "read",
+  "list",
+  "save",
+  "session_start",
+  "session_resume",
+  "session_finish",
+  "session_show",
+  "session_complete",
+  "session_undo",
+]);
 
 const helloSchema = z.object({
   name: z.string(),
@@ -47,6 +58,22 @@ const mutating = {
   idempotentHint: false,
   openWorldHint: false,
 } as const;
+
+const sessionWrite = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
+
+const sessionIdInput = z.object({
+  mutationId: z.string(),
+  sessionId: z.string(),
+});
+
+const sessionStepInput = sessionIdInput.extend({
+  step: z.number().int().nonnegative(),
+});
 
 function toolError(message: string) {
   return {
@@ -108,7 +135,7 @@ export function createCookbookMcpServer(api: CookbookApi): McpServer {
     },
     {
       instructions:
-        "Household cookbook MCP. Tools: read, list, save, and hello.",
+        "Household cookbook MCP. Tools: read, list, save, hello, and cooking session start, resume, finish, show, complete, and undo.",
     },
   );
 
@@ -191,6 +218,113 @@ export function createCookbookMcpServer(api: CookbookApi): McpServer {
       }
       const recipe: Recipe = result.value;
       return toolOk(recipe, "Saved.");
+    },
+  );
+
+  server.registerTool(
+    "session_resume",
+    {
+      title: "Resume cooking session",
+      description: "Return the one active cooking session, including its recipe snapshot.",
+      inputSchema: z.object({}),
+      annotations: readOnly,
+    },
+    async () => {
+      const result = await api.sessionResume();
+      if (!result.ok || !result.value) {
+        return toolError(result.ok ? MESSAGES.sessionMissing : result.message);
+      }
+      return toolOk(result.value, "Cooking session.");
+    },
+  );
+
+  server.registerTool(
+    "session_start",
+    {
+      title: "Start cooking session",
+      description:
+        "Start the household cooking session for a recipe. The same mutation id returns that session and does not open a second one.",
+      inputSchema: z.object({
+        mutationId: z.string(),
+        recipeId: z.string(),
+      }),
+      annotations: sessionWrite,
+    },
+    async ({ mutationId, recipeId }) => {
+      const result = await api.sessionStart({ mutationId, recipeId });
+      if (!result.ok) {
+        return toolError(result.message);
+      }
+      return toolOk(result.value, "Cooking session.");
+    },
+  );
+
+  server.registerTool(
+    "session_finish",
+    {
+      title: "Finish cooking session",
+      description: "Finish the active cooking session. Repeating the same mutation id stays finished.",
+      inputSchema: sessionIdInput,
+      annotations: sessionWrite,
+    },
+    async ({ mutationId, sessionId }) => {
+      const result = await api.sessionFinish({ mutationId, sessionId });
+      if (!result.ok) {
+        return toolError(result.message);
+      }
+      return toolOk(result.value, "Cooking session finished.");
+    },
+  );
+
+  server.registerTool(
+    "session_show",
+    {
+      title: "Show cooking step",
+      description:
+        "Set the step currently displayed. This does not complete or undo a step.",
+      inputSchema: sessionStepInput,
+      annotations: sessionWrite,
+    },
+    async ({ mutationId, sessionId, step }) => {
+      const result = await api.sessionShow({ mutationId, sessionId, step });
+      if (!result.ok) {
+        return toolError(result.message);
+      }
+      return toolOk(result.value, "Cooking session.");
+    },
+  );
+
+  server.registerTool(
+    "session_complete",
+    {
+      title: "Complete cooking step",
+      description: "Mark a step complete. Repeating it does not clear the step.",
+      inputSchema: sessionStepInput,
+      annotations: sessionWrite,
+    },
+    async ({ mutationId, sessionId, step }) => {
+      const result = await api.sessionComplete({ mutationId, sessionId, step });
+      if (!result.ok) {
+        return toolError(result.message);
+      }
+      return toolOk(result.value, "Cooking session.");
+    },
+  );
+
+  server.registerTool(
+    "session_undo",
+    {
+      title: "Undo cooking step",
+      description: "Clear a completed step. Repeating it does not complete the step.",
+      inputSchema: sessionStepInput,
+      annotations: sessionWrite,
+    },
+    async ({ mutationId, sessionId, step }) => {
+      const result = await api.sessionUndo({ mutationId, sessionId, step });
+      if (!result.ok) {
+        return toolError(result.message);
+      }
+      return toolOk(result.value, "Cooking session.");
     },
   );
 

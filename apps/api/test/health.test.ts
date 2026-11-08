@@ -8,6 +8,7 @@ import { getReadyStatus } from "../src/health.ts";
 import { listen } from "../src/http.ts";
 import type { SqlClient } from "../src/migrate.ts";
 import { createMemoryRecipeStore } from "../src/recipes/index.ts";
+import { createMemorySessionStore } from "../src/sessions/index.ts";
 
 const CALLER_TOKENS = ["test-api-mcp-token-xx", "test-api-web-token-xx"];
 
@@ -61,6 +62,7 @@ describe("http health", () => {
     const api = await listen("127.0.0.1", 0, {
       getReady: async () => ready,
       recipes: createMemoryRecipeStore(),
+      sessions: createMemorySessionStore(),
       callerTokens: CALLER_TOKENS,
     });
     baseUrl = api.url;

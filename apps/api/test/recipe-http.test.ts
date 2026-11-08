@@ -6,6 +6,7 @@ import { verifies } from "@cookbook/test";
 
 import { listen } from "../src/http.ts";
 import { createMemoryRecipeStore } from "../src/recipes/index.ts";
+import { createMemorySessionStore } from "../src/sessions/index.ts";
 
 const MCP_TOKEN = "test-api-mcp-token-xx";
 const WEB_TOKEN = "test-api-web-token-xx";
@@ -41,6 +42,7 @@ describe("recipe HTTP", () => {
     const api = await listen("127.0.0.1", 0, {
       getReady: async () => ({ status: "ok", database: "up", seed: true }),
       recipes: await seedStore(),
+      sessions: createMemorySessionStore(),
       callerTokens: CALLER_TOKENS,
     });
     baseUrl = api.url;
