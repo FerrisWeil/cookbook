@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { emptyRecipeFacts, MESSAGES } from "@cookbook/shared";
+import { emptyRecipeFacts, MESSAGES, type RecipeFacts } from "@cookbook/shared";
 import { verifies } from "@cookbook/test";
 
+import { MutationAckError } from "../src/mutations.ts";
 import { RecipeError } from "../src/recipes/errors.ts";
 import { createMemoryRecipeStore } from "../src/recipes/memory.ts";
 import type { SaveRecipeInput } from "../src/recipes/types.ts";
+
+function factsPatch(fields: unknown, mutationId = "mut-1"): unknown {
+  return { mutationId, fields };
+}
 
 function base(overrides: SaveRecipeInput = {}): SaveRecipeInput {
   return {
@@ -193,7 +198,10 @@ describe("recipe facts", () => {
         }),
       );
       assert.equal(reset.facts.primaryProtein, "eggs");
-      const updated = await store.updateFacts(created.id, emptyRecipeFacts());
+      const updated = await store.updateFacts(
+        created.id,
+        factsPatch(null, "clear-all"),
+      );
       assert.deepEqual(updated.facts, emptyRecipeFacts());
     }),
   );
@@ -255,7 +263,7 @@ describe("recipe facts", () => {
         },
         { title: "nope" },
       ];
-      for (const facts of invalid) {
+      for (const [index, facts] of invalid.entries()) {
         await assert.rejects(
           () => store.save(base({ id: created.id, facts })),
           (error: unknown) => {
@@ -264,7 +272,7 @@ describe("recipe facts", () => {
           },
         );
         await assert.rejects(
-          () => store.updateFacts(created.id, facts),
+          () => store.updateFacts(created.id, factsPatch(facts, `bad-${String(index)}`)),
           (error: unknown) => {
             assert.ok(error instanceof RecipeError);
             return true;
@@ -298,12 +306,15 @@ describe("recipe facts", () => {
           nutrition: { source: "entered", calories: 500 },
         }),
       );
-      const updated = await store.updateFacts(created.id, {
-        primaryProtein: "chicken",
-        totalMinutes: 30,
-        effort: "low",
-        mealTypes: ["dinner"],
-      });
+      const updated = await store.updateFacts(
+        created.id,
+        factsPatch({
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        }),
+      );
       assert.equal(updated.title, "Example: Bowls");
       assert.equal(updated.servings, 3);
       assert.equal(updated.favorite, true);
@@ -319,13 +330,127 @@ describe("recipe facts", () => {
         mealTypes: ["dinner"],
       });
       await assert.rejects(
-        () => store.updateFacts("missing", emptyRecipeFacts()),
+        () => store.updateFacts("missing", factsPatch(emptyRecipeFacts())),
         (error: unknown) => {
           assert.ok(error instanceof RecipeError);
           assert.equal(error.message, MESSAGES.notFound);
           return true;
         },
       );
+    }),
+  );
+
+  it(
+    "applies only submitted facts fields and leaves omitted fields unchanged",
+    verifies("190", "ed9a4d548924818c", async () => {
+    const store = createMemoryRecipeStore();
+    const created = await store.save(
+      base({
+        facts: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
+      }),
+    );
+    const patched = await store.updateFacts(
+      created.id,
+      factsPatch({ primaryProtein: "seitan" }, "protein-only"),
+    );
+    assert.deepEqual(patched.facts, {
+      primaryProtein: "seitan",
+      totalMinutes: 30,
+      effort: "low",
+      mealTypes: ["dinner"],
+    });
+    const clearedProtein = await store.updateFacts(
+      created.id,
+      factsPatch({ primaryProtein: null }, "clear-protein"),
+    );
+    assert.equal(clearedProtein.facts.primaryProtein, null);
+    assert.equal(clearedProtein.facts.totalMinutes, 30);
+    }),
+  );
+
+  it(
+    "acknowledges the same mutation id without a second effect",
+    verifies("191", "6eb309098e9bcdac", async () => {
+      const store = createMemoryRecipeStore();
+      const created = await store.save(
+        base({
+          facts: {
+            primaryProtein: "chicken",
+            totalMinutes: 30,
+            effort: "low",
+            mealTypes: ["dinner"],
+          },
+        }),
+      );
+      const first = await store.updateFacts(
+        created.id,
+        factsPatch({ primaryProtein: "seitan" }, "same"),
+      );
+      await store.save(
+        base({
+          id: created.id,
+          facts: {
+            primaryProtein: "tofu",
+            totalMinutes: 45,
+            effort: "high",
+            mealTypes: ["lunch"],
+          },
+        }),
+      );
+      const replay = await store.updateFacts(
+        created.id,
+        factsPatch({ primaryProtein: "seitan" }, "same"),
+      );
+      assert.equal(first.facts.primaryProtein, "seitan");
+      assert.equal(replay.facts.primaryProtein, "tofu");
+      assert.equal(replay.facts.totalMinutes, 45);
+    }),
+  );
+
+  it(
+    "refuses a reused mutation id with a different payload",
+    verifies("192", "1e302e6f8d2e63be", async () => {
+      const store = createMemoryRecipeStore();
+      const created = await store.save(
+        base({
+          facts: {
+            primaryProtein: "chicken",
+            totalMinutes: 30,
+            effort: "low",
+            mealTypes: ["dinner"],
+          },
+        }),
+      );
+      await store.updateFacts(
+        created.id,
+        factsPatch({ primaryProtein: "seitan" }, "same"),
+      );
+      await store.save(
+        base({
+          id: created.id,
+          facts: {
+            primaryProtein: "tofu",
+            totalMinutes: 45,
+            effort: "high",
+            mealTypes: ["lunch"],
+          },
+        }),
+      );
+      await assert.rejects(
+        () =>
+          store.updateFacts(
+            created.id,
+            factsPatch({ primaryProtein: "beef" }, "same"),
+          ),
+        (error: unknown) => error instanceof MutationAckError,
+      );
+      const afterReject = await store.read(created.id);
+      assert.equal(afterReject.facts.primaryProtein, "tofu");
     }),
   );
 });

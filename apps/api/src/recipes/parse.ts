@@ -178,16 +178,86 @@ export function parseFactsField(value: unknown): RecipeFacts | null | undefined 
   return parseFacts(value);
 }
 
+const FACT_KEYS = [
+  "primaryProtein",
+  "totalMinutes",
+  "effort",
+  "mealTypes",
+] as const;
+
+export type FactsPatch = {
+  mutationId: string;
+  fields: Partial<RecipeFacts> | null;
+};
+
+export function parseFactsPatch(value: unknown): FactsPatch {
+  if (!isObject(value)) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  const mutationId = value["mutationId"];
+  if (typeof mutationId !== "string" || mutationId.trim() === "") {
+    throw new RecipeError("invalid_facts", "A mutation id is required.");
+  }
+  if (!("fields" in value)) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  if (value["fields"] === null) {
+    return { mutationId: mutationId.trim(), fields: null };
+  }
+  if (!isObject(value["fields"])) {
+    throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+  }
+  const raw = value["fields"];
+  for (const key of Object.keys(raw)) {
+    if (!FACT_KEYS.includes(key as (typeof FACT_KEYS)[number])) {
+      throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
+    }
+  }
+  const fields: Partial<RecipeFacts> = {};
+  if ("primaryProtein" in raw) {
+    fields.primaryProtein = parsePrimaryProtein(raw["primaryProtein"]);
+  }
+  if ("totalMinutes" in raw) {
+    fields.totalMinutes = parseTotalMinutes(raw["totalMinutes"]);
+  }
+  if ("effort" in raw) {
+    fields.effort = parseEffort(raw["effort"]);
+  }
+  if ("mealTypes" in raw) {
+    fields.mealTypes = parseMealTypes(raw["mealTypes"]);
+  }
+  return { mutationId: mutationId.trim(), fields };
+}
+
+export function applyFactsPatch(
+  current: RecipeFacts,
+  fields: Partial<RecipeFacts> | null,
+): RecipeFacts {
+  if (fields === null) {
+    return emptyRecipeFacts();
+  }
+  return {
+    primaryProtein:
+      "primaryProtein" in fields
+        ? (fields.primaryProtein ?? null)
+        : current.primaryProtein,
+    totalMinutes:
+      "totalMinutes" in fields
+        ? (fields.totalMinutes ?? null)
+        : current.totalMinutes,
+    effort: "effort" in fields ? (fields.effort ?? null) : current.effort,
+    mealTypes:
+      "mealTypes" in fields
+        ? [...(fields.mealTypes ?? [])]
+        : [...current.mealTypes],
+  };
+}
+
 export function parseFacts(value: unknown): RecipeFacts {
   if (!isObject(value)) {
     throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);
   }
-  const allowed = new Set([
-    "primaryProtein",
-    "totalMinutes",
-    "effort",
-    "mealTypes",
-  ]);
+  const allowed = new Set<string>(FACT_KEYS);
   for (const key of Object.keys(value)) {
     if (!allowed.has(key)) {
       throw new RecipeError("invalid_facts", MESSAGES.invalidFacts);

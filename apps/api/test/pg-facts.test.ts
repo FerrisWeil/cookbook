@@ -10,6 +10,7 @@ import { emptyRecipeFacts } from "@cookbook/shared";
 import { verifies } from "@cookbook/test";
 import pg from "pg";
 
+import { MutationAckError } from "../src/mutations.ts";
 import {
   applyMigrations,
   applySeed,
@@ -154,10 +155,13 @@ describe("postgres recipe facts", () => {
       assert.equal(omitted.actor, "chef");
 
       const patched = await store.updateFacts(created.id, {
-        primaryProtein: "seitan",
-        totalMinutes: 40,
-        effort: "medium",
-        mealTypes: ["lunch", "dinner", "snack"],
+        mutationId: "pg-facts-1",
+        fields: {
+          primaryProtein: "seitan",
+          totalMinutes: 40,
+          effort: "medium",
+          mealTypes: ["lunch", "dinner", "snack"],
+        },
       });
       assert.equal(patched.title, "Example: Lemon chicken bowls");
       assert.deepEqual(patched.ingredients, created.ingredients);
@@ -171,7 +175,10 @@ describe("postgres recipe facts", () => {
       const reread = await store.read(created.id);
       assert.deepEqual(reread.facts, patched.facts);
 
-      const cleared = await store.updateFacts(created.id, null);
+      const cleared = await store.updateFacts(created.id, {
+        mutationId: "pg-facts-clear",
+        fields: null,
+      });
       assert.deepEqual(cleared.facts, emptyRecipeFacts());
       const afterClear = await store.read(created.id);
       assert.deepEqual(afterClear.facts, emptyRecipeFacts());
@@ -185,4 +192,68 @@ describe("postgres recipe facts", () => {
       assert.equal(again.includes("0003_recipe_facts.sql"), false);
     }),
   );
+
+  it("applies a facts patch in the same transaction as the mutation ack", async () => {
+    assert.ok(pool);
+    const store = createPgRecipeStore(clientFrom(pool).checkout);
+    const created = await store.save({
+      actor: "chef",
+      title: "Example: Acked facts",
+      servings: 2,
+      steps: ["Cook."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+    });
+    const proteinOnly = await store.updateFacts(created.id, {
+      mutationId: "pg-omit",
+      fields: { primaryProtein: "seitan" },
+    });
+    assert.deepEqual(proteinOnly.facts, {
+      primaryProtein: "seitan",
+      totalMinutes: 30,
+      effort: "low",
+      mealTypes: ["dinner"],
+    });
+    await store.save({
+      id: created.id,
+      actor: "chef",
+      title: "Example: Acked facts",
+      servings: 2,
+      steps: ["Cook."],
+      facts: {
+        primaryProtein: "tofu",
+        totalMinutes: 45,
+        effort: "high",
+        mealTypes: ["lunch"],
+      },
+    });
+    const replay = await store.updateFacts(created.id, {
+      mutationId: "pg-omit",
+      fields: { primaryProtein: "seitan" },
+    });
+    assert.equal(replay.facts.primaryProtein, "tofu");
+    assert.equal(replay.facts.totalMinutes, 45);
+    await assert.rejects(
+      () =>
+        store.updateFacts(created.id, {
+          mutationId: "pg-omit",
+          fields: { primaryProtein: "beef" },
+        }),
+      (error: unknown) => error instanceof MutationAckError,
+    );
+    const acked = await pool.query(
+      "SELECT payload_fingerprint FROM recipe_mutation_acks WHERE mutation_id = $1",
+      ["pg-omit"],
+    );
+    assert.equal(acked.rowCount, 1);
+    const applied = await pool.query(
+      "SELECT id FROM schema_migrations WHERE id = $1",
+      ["0004_recipe_mutation_acks.sql"],
+    );
+    assert.equal(applied.rowCount, 1);
+  });
 });

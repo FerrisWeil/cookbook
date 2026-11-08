@@ -2,10 +2,16 @@ import { randomUUID } from "node:crypto";
 
 import type { RecipeFacts } from "@cookbook/shared";
 
+import {
+  applyWithAck,
+  canonicalFingerprint,
+} from "../mutations.js";
 import { RecipeError } from "./errors.js";
 import {
+  applyFactsPatch,
   factsOrEmpty,
   parseFactsField,
+  parseFactsPatch,
   parseHide,
   parseSave,
   type ParsedSave,
@@ -409,18 +415,41 @@ export function createPgRecipeStore(
     },
 
     async updateFacts(id: string, facts: unknown): Promise<Recipe> {
-      const parsed = parseFactsField(facts);
-      if (parsed === undefined) {
-        throw new RecipeError("invalid_facts", "Facts are required.");
-      }
-      const next = factsOrEmpty(parsed);
+      const patch = parseFactsPatch(facts);
+      const fingerprint = canonicalFingerprint(patch.fields);
       return transaction(checkout, async (client) => {
-        const current = await loadVisible(client, id);
-        if (!current) {
-          throw new RecipeError("not_found", "The recipe was not found.");
+        let updated: Recipe | undefined;
+        const ack = await applyWithAck(
+          client,
+          {
+            mutationId: patch.mutationId,
+            payloadFingerprint: fingerprint,
+            recipeId: id,
+          },
+          async () => {
+            const current = await loadVisible(client, id);
+            if (!current) {
+              throw new RecipeError("not_found", "The recipe was not found.");
+            }
+            await writeFacts(
+              client,
+              id,
+              applyFactsPatch(current.facts, patch.fields),
+            );
+            const next = await loadVisible(client, id);
+            if (!next) {
+              throw new RecipeError("not_found", "The recipe was not found.");
+            }
+            updated = next;
+          },
+        );
+        if (ack.kind === "duplicate") {
+          const current = await loadVisible(client, id);
+          if (!current) {
+            throw new RecipeError("not_found", "The recipe was not found.");
+          }
+          return current;
         }
-        await writeFacts(client, id, next);
-        const updated = await loadVisible(client, id);
         if (!updated) {
           throw new RecipeError("not_found", "The recipe was not found.");
         }

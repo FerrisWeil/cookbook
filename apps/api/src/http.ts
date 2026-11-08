@@ -7,7 +7,9 @@ import { MESSAGES, type ReadyStatus } from "@cookbook/shared";
 
 import { requestHasValidBearer } from "./auth.js";
 import { createCommitHub, type CommitHub } from "./commits.js";
+import { MutationAckError } from "./mutations.js";
 import { parseFieldList, projectRecipe } from "./recipe-fields.js";
+import { parseFactsPatch } from "./recipes/parse.js";
 import { isRecipeError, type RecipeStore } from "./recipes/index.js";
 
 export type ApiDeps = {
@@ -85,6 +87,12 @@ function stepsError(body: Record<string, unknown>): string | undefined {
 }
 
 function sendStoreError(reply: FastifyReply, error: unknown): FastifyReply {
+  if (error instanceof MutationAckError) {
+    return sendJson(reply, 409, {
+      error: "payload_mismatch",
+      message: error.message,
+    });
+  }
   if (isRecipeError(error)) {
     const notFound = error.code === "not_found";
     return sendJson(reply, notFound ? 404 : 400, {
@@ -356,8 +364,12 @@ function createApp(deps: ApiDeps) {
         });
       }
       const body: unknown = parsed === undefined ? {} : parsed;
-      const updated = await deps.recipes.updateFacts(id, body);
-      return sendJson(reply, 200, { facts: updated.facts });
+      const patch = parseFactsPatch(body);
+      const updated = await deps.recipes.updateFacts(id, patch);
+      return sendJson(reply, 200, {
+        facts: updated.facts,
+        mutation: { id: patch.mutationId },
+      });
     } catch (error) {
       return sendStoreError(reply, error);
     }

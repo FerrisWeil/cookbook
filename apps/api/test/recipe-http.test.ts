@@ -175,10 +175,13 @@ describe("recipe HTTP", () => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        primaryProtein: "chicken",
-        totalMinutes: 30,
-        effort: "low",
-        mealTypes: ["dinner"],
+        mutationId: "http-facts-1",
+        fields: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
       }),
     });
     assert.equal(patched.status, 200);
@@ -189,6 +192,7 @@ describe("recipe HTTP", () => {
         effort: "low",
         mealTypes: ["dinner"],
       },
+      mutation: { id: "http-facts-1" },
     });
     const read = await fetch(
       `${baseUrl}/recipes/facts-http?fields=title,ingredients,steps,facts`,
@@ -207,6 +211,64 @@ describe("recipe HTTP", () => {
           mealTypes: ["dinner"],
         },
       },
+    });
+    const proteinOnly = await fetch(`${baseUrl}/recipes/facts-http/facts`, {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        mutationId: "http-facts-protein",
+        fields: { primaryProtein: "seitan" },
+      }),
+    });
+    assert.equal(proteinOnly.status, 200);
+    assert.deepEqual(await proteinOnly.json(), {
+      facts: {
+        primaryProtein: "seitan",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+      mutation: { id: "http-facts-protein" },
+    });
+    const missingId = await fetch(`${baseUrl}/recipes/facts-http/facts`, {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ fields: { primaryProtein: "tofu" } }),
+    });
+    assert.equal(missingId.status, 400);
+    const replay = await fetch(`${baseUrl}/recipes/facts-http/facts`, {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        mutationId: "http-facts-protein",
+        fields: { primaryProtein: "seitan" },
+      }),
+    });
+    assert.equal(replay.status, 200);
+    const mismatch = await fetch(`${baseUrl}/recipes/facts-http/facts`, {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        mutationId: "http-facts-protein",
+        fields: { primaryProtein: "beef" },
+      }),
+    });
+    assert.equal(mismatch.status, 409);
+    assert.deepEqual(await mismatch.json(), {
+      error: "payload_mismatch",
+      message: "That mutation id was already used with a different payload.",
     });
   });
 });

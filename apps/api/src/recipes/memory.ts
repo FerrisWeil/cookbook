@@ -2,8 +2,16 @@ import { randomUUID } from "node:crypto";
 
 import { emptyRecipeFacts, type RecipeFacts } from "@cookbook/shared";
 
+import { MutationAckError, canonicalFingerprint } from "../mutations.js";
 import { RecipeError } from "./errors.js";
-import { factsOrEmpty, parseFactsField, parseHide, parseSave } from "./parse.js";
+import {
+  applyFactsPatch,
+  factsOrEmpty,
+  parseFactsField,
+  parseFactsPatch,
+  parseHide,
+  parseSave,
+} from "./parse.js";
 import {
   SHIPPED_ACTORS,
   type HideRecipeInput,
@@ -62,6 +70,7 @@ export class MemoryRecipeStore implements RecipeStore {
   private readonly actors: Set<string>;
   private readonly recipes = new Map<string, StoredRecipe>();
   private readonly order: string[] = [];
+  private readonly acks = new Map<string, string>();
 
   constructor(actors: readonly string[] = SHIPPED_ACTORS) {
     this.actors = new Set(actors);
@@ -148,15 +157,21 @@ export class MemoryRecipeStore implements RecipeStore {
   }
 
   async updateFacts(id: string, facts: unknown): Promise<Recipe> {
-    const parsed = parseFactsField(facts);
-    if (parsed === undefined) {
-      throw new RecipeError("invalid_facts", "Facts are required.");
-    }
+    const patch = parseFactsPatch(facts);
+    const fingerprint = canonicalFingerprint(patch.fields);
     const stored = this.recipes.get(id);
     if (!stored || stored.hiddenAt) {
       throw new RecipeError("not_found", "The recipe was not found.");
     }
-    stored.facts = factsOrEmpty(parsed);
+    const existing = this.acks.get(patch.mutationId);
+    if (existing) {
+      if (existing === fingerprint) {
+        return visible(stored);
+      }
+      throw new MutationAckError();
+    }
+    stored.facts = applyFactsPatch(stored.facts, patch.fields);
+    this.acks.set(patch.mutationId, fingerprint);
     return visible(stored);
   }
 
