@@ -334,6 +334,35 @@ function createApp(deps: ApiDeps) {
     }
   });
 
+  app.patch("/recipes/:id/facts", async (request, reply) => {
+    const pathname = requestUrl(request).pathname;
+    const factsPath = /^\/recipes\/([^/]+)\/facts$/.exec(pathname);
+    if (!factsPath) {
+      return sendJson(reply, 404, { error: "not_found" });
+    }
+    const id = recipeIdFromPath(factsPath[1] ?? "");
+    if (!id) {
+      return sendJson(reply, 404, {
+        error: "not_found",
+        message: MESSAGES.notFound,
+      });
+    }
+    try {
+      const parsed = request.body;
+      if (parsed === INVALID_JSON) {
+        return sendJson(reply, 400, {
+          error: "invalid",
+          message: MESSAGES.invalidFacts,
+        });
+      }
+      const body: unknown = parsed === undefined ? {} : parsed;
+      const updated = await deps.recipes.updateFacts(id, body);
+      return sendJson(reply, 200, { facts: updated.facts });
+    } catch (error) {
+      return sendStoreError(reply, error);
+    }
+  });
+
   app.setNotFoundHandler((_request, reply) => {
     return sendJson(reply, 404, { error: "not_found" });
   });

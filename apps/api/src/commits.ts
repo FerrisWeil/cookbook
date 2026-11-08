@@ -50,5 +50,10 @@ export function notifyingRecipeStore(
         typeof input.id === "string" ? input.id : String(input.id ?? "");
       hub.notify({ recipeId, op: "hidden" });
     },
+    async updateFacts(id, facts) {
+      const recipe = await store.updateFacts(id, facts);
+      hub.notify({ recipeId: recipe.id, op: "saved" });
+      return recipe;
+    },
   };
 }

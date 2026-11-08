@@ -5,6 +5,7 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 
 import {
+  FACTS_SAVE_ERROR,
   fetchRecipeList,
   fetchRecipeView,
   LIST_ERROR,
@@ -14,6 +15,7 @@ import {
   RECIPE_MISSING,
   recipeReadUrl,
   RECIPE_READ_FIELDS,
+  updateRecipeFacts,
 } from "../src/api.ts";
 import { ListScreen } from "../src/ListScreen.tsx";
 import { RecipeScreen } from "../src/RecipeScreen.tsx";
@@ -23,29 +25,51 @@ function html(node: ReturnType<typeof createElement>): string {
 }
 
 describe("kitchen API mapping", () => {
-  it("requests title, ingredient lines, and steps from the read API", () => {
-    assert.equal(RECIPE_READ_FIELDS, "title,ingredients,steps");
+  it("requests title, ingredient lines, steps, and facts from the read API", () => {
+    assert.equal(RECIPE_READ_FIELDS, "title,ingredients,steps,facts");
     assert.equal(
       recipeReadUrl("alpha"),
-      "/api/recipes/alpha?fields=title%2Cingredients%2Csteps",
+      "/api/recipes/alpha?fields=title%2Cingredients%2Csteps%2Cfacts",
     );
     const viewed = parseRecipeView({
       recipe: {
         title: "Example: Tomato lentils",
         ingredients: [{ line: "1 cup lentils", amount: 1, unit: "cup", name: "lentils" }],
         steps: ["Simmer.", "Salt."],
+        facts: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
       },
     });
     assert.deepEqual(viewed, {
       title: "Example: Tomato lentils",
       ingredients: ["1 cup lentils"],
       steps: ["Simmer.", "Salt."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
     });
     assert.deepEqual(
       parseRecipeView({
         recipe: { title: "Example: Plain", steps: ["Stir."] },
       }),
-      { title: "Example: Plain", ingredients: [], steps: ["Stir."] },
+      {
+        title: "Example: Plain",
+        ingredients: [],
+        steps: ["Stir."],
+        facts: {
+          primaryProtein: null,
+          totalMinutes: null,
+          effort: null,
+          mealTypes: [],
+        },
+      },
     );
     assert.throws(() => parseRecipeList({}), new Error(LIST_ERROR));
     assert.throws(() => parseRecipeView({}), new Error(RECIPE_ERROR));
@@ -88,6 +112,22 @@ describe("kitchen API mapping", () => {
         assert.equal(error, abort);
         return true;
       });
+    } finally {
+      globalThis.fetch = original;
+    }
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ error: "invalid" }), { status: 400 });
+    try {
+      await assert.rejects(
+        updateRecipeFacts("alpha", {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        }),
+        new Error(FACTS_SAVE_ERROR),
+      );
     } finally {
       globalThis.fetch = original;
     }

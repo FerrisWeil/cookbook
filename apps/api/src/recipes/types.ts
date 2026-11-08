@@ -1,3 +1,9 @@
+import type {
+  RecipeEffort,
+  RecipeFacts,
+  RecipeMealType,
+} from "@cookbook/shared";
+
 export const SHIPPED_ACTORS = ["chef", "system", "taylor"] as const;
 
 export type ShippedActor = (typeof SHIPPED_ACTORS)[number];
@@ -21,6 +27,8 @@ export type Nutrition = {
   carbs: number | null;
 };
 
+export type { RecipeEffort, RecipeFacts, RecipeMealType };
+
 export type Recipe = {
   id: string;
   title: string;
@@ -31,11 +39,13 @@ export type Recipe = {
   ingredients: Ingredient[];
   steps: string[];
   nutrition: Nutrition | null;
+  facts: RecipeFacts;
 };
 
 export type RecipeListItem = {
   id: string;
   title: string;
+  facts: RecipeFacts;
 };
 
 export type IngredientInput = {
@@ -63,6 +73,7 @@ export type SaveRecipeInput = {
   ingredients?: unknown;
   steps?: unknown;
   nutrition?: unknown;
+  facts?: unknown;
 };
 
 export type HideRecipeInput = {
@@ -75,6 +86,7 @@ export type RecipeStore = {
   read(id: string): Promise<Recipe>;
   list(): Promise<RecipeListItem[]>;
   hide(input: HideRecipeInput): Promise<void>;
+  updateFacts(id: string, facts: unknown): Promise<Recipe>;
 };
 
 export type StoredRecipe = Recipe & {

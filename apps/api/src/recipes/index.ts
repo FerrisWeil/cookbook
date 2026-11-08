@@ -12,6 +12,7 @@ export {
   type Nutrition,
   type NutritionSource,
   type Recipe,
+  type RecipeFacts,
   type RecipeListItem,
   type RecipeStore,
   type SaveRecipeInput,

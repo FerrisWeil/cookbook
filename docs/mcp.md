@@ -31,21 +31,21 @@ Without a field list, the result is title, steps in saved order, servings, and n
 
 With a field list, the result is only those fields. An unknown field is told which field is invalid.
 
-Valid fields: `id`, `title`, `ingredients`, `steps`, `servings`, `nutrition`, `favorite`, `rating`, `actor`.
+Valid fields: `id`, `title`, `ingredients`, `steps`, `servings`, `nutrition`, `favorite`, `rating`, `actor`, `facts`.
 
 ### `list`
 
-Each item is `id` and `title`. Hidden recipes are omitted.
+Each item is `id`, `title`, and `facts`. Hidden recipes are omitted.
 
 ### `save`
 
 Required: a non-empty title, steps (at least one, stored in that order), servings greater than zero, and an actor. The actor is a name, not a login. There is no default.
 
-Optional: nutrition (one per-serving row, source `estimated`, `entered`, or `copied`, with calories, protein, fat, and carbs), favorite, rating (empty or a whole number from one to five), ingredient lines (written line required; amount, unit, and name may be empty).
+Optional: nutrition (one per-serving row, source `estimated`, `entered`, or `copied`, with calories, protein, fat, and carbs), favorite, rating (empty or a whole number from one to five), ingredient lines (written line required; amount, unit, and name may be empty), facts (explicit primary protein, total minutes, effort, and meal types; see [recipes.md](recipes.md)). The tool description tells an agent how to supply facts. The server does not infer them.
 
 Given an id, save uses that id. A visible recipe is updated. A hidden id is not found and is not revived. Without an id, save creates a recipe.
 
-Save replaces title, steps, servings, favorite, rating, and ingredients. Actor is recorded on create and does not change. An omitted favorite is off. Nutrition omitted is left as stored; a nutrition object replaces the row; empty nutrition clears it.
+Save replaces title, steps, servings, favorite, rating, and ingredients. Actor is recorded on create and does not change. An omitted favorite is off. Nutrition omitted is left as stored; a nutrition object replaces the row; empty nutrition clears it. Facts omitted are left as stored; a facts object replaces the four slots; `facts: null` clears them.
 
 ## Household API
 

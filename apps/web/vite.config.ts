@@ -6,10 +6,10 @@ import { defineConfig, type Plugin, type ProxyOptions } from "vite";
 
 import {
   incomingRecipeApiPath,
-  isRecipeReadMethod,
+  isRecipeFactsPath,
   loadWebToken,
   recipeAuthorization,
-  shouldAttachWebToken,
+  recipeProxyDecision,
 } from "./dev-proxy.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -18,10 +18,13 @@ const attachWebToken: NonNullable<ProxyOptions["configure"]> = (proxy) => {
   proxy.on("proxyReq", (proxyReq, req) => {
     proxyReq.removeHeader("authorization");
     const url = req.url ?? "";
-    if (
-      shouldAttachWebToken(url) &&
-      isRecipeReadMethod(req.method ?? "GET")
-    ) {
+    const decision = recipeProxyDecision(req.method ?? "GET", url, {
+      origin: req.headers.origin,
+      host: req.headers.host,
+      "content-type": req.headers["content-type"],
+      "sec-fetch-site": req.headers["sec-fetch-site"],
+    });
+    if (decision.allow && decision.attachToken) {
       proxyReq.setHeader(
         "authorization",
         recipeAuthorization(loadWebToken(process.env)),
@@ -37,15 +40,23 @@ function webTokenProxy(): Plugin {
       loadWebToken(process.env);
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? "").split("?")[0] ?? "";
-        if (!incomingRecipeApiPath(path)) {
+        if (!incomingRecipeApiPath(path) && !isRecipeFactsPath(path)) {
           next();
           return;
         }
-        if (!isRecipeReadMethod(req.method ?? "GET")) {
-          res.statusCode = 405;
-          res.setHeader("allow", "GET, HEAD");
+        const decision = recipeProxyDecision(req.method ?? "GET", path, {
+          origin: req.headers.origin,
+          host: req.headers.host,
+          "content-type": req.headers["content-type"],
+          "sec-fetch-site": req.headers["sec-fetch-site"],
+        });
+        if (!decision.allow) {
+          res.statusCode = decision.status;
+          if (decision.allowHeader) {
+            res.setHeader("allow", decision.allowHeader);
+          }
           res.setHeader("content-type", "application/json; charset=utf-8");
-          res.end(JSON.stringify({ error: "method_not_allowed" }));
+          res.end(JSON.stringify({ error: decision.error }));
           return;
         }
         next();

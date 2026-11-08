@@ -1,4 +1,5 @@
 import {
+  FACTS_SCHEMA_DESCRIPTION,
   MESSAGES,
   type Recipe,
   type RecipeListItem,
@@ -30,6 +31,7 @@ const saveInput = z.object({
   rating: z.unknown().optional(),
   ingredients: z.unknown().optional(),
   nutrition: z.unknown().optional(),
+  facts: z.unknown().optional(),
 });
 
 const readOnly = {
@@ -137,7 +139,8 @@ export function createCookbookMcpServer(api: CookbookApi): McpServer {
     "read",
     {
       title: "Read recipe",
-      description: "Return one visible recipe. Id is required. Optional fields limits the result.",
+      description:
+        "Return one visible recipe. Id is required. Optional fields limits the result. Valid fields include facts.",
       inputSchema: readInput,
       annotations: readOnly,
     },
@@ -158,7 +161,7 @@ export function createCookbookMcpServer(api: CookbookApi): McpServer {
     "list",
     {
       title: "List recipes",
-      description: "Return visible recipes as id and title.",
+      description: "Return visible recipes as id, title, and facts.",
       inputSchema: z.object({}),
       annotations: readOnly,
     },
@@ -177,7 +180,7 @@ export function createCookbookMcpServer(api: CookbookApi): McpServer {
     {
       title: "Save recipe",
       description:
-        "Create or update a recipe. Required: title, steps, servings, and actor.",
+        `Create or update a recipe. Required: title, steps, servings, and actor. ${FACTS_SCHEMA_DESCRIPTION}`,
       inputSchema: saveInput,
       annotations: mutating,
     },

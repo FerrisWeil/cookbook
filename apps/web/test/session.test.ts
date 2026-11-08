@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { emptyRecipeFacts } from "@cookbook/shared";
+
 import { memoryLock, memoryStorage, type NetworkPort } from "../src/sync/ports.ts";
 import {
   createKitchenSession,
@@ -26,9 +28,17 @@ function deferred<T>(): {
 
 function makeHarness(network?: NetworkPort) {
   const recipes = new Map<string, RecipeRow>([
-    ["r1", { title: "Alpha", ingredients: ["salt"], steps: ["mix"] }],
+    [
+      "r1",
+      {
+        title: "Alpha",
+        ingredients: ["salt"],
+        steps: ["mix"],
+        facts: emptyRecipeFacts(),
+      },
+    ],
   ]);
-  let list = [{ id: "r1", title: "Alpha" }];
+  let list = [{ id: "r1", title: "Alpha", facts: emptyRecipeFacts() }];
   let handlers: StreamHandlers | undefined;
   const stream: StreamPort = {
     connect(next) {
@@ -48,6 +58,7 @@ function makeHarness(network?: NetworkPort) {
         title: row.title,
         ingredients: [...row.ingredients],
         steps: [...row.steps],
+        facts: { ...row.facts, mealTypes: [...row.facts.mealTypes] },
       };
     },
   };
@@ -67,8 +78,12 @@ function makeHarness(network?: NetworkPort) {
   return {
     ports,
     handlers: () => handlers,
-    setList(next: { id: string; title: string }[]) {
-      list = next;
+    setList(next: { id: string; title: string; facts?: ReturnType<typeof emptyRecipeFacts> }[]) {
+      list = next.map((item) => ({
+        id: item.id,
+        title: item.title,
+        facts: item.facts ?? emptyRecipeFacts(),
+      }));
     },
     setRecipe(id: string, row: RecipeRow) {
       recipes.set(id, row);
@@ -112,6 +127,7 @@ describe("kitchen session", () => {
       title: "Chef title",
       ingredients: ["pepper"],
       steps: ["wait"],
+      facts: emptyRecipeFacts(),
     });
     await session.refetch();
     const view = session.recipe("r1");
@@ -175,6 +191,7 @@ describe("kitchen session", () => {
       title: "From chef",
       ingredients: ["salt"],
       steps: ["mix", "plate"],
+      facts: emptyRecipeFacts(),
     });
     harness.setList([{ id: "r1", title: "From chef" }]);
     harness.handlers()?.onEvent({ recipeId: "r1", op: "saved" });
@@ -234,6 +251,7 @@ describe("kitchen session", () => {
         title: row.title,
         ingredients: [...row.ingredients],
         steps: [...row.steps],
+        facts: { ...row.facts, mealTypes: [...row.facts.mealTypes] },
       };
     };
     const session = createKitchenSession(harness.ports);
@@ -247,6 +265,7 @@ describe("kitchen session", () => {
       title: "Newer",
       ingredients: ["salt"],
       steps: ["mix"],
+      facts: emptyRecipeFacts(),
     });
     await refetching;
     const afterRefetch = session.recipe("r1");
@@ -258,6 +277,7 @@ describe("kitchen session", () => {
       title: "Stale",
       ingredients: ["old"],
       steps: ["old"],
+      facts: emptyRecipeFacts(),
     });
     await opening;
     const afterOpen = session.recipe("r1");

@@ -251,13 +251,49 @@ curl -fsS http://127.0.0.1:8080/api/recipes | tee /tmp/cookbook-web-recipes-afte
 grep -q '"recipes":' /tmp/cookbook-web-recipes-after.json
 grep -q "Example:" /tmp/cookbook-web-recipes-after.json
 recipe_id="$(node -e 'const fs=require("fs"); const body=JSON.parse(fs.readFileSync("/tmp/cookbook-web-recipes-after.json","utf8")); const row=body.recipes.find((item)=>item.title.startsWith("Example:")); if(!row) process.exit(1); process.stdout.write(row.id)')"
-curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,ingredients,steps" \
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,ingredients,steps,facts" \
   | tee /tmp/cookbook-web-recipe.json
 grep -q '"title"' /tmp/cookbook-web-recipe.json
 grep -q '"steps"' /tmp/cookbook-web-recipe.json
 grep -q "1 cup water" /tmp/cookbook-web-recipe.json
+grep -q '"facts"' /tmp/cookbook-web-recipe.json
 if grep -Fq "$web_token" /tmp/cookbook-web-recipes-after.json /tmp/cookbook-web-recipe.json; then
   echo "web token leaked in a recipe payload" >&2
+  exit 1
+fi
+
+code=$(curl -sS -o /tmp/cookbook-web-facts.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: http://127.0.0.1:8080' \
+  -d '{"primaryProtein":"chicken","totalMinutes":30,"effort":"low","mealTypes":["dinner"]}')
+if [[ "$code" != "200" ]]; then
+  echo "web proxy did not accept a same-origin facts PATCH: ${code}" >&2
+  cat /tmp/cookbook-web-facts.json >&2
+  exit 1
+fi
+grep -q '"primaryProtein":"chicken"' /tmp/cookbook-web-facts.json
+
+code=$(curl -sS -o /tmp/cookbook-web-facts-cross.json -w '%{http_code}' \
+  -X PATCH "http://127.0.0.1:8080/api/recipes/${recipe_id}/facts" \
+  -H 'content-type: application/json' \
+  -H 'Origin: https://evil.example' \
+  -d '{"primaryProtein":"beef","totalMinutes":10,"effort":"high","mealTypes":["lunch"]}')
+if [[ "$code" != "403" ]]; then
+  echo "web proxy allowed a cross-origin facts write: ${code}" >&2
+  cat /tmp/cookbook-web-facts-cross.json >&2
+  exit 1
+fi
+
+curl -fsS "http://127.0.0.1:8080/api/recipes/${recipe_id}?fields=title,facts" \
+  | tee /tmp/cookbook-web-facts-read.json
+grep -q '"primaryProtein":"chicken"' /tmp/cookbook-web-facts-read.json
+if grep -Fq '"primaryProtein":"beef"' /tmp/cookbook-web-facts-read.json; then
+  echo "cross-origin facts PATCH mutated the recipe" >&2
+  exit 1
+fi
+if grep -Fq "$web_token" /tmp/cookbook-web-facts.json /tmp/cookbook-web-facts-read.json; then
+  echo "web token leaked in a facts payload" >&2
   exit 1
 fi
 

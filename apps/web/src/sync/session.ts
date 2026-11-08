@@ -1,4 +1,4 @@
-import type { RecipeListItem } from "@cookbook/shared";
+import { type RecipeFacts, type RecipeListItem } from "@cookbook/shared";
 
 import { overlayList, overlayRecord } from "./overlay";
 import { Outbox } from "./outbox";
@@ -9,6 +9,7 @@ export type RecipeSnapshot = {
   title: string;
   ingredients: string[];
   steps: string[];
+  facts: RecipeFacts;
 };
 
 export type RecipeReader = {
@@ -68,6 +69,33 @@ function asRecord(snapshot: RecipeSnapshot): Record<string, JsonValue> {
     title: snapshot.title,
     ingredients: snapshot.ingredients,
     steps: snapshot.steps,
+    primaryProtein: snapshot.facts.primaryProtein,
+    totalMinutes: snapshot.facts.totalMinutes,
+    effort: snapshot.facts.effort,
+    mealTypes: [...snapshot.facts.mealTypes],
+  };
+}
+
+function factsFromRecord(record: Record<string, JsonValue>): RecipeFacts {
+  const meals = record["mealTypes"];
+  const effort = record["effort"];
+  const protein = record["primaryProtein"];
+  const minutes = record["totalMinutes"];
+  return {
+    primaryProtein: typeof protein === "string" ? protein : null,
+    totalMinutes: typeof minutes === "number" ? minutes : null,
+    effort:
+      effort === "low" || effort === "medium" || effort === "high" ? effort : null,
+    mealTypes: Array.isArray(meals)
+      ? meals.filter(
+          (item): item is RecipeFacts["mealTypes"][number] =>
+            item === "breakfast" ||
+            item === "lunch" ||
+            item === "dinner" ||
+            item === "snack" ||
+            item === "dessert",
+        )
+      : [],
   };
 }
 
@@ -80,6 +108,7 @@ function asRecipe(record: Record<string, JsonValue>): RecipeSnapshot {
     steps: Array.isArray(record["steps"])
       ? record["steps"].map((item) => String(item))
       : [],
+    facts: factsFromRecord(record),
   };
 }
 

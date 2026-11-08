@@ -121,6 +121,9 @@ const failingStore: RecipeStore = {
   async hide() {
     throw new Error("store failed");
   },
+  async updateFacts() {
+    throw new Error("store failed");
+  },
 };
 
 describe("HTTP adapter stays out of application modules", () => {

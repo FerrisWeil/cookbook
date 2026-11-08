@@ -48,7 +48,9 @@ export function overlayRecipe<T extends Record<string, JsonValue>>(
   return overlayRecord(snapshot, pending, draft);
 }
 
-export function overlayList<T extends { id: string; title: string }>(
+export function overlayList<
+  T extends { id: string; title: string; facts?: Record<string, JsonValue> },
+>(
   items: readonly T[],
   pending: readonly Mutation[],
 ): T[] {
@@ -57,11 +59,35 @@ export function overlayList<T extends { id: string; title: string }>(
     if (forRow.length === 0) {
       return item;
     }
+    const facts = item.facts;
     const overlaid = overlayRecord(
-      { title: item.title },
+      {
+        title: item.title,
+        ...(facts
+          ? {
+              primaryProtein: facts["primaryProtein"] ?? null,
+              totalMinutes: facts["totalMinutes"] ?? null,
+              effort: facts["effort"] ?? null,
+              mealTypes: facts["mealTypes"] ?? [],
+            }
+          : {}),
+      },
       forRow,
       null,
     );
-    return { ...item, title: overlaid.title };
+    if (!facts) {
+      return { ...item, title: overlaid.title };
+    }
+    return {
+      ...item,
+      title: overlaid.title,
+      facts: {
+        ...facts,
+        primaryProtein: overlaid.primaryProtein,
+        totalMinutes: overlaid.totalMinutes,
+        effort: overlaid.effort,
+        mealTypes: overlaid.mealTypes,
+      },
+    };
   });
 }

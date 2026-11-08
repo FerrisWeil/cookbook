@@ -71,7 +71,18 @@ describe("recipe HTTP", () => {
     assert.equal(mcp.status, 200);
     assert.equal(web.status, 200);
     assert.deepEqual(await mcp.json(), {
-      recipes: [{ id: "alpha", title: "Example: Alpha" }],
+      recipes: [
+        {
+          id: "alpha",
+          title: "Example: Alpha",
+          facts: {
+            primaryProtein: null,
+            totalMinutes: null,
+            effort: null,
+            mealTypes: [],
+          },
+        },
+      ],
     });
   }));
 
@@ -138,5 +149,64 @@ describe("recipe HTTP", () => {
       }),
     });
     assert.equal(revive.status, 404);
+  });
+
+  it("updates facts without replacing the rest of the recipe", async () => {
+    const created = await fetch(`${baseUrl}/recipes`, {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        id: "facts-http",
+        title: "Example: Facts http",
+        steps: ["mix"],
+        servings: 2,
+        actor: "chef",
+        ingredients: [{ line: "salt" }],
+      }),
+    });
+    assert.equal(created.status, 200);
+    const patched = await fetch(`${baseUrl}/recipes/facts-http/facts`, {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      }),
+    });
+    assert.equal(patched.status, 200);
+    assert.deepEqual(await patched.json(), {
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+    });
+    const read = await fetch(
+      `${baseUrl}/recipes/facts-http?fields=title,ingredients,steps,facts`,
+      { headers: { authorization: `Bearer ${WEB_TOKEN}` } },
+    );
+    assert.equal(read.status, 200);
+    assert.deepEqual(await read.json(), {
+      recipe: {
+        title: "Example: Facts http",
+        ingredients: [{ line: "salt", amount: null, unit: "", name: "" }],
+        steps: ["mix"],
+        facts: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
+      },
+    });
   });
 });

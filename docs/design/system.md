@@ -22,7 +22,7 @@ React stays the React `apps/web` already has. The UI package does not install a 
 
 The pieces the screens share: the page shell, a recipe card, the article (ingredients and steps), buttons, filter chips, a step check-off, and the load and error message. This slice ships the shell, card, article, buttons, and load/error copy. `/guide` ([demo](demo.md)) is not built.
 
-Theme control placement and icons wait for a later design pass. List cards are [information architecture](information-architecture.md). Title-only cards omit favorite, rating, and tags until the list API returns them.
+Theme control placement and home-screen icons wait for a later design pass. List cards are [information architecture](information-architecture.md). Cards show title and facts. Favorite, rating, and tags wait until the list API returns those fields.
 
 ## Supply chain
 

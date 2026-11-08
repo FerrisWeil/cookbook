@@ -4,16 +4,24 @@ import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { verifies } from "@cookbook/test";
+
 import {
   incomingRecipeApiPath,
+  isJsonContentType,
+  isRecipeFactsMethod,
+  isRecipeFactsPath,
   isRecipeReadMethod,
+  isSameOriginFactsRequest,
   loadWebToken,
   recipeAuthorization,
+  recipeProxyDecision,
   shouldAttachWebToken,
   upstreamRecipePath,
 } from "../dev-proxy.ts";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = join(webRoot, "../..");
 
 function walkFiles(dir: string, found: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -131,4 +139,111 @@ describe("read-only recipe proxy", () => {
       assert.equal(text.includes("Bearer "), false, file);
     }
   });
+});
+
+describe("facts mutation proxy", () => {
+  it(
+    "lets the browser update facts from the same origin and refuses a full recipe save",
+    verifies("187", "636ac7e770b30442", () => {
+      const ok = recipeProxyDecision("PATCH", "/api/recipes/alpha/facts", {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+      });
+      assert.deepEqual(ok, { allow: true, attachToken: true });
+      const fullSave = recipeProxyDecision("PUT", "/api/recipes", {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+      });
+      assert.equal(fullSave.allow, false);
+      assert.equal(fullSave.status, 405);
+      const nginx = [
+        readFileSync(join(repoRoot, "docker/nginx.conf"), "utf8"),
+        readFileSync(join(repoRoot, "deploy/nas/nginx.conf"), "utf8"),
+      ].join("\n");
+      assert.match(nginx, /location ~ \^\/api\/recipes\/\(\[\^\/\]\+\)\/facts\$/);
+      assert.match(nginx, /if \(\$request_method != PATCH\)/);
+      assert.match(nginx, /rewrite \^ \/recipes\/\$facts_id\/facts break;/);
+      assert.match(
+        nginx,
+        /location \/api\/recipes \{\s*if \(\$request_method !~ \^\(GET\|HEAD\)\$\)/,
+      );
+      assert.equal(isRecipeFactsPath("/api/recipes/alpha/facts"), true);
+      assert.equal(isRecipeFactsPath("/api/recipes/alpha"), false);
+      assert.equal(isRecipeFactsPath("/api/recipes/alpha/facts/extra"), false);
+      assert.equal(isRecipeFactsMethod("PATCH"), true);
+      assert.equal(isRecipeFactsMethod("PUT"), false);
+    }),
+  );
+
+  it(
+    "refuses a facts update from a different origin",
+    verifies("188", "9ba9d7157047d0fe", () => {
+      const cross = recipeProxyDecision("PATCH", "/api/recipes/alpha/facts", {
+        origin: "https://evil.example",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+        "sec-fetch-site": "cross-site",
+      });
+      assert.equal(cross.allow, false);
+      assert.equal(cross.status, 403);
+      assert.equal(
+        isSameOriginFactsRequest({
+          origin: "https://evil.example",
+          host: "127.0.0.1:8080",
+        }),
+        false,
+      );
+      assert.equal(
+        isSameOriginFactsRequest({
+          origin: "http://127.0.0.1:8080",
+          host: "127.0.0.1:8080",
+        }),
+        true,
+      );
+      const missing = recipeProxyDecision("PATCH", "/api/recipes/alpha/facts", {
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+      });
+      assert.equal(missing.allow, false);
+      assert.equal(missing.status, 403);
+    }),
+  );
+
+  it(
+    "refuses a facts update that is not PATCH or not JSON",
+    verifies("189", "f116930ae5df1bae", () => {
+      const post = recipeProxyDecision("POST", "/api/recipes/alpha/facts", {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+      });
+      assert.equal(post.allow, false);
+      assert.equal(post.status, 405);
+      const put = recipeProxyDecision("PUT", "/api/recipes/alpha/facts", {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+        "content-type": "application/json",
+      });
+      assert.equal(put.allow, false);
+      assert.equal(put.status, 405);
+      const get = recipeProxyDecision("GET", "/api/recipes/alpha/facts", {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+      });
+      assert.equal(get.allow, false);
+      assert.equal(get.status, 405);
+      const form = recipeProxyDecision("PATCH", "/api/recipes/alpha/facts", {
+        origin: "http://127.0.0.1:8080",
+        host: "127.0.0.1:8080",
+        "content-type": "application/x-www-form-urlencoded",
+      });
+      assert.equal(form.allow, false);
+      assert.equal(form.status, 415);
+      assert.equal(isJsonContentType("application/json; charset=utf-8"), true);
+      assert.equal(isJsonContentType("text/plain"), false);
+    }),
+  );
 });
