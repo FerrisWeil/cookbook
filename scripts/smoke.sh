@@ -202,7 +202,10 @@ try {
   process.stdout.write(`${helloBody}\n`);
   const listed = await client.listTools();
   const names = listed.tools.map((tool) => tool.name).sort().join(",");
-  if (names !== "hello,list,read,save") {
+  if (
+    names !==
+    "hello,list,read,save,session_complete,session_finish,session_resume,session_show,session_start,session_undo"
+  ) {
     console.error(names);
     process.exit(1);
   }
