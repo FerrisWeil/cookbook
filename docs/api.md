@@ -47,13 +47,13 @@ Clear all four:
 { "mutationId": "…", "fields": null }
 ```
 
-Success is `{ "facts": { … }, "mutation": { "id": "<mutationId>" } }`. The same id and payload returns that success without writing again. The same id and a different payload is `409 payload_mismatch`. Missing `mutationId` or invalid fields is `400`. Validation is in [recipes.md](recipes.md). The kitchen browser uses this PATCH through the web proxy. MCP `save` still sends a full optional `facts` object or `facts: null`; it does not use this PATCH.
+Success is `{ "facts": { … }, "mutation": { "id": "<mutationId>" } }`. The same id, payload, and recipe returns that success without writing again. The same id with a different payload or recipe is `409 payload_mismatch`. Missing `mutationId` or invalid fields is `400`. Validation is in [recipes.md](recipes.md). The kitchen browser uses this PATCH through the web proxy. MCP `save` still sends a full optional `facts` object or `facts: null`; it does not use this PATCH.
 
 Notifications are emitted from the recipe store seam after a successful commit, not only from the browser HTTP handler. Extra store methods pass through the wrapper; `updateFacts` notifies after it commits. Duplicate acks still return the current recipe and notify. The hub is in-process: one API replica. A restart drops the stream; clients reconnect and refetch. Direct SQL does not notify. Keepalive is not the stream timeout.
 
 `keepAliveTimeout` stays 5s. An open SSE socket sets its own timeout to 0. Nginx `proxy_buffering off` and a 1h read timeout apply only to `/api/recipes/events`.
 
-Mutation ids are stored in `recipe_mutation_acks`. `applyWithAck` must run on a client already inside the effect's transaction. It locks the ack row, applies the effect, then inserts the id and payload fingerprint. Same id and fingerprint is a duplicate ack. Same id and a different fingerprint is rejected. The facts PATCH sends `mutationId` and records the ack in the same transaction as the facts write.
+Mutation ids are stored in `recipe_mutation_acks`. `applyWithAck` must run on a client already inside the effect's transaction. An advisory lock serializes first use of an id. Then it locks the ack row, applies the effect, and inserts the id, payload fingerprint, and recipe. Same id, fingerprint, and recipe is a duplicate ack. Same id with a different fingerprint or recipe is rejected. Concurrent same-id first writes become one effect and 200. The facts PATCH sends `mutationId` and records the ack in the same transaction as the facts write.
 
 ## Callers
 

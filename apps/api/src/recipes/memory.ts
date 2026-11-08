@@ -70,7 +70,10 @@ export class MemoryRecipeStore implements RecipeStore {
   private readonly actors: Set<string>;
   private readonly recipes = new Map<string, StoredRecipe>();
   private readonly order: string[] = [];
-  private readonly acks = new Map<string, string>();
+  private readonly acks = new Map<
+    string,
+    { fingerprint: string; recipeId: string }
+  >();
 
   constructor(actors: readonly string[] = SHIPPED_ACTORS) {
     this.actors = new Set(actors);
@@ -165,13 +168,16 @@ export class MemoryRecipeStore implements RecipeStore {
     }
     const existing = this.acks.get(patch.mutationId);
     if (existing) {
-      if (existing === fingerprint) {
+      if (
+        existing.recipeId === id &&
+        existing.fingerprint === fingerprint
+      ) {
         return visible(stored);
       }
       throw new MutationAckError();
     }
     stored.facts = applyFactsPatch(stored.facts, patch.fields);
-    this.acks.set(patch.mutationId, fingerprint);
+    this.acks.set(patch.mutationId, { fingerprint, recipeId: id });
     return visible(stored);
   }
 

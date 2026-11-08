@@ -18,7 +18,6 @@ export class Outbox {
   private readonly lock: LockPort;
   private readonly now: () => number;
   private items: QueueItem[] = [];
-  private loaded = false;
   private readonly listeners = new Set<() => void>();
 
   constructor(ports: OutboxPorts) {
@@ -67,7 +66,7 @@ export class Outbox {
 
   async enqueue(mutation: Mutation): Promise<void> {
     await this.lock.withLock(async () => {
-      await this.ensureLoaded();
+      await this.reload();
       this.items = enqueue(this.items, mutation);
       await this.persist();
     });
@@ -76,7 +75,7 @@ export class Outbox {
 
   async drain(): Promise<void> {
     await this.lock.withLock(async () => {
-      await this.ensureLoaded();
+      await this.reload();
       for (;;) {
         this.items = prune(this.items);
         const next = nextSendable(this.items, this.now());
@@ -116,12 +115,8 @@ export class Outbox {
     this.emit();
   }
 
-  private async ensureLoaded(): Promise<void> {
-    if (this.loaded) {
-      return;
-    }
+  private async reload(): Promise<void> {
     this.items = prune(await this.storage.load());
-    this.loaded = true;
   }
 
   private async persist(): Promise<void> {

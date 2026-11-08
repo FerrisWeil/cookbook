@@ -15,6 +15,7 @@ const API = process.env.API_ORIGIN ?? "http://127.0.0.1:3000";
 const MCP =
   process.env.API_AUTH_TOKEN_MCP ?? "local-dev-api-mcp-token-not-for-nas";
 const RECIPE_ID = "outbox-browser";
+const RECIPE_ID_B = "outbox-browser-b";
 
 function fail(message) {
   process.stderr.write(`${message}\n`);
@@ -157,6 +158,10 @@ async function connectChrome(userDataDir, port) {
     );
   });
   const browser = new Cdp(ws);
+  return { chrome, browser };
+}
+
+async function attachPage(browser) {
   const created = await browser.send("Target.createTarget", { url: "about:blank" });
   const attached = await browser.send("Target.attachToTarget", {
     targetId: created.targetId,
@@ -173,7 +178,10 @@ async function connectChrome(userDataDir, port) {
     deviceScaleFactor: 1,
     mobile: true,
   });
-  return { chrome, browser, send, sessionId };
+  await send("Fetch.enable", {
+    patterns: [{ urlPattern: "*/facts", requestStage: "Request" }],
+  });
+  return { send, sessionId };
 }
 
 async function evaluate(send, expression, awaitPromise = false) {
@@ -237,9 +245,9 @@ function longSteps() {
   return Array.from({ length: 28 }, (_, index) => `Step ${index + 1}. Keep scrolling past the facts form.`);
 }
 
-function recipeBody(title, facts) {
+function recipeBody(id, title, facts) {
   return {
-    id: RECIPE_ID,
+    id,
     title,
     servings: 2,
     actor: "chef",
@@ -263,23 +271,23 @@ const CHEF_FACTS = {
   mealTypes: ["lunch"],
 };
 
-async function seedRecipe(title, facts) {
+async function seedRecipe(id, title, facts) {
   const saved = await api("/recipes", {
     method: "PUT",
-    body: JSON.stringify(recipeBody(title, facts)),
+    body: JSON.stringify(recipeBody(id, title, facts)),
   });
   if (saved.status !== 200) {
     fail(`seed failed ${saved.status}`);
   }
 }
 
-async function readFacts() {
-  const read = await api(`/recipes/${RECIPE_ID}?fields=title,facts`);
+async function readFacts(id = RECIPE_ID) {
+  const read = await api(`/recipes/${id}?fields=title,facts`);
   return read.body?.recipe ?? {};
 }
 
-async function openRecipe(send) {
-  await send("Page.navigate", { url: `${WEB}/recipes/${RECIPE_ID}` });
+async function openRecipe(send, id = RECIPE_ID) {
+  await send("Page.navigate", { url: `${WEB}/recipes/${id}` });
   await waitFor(
     send,
     `document.body ? (String(document.body.innerText || "").includes("Example:") && !String(document.body.innerText || "").includes("Loading recipe")) : false`,
@@ -329,31 +337,33 @@ function hasProtein(items, protein) {
   );
 }
 
-function attachFetchGate(browser, send) {
-  const gate = { mode: "pass" };
-  browser.on("Fetch.requestPaused", (params) => {
+function attachFetchGate(browser) {
+  const gate = { mode: "pass", rejectPatches: 0 };
+  browser.on("Fetch.requestPaused", (params, sessionId) => {
     const url = params.request?.url ?? "";
     const method = params.request?.method ?? "";
     const isFactsPatch = method === "PATCH" && url.includes("/facts");
+    const reply = (name, args) => browser.send(name, args, sessionId);
     const handle = async () => {
       if (!isFactsPatch || gate.mode === "pass") {
-        await send("Fetch.continueRequest", { requestId: params.requestId });
+        await reply("Fetch.continueRequest", { requestId: params.requestId });
         return;
       }
       if (gate.mode === "offline") {
-        await send("Fetch.failRequest", {
+        await reply("Fetch.failRequest", {
           requestId: params.requestId,
           errorReason: "Failed",
         });
         return;
       }
+      gate.rejectPatches += 1;
       const body = Buffer.from(
         JSON.stringify({
           error: "invalid",
           message: "Could not save recipe facts.",
         }),
       ).toString("base64");
-      await send("Fetch.fulfillRequest", {
+      await reply("Fetch.fulfillRequest", {
         requestId: params.requestId,
         responseCode: 400,
         responseHeaders: [{ name: "content-type", value: "application/json" }],
@@ -377,17 +387,18 @@ async function run() {
 
   const userDataDir = await mkdtemp(join(tmpdir(), "cookbook-chrome-"));
   const port = await freePort();
-  const { chrome, browser, send } = await connectChrome(userDataDir, port);
-  const gate = attachFetchGate(browser, send);
-  await send("Fetch.enable", {
-    patterns: [{ urlPattern: "*/facts", requestStage: "Request" }],
-  });
+  const { chrome, browser } = await connectChrome(userDataDir, port);
+  const gate = attachFetchGate(browser);
+  const { send } = await attachPage(browser);
+  const second = await attachPage(browser);
 
   try {
     process.stderr.write("phase:seed-scroll\n");
-    await seedRecipe("Example: Outbox bowls", BASE_FACTS);
+    await seedRecipe(RECIPE_ID, "Example: Outbox bowls", BASE_FACTS);
+    await seedRecipe(RECIPE_ID_B, "Example: Outbox second", BASE_FACTS);
     process.stderr.write("phase:open-scroll\n");
-    await openRecipe(send);
+    await openRecipe(send, RECIPE_ID);
+    await openRecipe(second.send, RECIPE_ID_B);
     await clickNamed(send, "Edit recipe facts");
     await setProtein(send, "DRAFT HOLD");
     const beforeScroll = await evaluate(
@@ -405,7 +416,7 @@ async function run() {
     if (!(beforeScroll > 80)) {
       fail(`long recipe did not scroll; scrollY=${beforeScroll}`);
     }
-    await seedRecipe("Example: Chef intervening title", CHEF_FACTS);
+    await seedRecipe(RECIPE_ID, "Example: Chef intervening title", CHEF_FACTS);
     await waitFor(
       send,
       `document.body.innerText.includes("Chef intervening title")`,
@@ -428,8 +439,41 @@ async function run() {
     process.stdout.write("browser-outbox-scroll-ok\n");
     await clickNamed(send, "Cancel");
 
-    await seedRecipe("Example: Outbox bowls", BASE_FACTS);
-    await openRecipe(send);
+    gate.mode = "offline";
+    await editProtein(send, "seitan");
+    await editProtein(second.send, "tofu");
+    const twoTab = await waitFor(
+      send,
+      `(async () => {
+        const items = await ${OUTBOX_READ};
+        const seitan = items.some((item) => item?.mutation?.fields?.primaryProtein === "seitan" && item?.mutation?.recipeId === ${JSON.stringify(RECIPE_ID)});
+        const tofu = items.some((item) => item?.mutation?.fields?.primaryProtein === "tofu" && item?.mutation?.recipeId === ${JSON.stringify(RECIPE_ID_B)});
+        return seitan && tofu ? items : null;
+      })()`,
+      8_000,
+      true,
+    );
+    if (!hasProtein(twoTab, "seitan") || !hasProtein(twoTab, "tofu")) {
+      fail(`two tabs did not keep both pending edits: ${JSON.stringify(twoTab)}`);
+    }
+    process.stdout.write("browser-outbox-twotab-ok\n");
+    gate.mode = "pass";
+    const drainDeadline = Date.now() + 20_000;
+    let leftover = [];
+    while (Date.now() < drainDeadline) {
+      leftover = await evaluate(send, OUTBOX_READ, true);
+      if (Array.isArray(leftover) && leftover.length === 0) {
+        leftover = [];
+        break;
+      }
+      await sleep(300);
+    }
+    if (Array.isArray(leftover) && leftover.length > 0) {
+      fail(`two-tab queue did not drain: ${JSON.stringify(leftover)}`);
+    }
+
+    await seedRecipe(RECIPE_ID, "Example: Outbox bowls", BASE_FACTS);
+    await openRecipe(send, RECIPE_ID);
     gate.mode = "offline";
     await editProtein(send, "seitan");
     await waitFor(
@@ -449,7 +493,7 @@ async function run() {
     if (!hasProtein(queued, "seitan")) {
       fail(`outbox did not persist the offline edit: ${JSON.stringify(queued)}`);
     }
-    await seedRecipe("Example: Chef intervening title", CHEF_FACTS);
+    await seedRecipe(RECIPE_ID, "Example: Chef intervening title", CHEF_FACTS);
     await send("Page.reload", { ignoreCache: true });
     await waitFor(
       send,
@@ -463,7 +507,7 @@ async function run() {
     const deadline = Date.now() + 35_000;
     let facts;
     while (Date.now() < deadline) {
-      facts = await readFacts();
+      facts = await readFacts(RECIPE_ID);
       if (
         facts?.facts?.primaryProtein === "seitan" &&
         facts?.facts?.totalMinutes === 99 &&
@@ -490,8 +534,9 @@ async function run() {
     process.stdout.write("browser-outbox-replay-ok\n");
 
     gate.mode = "reject";
-    await seedRecipe("Example: Outbox bowls", BASE_FACTS);
-    await openRecipe(send);
+    gate.rejectPatches = 0;
+    await seedRecipe(RECIPE_ID, "Example: Outbox bowls", BASE_FACTS);
+    await openRecipe(send, RECIPE_ID);
     await editProtein(send, "rejected-protein");
     await waitFor(
       send,
@@ -527,8 +572,17 @@ async function run() {
     ) {
       fail(`permanent reject left the item retryable: ${JSON.stringify(stillQueued)}`);
     }
-    await sleep(1500);
-    const afterHold = await readFacts();
+    const rejectsAfterStatus = gate.rejectPatches;
+    if (rejectsAfterStatus < 1) {
+      fail("permanent reject never hit the facts PATCH");
+    }
+    await sleep(5_000);
+    if (gate.rejectPatches !== rejectsAfterStatus) {
+      fail(
+        `permanent reject retried PATCH ${gate.rejectPatches - rejectsAfterStatus} extra time(s)`,
+      );
+    }
+    const afterHold = await readFacts(RECIPE_ID);
     if (afterHold?.facts?.primaryProtein === "rejected-protein") {
       fail("permanent reject was retried against the API");
     }

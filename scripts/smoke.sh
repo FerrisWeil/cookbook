@@ -438,6 +438,7 @@ if command -v google-chrome-stable >/dev/null 2>&1 \
   || command -v chromium >/dev/null 2>&1; then
   node scripts/browser-outbox.mjs | tee /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-scroll-ok" /tmp/cookbook-browser-outbox.log
+  grep -q "browser-outbox-twotab-ok" /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-replay-ok" /tmp/cookbook-browser-outbox.log
   grep -q "browser-outbox-reject-ok" /tmp/cookbook-browser-outbox.log
 else

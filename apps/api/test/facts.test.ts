@@ -453,4 +453,44 @@ describe("recipe facts", () => {
       assert.equal(afterReject.facts.primaryProtein, "tofu");
     }),
   );
+
+  it("refuses the same mutation id against a different recipe", async () => {
+    const store = createMemoryRecipeStore();
+    const first = await store.save(
+      base({
+        title: "Example: First",
+        facts: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
+      }),
+    );
+    const second = await store.save(
+      base({
+        title: "Example: Second",
+        facts: {
+          primaryProtein: "chicken",
+          totalMinutes: 30,
+          effort: "low",
+          mealTypes: ["dinner"],
+        },
+      }),
+    );
+    await store.updateFacts(
+      first.id,
+      factsPatch({ primaryProtein: "seitan" }, "shared"),
+    );
+    await assert.rejects(
+      () =>
+        store.updateFacts(
+          second.id,
+          factsPatch({ primaryProtein: "seitan" }, "shared"),
+        ),
+      (error: unknown) => error instanceof MutationAckError,
+    );
+    const untouched = await store.read(second.id);
+    assert.equal(untouched.facts.primaryProtein, "chicken");
+  });
 });

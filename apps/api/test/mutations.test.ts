@@ -17,6 +17,9 @@ function memoryAcks(): SqlClient & { applied: string[] } {
   return {
     applied,
     async query(sql, params = []) {
+      if (sql.includes("pg_advisory_xact_lock")) {
+        return { rowCount: 1, rows: [] };
+      }
       if (sql.includes("SELECT payload_fingerprint")) {
         const mutationId = String(params[0]);
         const row = rows.get(mutationId);
@@ -54,6 +57,39 @@ describe("mutation acknowledgements", () => {
     assert.equal(first.kind, "applied");
     assert.equal(second.kind, "duplicate");
     assert.deepEqual(client.applied, ["effect"]);
+  });
+
+  it("rejects the same mutation id against a different recipe", async () => {
+    const client = memoryAcks();
+    await applyWithAck(
+      client,
+      {
+        mutationId: "mut-1",
+        payloadFingerprint: canonicalFingerprint({ primaryProtein: "seitan" }),
+        recipeId: "r1",
+      },
+      async () => {
+        client.applied.push("r1");
+      },
+    );
+    await assert.rejects(
+      () =>
+        applyWithAck(
+          client,
+          {
+            mutationId: "mut-1",
+            payloadFingerprint: canonicalFingerprint({
+              primaryProtein: "seitan",
+            }),
+            recipeId: "r2",
+          },
+          async () => {
+            client.applied.push("r2");
+          },
+        ),
+      (error: unknown) => error instanceof MutationAckError,
+    );
+    assert.deepEqual(client.applied, ["r1"]);
   });
 
   it("rejects the same mutation id with a different payload", async () => {

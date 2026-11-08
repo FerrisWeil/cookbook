@@ -300,6 +300,50 @@ describe("outbox driver", () => {
     assert.match(dumped, /"title":"A"/);
   });
 
+  it("keeps both pending items when two drivers share storage", async () => {
+    const storage = memoryStorage();
+    const lock = memoryLock();
+    const network = networkWith(async () => ({
+      ok: false,
+      kind: "unavailable" as const,
+      message: "offline",
+    }));
+    const first = new Outbox({ storage, network, lock, now: () => 0 });
+    const second = new Outbox({ storage, network, lock, now: () => 0 });
+    await first.drain();
+    await second.drain();
+    await first.enqueue(mutation("m1", { primaryProtein: "seitan" }, "r1"));
+    await second.enqueue(mutation("m2", { primaryProtein: "tofu" }, "r2"));
+    const stored = await storage.load();
+    assert.deepEqual(
+      stored.map((item) => item.mutation.id).sort(),
+      ["m1", "m2"],
+    );
+    await first.enqueue(mutation("m3", { totalMinutes: 40 }, "r1"));
+    const after = await storage.load();
+    assert.deepEqual(
+      after.map((item) => item.mutation.id).sort(),
+      ["m1", "m2", "m3"],
+    );
+  });
+
+  it("does not resurrect an acked item from a stale driver cache", async () => {
+    const storage = memoryStorage();
+    const lock = memoryLock();
+    const network = networkWith(async () => ({ ok: true, kind: "applied" }));
+    const first = new Outbox({ storage, network, lock, now: () => 0 });
+    const second = new Outbox({ storage, network, lock, now: () => 0 });
+    await first.enqueue(mutation("m1", { primaryProtein: "seitan" }, "r1"));
+    await second.drain();
+    await first.drain();
+    await second.enqueue(mutation("m2", { primaryProtein: "tofu" }, "r2"));
+    const stored = await storage.load();
+    assert.deepEqual(
+      stored.map((item) => item.mutation.id),
+      ["m2"],
+    );
+  });
+
   it("serializes sends so two drainers do not double-send or reorder", async () => {
     const storage = memoryStorage();
     const lock = memoryLock();

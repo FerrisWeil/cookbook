@@ -270,5 +270,40 @@ describe("recipe HTTP", () => {
       error: "payload_mismatch",
       message: "That mutation id was already used with a different payload.",
     });
+    const other = await fetch(`${baseUrl}/recipes`, {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        id: "facts-http-other",
+        title: "Example: Other facts",
+        steps: ["mix"],
+        servings: 2,
+        actor: "chef",
+      }),
+    });
+    assert.equal(other.status, 200);
+    const cross = await fetch(`${baseUrl}/recipes/facts-http-other/facts`, {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${WEB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        mutationId: "http-facts-protein",
+        fields: { primaryProtein: "seitan" },
+      }),
+    });
+    assert.equal(cross.status, 409);
+    const otherRead = await fetch(
+      `${baseUrl}/recipes/facts-http-other?fields=facts`,
+      { headers: { authorization: `Bearer ${WEB_TOKEN}` } },
+    );
+    const otherBody = (await otherRead.json()) as {
+      recipe?: { facts?: { primaryProtein?: unknown } };
+    };
+    assert.notEqual(otherBody.recipe?.facts?.primaryProtein, "seitan");
   });
 });

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCb } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { createServer } from "node:net";
 import { dirname, join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -52,13 +53,25 @@ function clientFrom(pool: pg.Pool): {
   };
 }
 
+async function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      server.close((error) => (error ? reject(error) : resolve(port)));
+    });
+    server.on("error", reject);
+  });
+}
+
 describe("postgres recipe facts", () => {
   let container = "";
   let pool: pg.Pool | undefined;
   const password = randomBytes(12).toString("hex");
-  const port = 55433;
 
   before(async () => {
+    const port = await freePort();
     container = `cookbook-facts-pg-${randomBytes(4).toString("hex")}`;
     await execFile("docker", [
       "run",
@@ -73,28 +86,6 @@ describe("postgres recipe facts", () => {
       `127.0.0.1:${port}:5432`,
       "postgres:16.15-alpine",
     ]);
-    const deadline = Date.now() + 30_000;
-    let ready = false;
-    while (Date.now() < deadline) {
-      try {
-        await execFile("docker", [
-          "exec",
-          container,
-          "pg_isready",
-          "-U",
-          "postgres",
-          "-d",
-          "cookbook",
-        ]);
-        ready = true;
-        break;
-      } catch {
-        await new Promise((resolve) => setTimeout(resolve, 250));
-      }
-    }
-    if (!ready) {
-      throw new Error("disposable postgres did not become ready");
-    }
     pool = new Pool({
       host: "127.0.0.1",
       port,
@@ -102,6 +93,23 @@ describe("postgres recipe facts", () => {
       password,
       database: "cookbook",
     });
+    const deadline = Date.now() + 30_000;
+    let last: unknown;
+    while (Date.now() < deadline) {
+      try {
+        await pool.query("SELECT 1");
+        last = undefined;
+        break;
+      } catch (error) {
+        last = error;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+    if (last !== undefined) {
+      throw last instanceof Error
+        ? last
+        : new Error("disposable postgres did not become ready");
+    }
     const { checkout, sql } = clientFrom(pool);
     await applyMigrations(checkout, migrationsDir);
     await applySeed(sql, seedFile);
@@ -286,5 +294,101 @@ describe("postgres recipe facts", () => {
     assert.equal(read.facts.primaryProtein, "seitan");
     assert.equal(read.facts.totalMinutes, 40);
     assert.equal(read.facts.effort, "low");
+  });
+
+  it("returns 200 twice for concurrent same-id same-target patches with one effect", async () => {
+    assert.ok(pool);
+    const store = createPgRecipeStore(clientFrom(pool).checkout);
+    const created = await store.save({
+      actor: "chef",
+      title: "Example: Same mutation",
+      servings: 2,
+      steps: ["Cook."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+    });
+    const body = {
+      mutationId: "pg-same-id",
+      fields: { primaryProtein: "seitan" },
+    };
+    const [first, second] = await Promise.all([
+      store.updateFacts(created.id, body),
+      store.updateFacts(created.id, body),
+    ]);
+    assert.equal(first.facts.primaryProtein, "seitan");
+    assert.equal(second.facts.primaryProtein, "seitan");
+    const acked = await pool.query(
+      "SELECT recipe_id FROM recipe_mutation_acks WHERE mutation_id = $1",
+      ["pg-same-id"],
+    );
+    assert.equal(acked.rowCount, 1);
+    assert.equal(acked.rows[0]?.["recipe_id"], created.id);
+  });
+
+  it("rejects a concurrent same-id different payload and a different recipe", async () => {
+    assert.ok(pool);
+    const store = createPgRecipeStore(clientFrom(pool).checkout);
+    const created = await store.save({
+      actor: "chef",
+      title: "Example: Mismatch mutation",
+      servings: 2,
+      steps: ["Cook."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+    });
+    const other = await store.save({
+      actor: "chef",
+      title: "Example: Other mutation",
+      servings: 2,
+      steps: ["Cook."],
+      facts: {
+        primaryProtein: "chicken",
+        totalMinutes: 30,
+        effort: "low",
+        mealTypes: ["dinner"],
+      },
+    });
+    const results = await Promise.allSettled([
+      store.updateFacts(created.id, {
+        mutationId: "pg-conflict-id",
+        fields: { primaryProtein: "seitan" },
+      }),
+      store.updateFacts(created.id, {
+        mutationId: "pg-conflict-id",
+        fields: { primaryProtein: "beef" },
+      }),
+    ]);
+    const fulfilled = results.filter((item) => item.status === "fulfilled");
+    const rejected = results.filter((item) => item.status === "rejected");
+    assert.equal(fulfilled.length, 1);
+    assert.equal(rejected.length, 1);
+    assert.equal(
+      rejected[0]?.status === "rejected" &&
+        rejected[0].reason instanceof MutationAckError,
+      true,
+    );
+    const winner =
+      fulfilled[0]?.status === "fulfilled" ? fulfilled[0].value.facts.primaryProtein : "";
+    assert.equal(winner === "seitan" || winner === "beef", true);
+    const stored = await store.read(created.id);
+    assert.equal(stored.facts.primaryProtein, winner);
+    await assert.rejects(
+      () =>
+        store.updateFacts(other.id, {
+          mutationId: "pg-conflict-id",
+          fields: { primaryProtein: winner },
+        }),
+      (error: unknown) => error instanceof MutationAckError,
+    );
+    const otherRead = await store.read(other.id);
+    assert.equal(otherRead.facts.primaryProtein, "chicken");
   });
 });

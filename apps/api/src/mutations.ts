@@ -22,23 +22,33 @@ export class MutationAckError extends Error {
 /**
  * Caller must pass a client already inside the effect's transaction.
  * `apply` must use that same client so the write and ack commit or roll back
- * together. `SELECT ... FOR UPDATE` serializes concurrent acks for one id.
+ * together. Advisory lock serializes first use of an id (no row to
+ * `FOR UPDATE` yet). Same id, fingerprint, and recipe is a duplicate.
+ * Same id with a different fingerprint or recipe is rejected.
  */
 export async function applyWithAck(
   client: SqlClient,
   input: MutationAckInput,
   apply: () => Promise<void>,
 ): Promise<MutationAckResult> {
+  await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+    input.mutationId,
+  ]);
   const existing = await client.query(
-    `SELECT payload_fingerprint
+    `SELECT payload_fingerprint, recipe_id
      FROM recipe_mutation_acks
      WHERE mutation_id = $1
      FOR UPDATE`,
     [input.mutationId],
   );
-  const row = existing.rows[0] as { payload_fingerprint?: unknown } | undefined;
+  const row = existing.rows[0] as
+    | { payload_fingerprint?: unknown; recipe_id?: unknown }
+    | undefined;
   if (row) {
-    if (row.payload_fingerprint === input.payloadFingerprint) {
+    if (
+      row.recipe_id === input.recipeId &&
+      row.payload_fingerprint === input.payloadFingerprint
+    ) {
       return { kind: "duplicate" };
     }
     throw new MutationAckError();
