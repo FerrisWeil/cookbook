@@ -5,7 +5,8 @@
 > `prototype/TAY-36-frontend` is a clickable kitchen for planning (Linear TAY-36).
 > Sample recipes only. No API, no database, no secrets. When an idea is chosen, it
 > becomes a normal Linear issue and is built properly on `master`. Prototype-only
-> code lives in `apps/web/src/prototype/`.
+> code lives in `apps/web/src/prototype/`. Before each new prototype round, merge
+> `master` into this branch to stay current.
 >
 > Run locally: `pnpm prototype` then open http://127.0.0.1:5173
 >
