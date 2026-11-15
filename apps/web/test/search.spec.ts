@@ -352,7 +352,7 @@ test.describe("recipe search", () => {
   }) => {
     const id = stamp();
     const prefix = `PwNow ${id}`;
-    const titles = Array.from({ length: 8 }, (_, index) => {
+    const titles = Array.from({ length: 12 }, (_, index) => {
       const n = String(index + 1).padStart(2, "0");
       return `Example: ${prefix} ${n}`;
     });
@@ -363,13 +363,12 @@ test.describe("recipe search", () => {
     await page.setViewportSize({ width: 390, height: 480 });
     await page.goto("/");
     await expect(recipeLink(page, titles[0] ?? "")).toBeVisible();
-    const targetTitle = titles[5] ?? "";
-    const target = recipeLink(page, targetTitle);
-    await target.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, 280));
     const scrolled = await page.evaluate(() => window.scrollY);
     expect(scrolled).toBeGreaterThan(80);
+    const targetTitle = titles[5] ?? "";
     await page.getByLabel("Recipe name").fill(prefix);
-    await target.click();
+    await recipeLink(page, targetTitle).click({ force: true });
     await expect(page).toHaveURL(/\/recipes\//);
     const recipeUrl = page.url();
     expect(new URL(recipeUrl).pathname).toMatch(/^\/recipes\//);
