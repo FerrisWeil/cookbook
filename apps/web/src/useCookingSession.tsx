@@ -6,10 +6,21 @@ import {
   type ReactNode,
 } from "react";
 
+import type { CookingSession } from "@cookbook/shared";
+
 import { createDetachedCooking } from "./cooking/browser";
 import type { CookingClient } from "./cooking/client";
-import type { CookingSession } from "@cookbook/shared";
+import type {
+  PrototypeCookingClient,
+  PrototypeCookingExtras,
+} from "./prototype/cookingStore";
 import { recipePath } from "./route";
+
+function isPrototypeCookingClient(
+  client: CookingClient,
+): client is PrototypeCookingClient {
+  return "getExtras" in client && typeof client.getExtras === "function";
+}
 
 const CookingContext = createContext<CookingClient | null>(null);
 
@@ -47,11 +58,20 @@ export function useCookingSession() {
   const client = useCooking();
   useCookingTick(client);
   const view = client.view();
+  const prototypeClient = isPrototypeCookingClient(client) ? client : null;
+  const prototypeExtras = prototypeClient?.getExtras() ?? null;
+  const runningTimers = prototypeClient?.runningTimerCount() ?? 0;
   return {
     view,
     error: client.error(),
+    prototypeClient,
+    prototypeExtras,
     resume: view
-      ? { title: view.snapshot.title, href: recipePath(view.recipeId) }
+      ? {
+          title: view.snapshot.title,
+          href: recipePath(view.recipeId),
+          runningTimers,
+        }
       : null,
     begin: (recipeId: string) => {
       void client.begin(recipeId);
@@ -91,6 +111,10 @@ export type CookingPanel =
       onComplete: () => void;
       onUndo: () => void;
       onFinish: () => void;
+      prototype?: {
+        client: PrototypeCookingClient;
+        extras: PrototypeCookingExtras;
+      };
     };
 
 export function cookingPanel(
@@ -121,5 +145,14 @@ export function cookingPanel(
     onComplete: cooking.complete,
     onUndo: cooking.undo,
     onFinish: cooking.end,
+    prototype:
+      cooking.prototypeClient &&
+      cooking.prototypeExtras &&
+      cooking.prototypeExtras.recipeId === recipeId
+        ? {
+            client: cooking.prototypeClient,
+            extras: cooking.prototypeExtras,
+          }
+        : undefined,
   };
 }

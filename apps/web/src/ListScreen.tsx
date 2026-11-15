@@ -57,7 +57,7 @@ export function ListScreen({
   onOpen: (href: string) => void;
   onRetry: () => void;
   status?: string;
-  resume?: { title: string; onOpen: () => void };
+  resume?: { title: string; runningTimers?: number; onOpen: () => void };
   search?: ListSearchProps;
 }) {
   const hasCriteria = search ? !criteriaIsEmpty(search.criteria) : false;
@@ -81,7 +81,9 @@ export function ListScreen({
       {resume ? (
         <p className="cooking-resume">
           <Button variant="primary" onClick={resume.onOpen}>
-            {`Cooking ${resume.title}`}
+            {resume.runningTimers && resume.runningTimers > 0
+              ? `Cooking ${resume.title} (${resume.runningTimers} timer${resume.runningTimers === 1 ? "" : "s"} running)`
+              : `Cooking ${resume.title}`}
           </Button>
         </p>
       ) : null}

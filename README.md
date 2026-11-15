@@ -1,5 +1,18 @@
 # Cookbook
 
+> [!IMPORTANT]
+> **Prototype branch (`prototype/TAY-36-frontend`) — NEVER MERGED TO `master`.**
+>
+> This branch runs the real `@cookbook/web` + `@cookbook/ui` client with 25 made-up edge-case sample recipes, in-memory facts edits, and browser-only cooking mode — **no API, no Postgres, and no secrets required**.
+>
+> **How ideas move to real work:** When Taylor picks an idea from this prototype, create a normal Linear issue and implement it cleanly on a branch off `master`. Prototype code is never merged into `master`. Before each new prototype round, merge `master` into this branch to stay current.
+>
+> **Run locally (one command, no API/DB):**
+> ```bash
+> pnpm prototype
+> ```
+> (Or `pnpm --filter @cookbook/web dev`.) Reachable prototype states are also available via the **Prototype controls** bar at the top of the screen or URL flags (`?state=empty`, `?state=loading`, `?state=error`, `?theme=light`, `?theme=dark`).
+
 A self-hosted family recipe app for Taylor and his wife. Used only at home. Never exposed to the public internet.
 
 [Chef](https://github.com/FerrisWeil/nas-mcp) is a separate cloud-hosted chatbot (not this repo). After a meal Taylor liked, Chef saves the recipe plus notes through this repo's MCP server. Taylor then browses favorites on desktop or iPhone when planning meals.

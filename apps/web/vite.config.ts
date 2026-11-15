@@ -38,6 +38,12 @@ function webTokenProxy(): Plugin {
   return {
     name: "cookbook-web-token-proxy",
     configureServer(server) {
+      if (
+        process.env.COOKBOOK_PROTOTYPE === "1" ||
+        !process.env.API_AUTH_TOKEN_WEB
+      ) {
+        return;
+      }
       loadWebToken(process.env);
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? "").split("?")[0] ?? "";

@@ -95,6 +95,7 @@ function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
         cooking.resume
           ? {
               title: cooking.resume.title,
+              runningTimers: cooking.resume.runningTimers,
               onOpen: () => onOpen(cooking.resume ? cooking.resume.href : "/"),
             }
           : undefined

@@ -4,6 +4,7 @@ import type { RecipeFacts } from "@cookbook/shared";
 
 import { RECIPE_ERROR, RECIPE_MISSING, type RecipeView } from "./api";
 import type { CookingPanel } from "./useCookingSession";
+import { CookingModeView } from "./prototype/CookingModeView";
 import { RecipeFactsForm } from "./RecipeFactsForm";
 import { RecipeFacts as RecipeFactsDisplay } from "./RecipeFacts";
 import type { FactsDraft, FactsFormStatus } from "./facts";
@@ -43,6 +44,23 @@ export function RecipeScreen({
   onCancelFacts: () => void;
   cooking?: CookingPanel;
 }) {
+  if (state.kind === "ready" && cooking?.mode === "here" && cooking.prototype) {
+    return (
+      <main className="ui-shell recipe-screen recipe-screen--cooking">
+        <CookingModeView
+          client={cooking.prototype.client}
+          extras={cooking.prototype.extras}
+          displayedStep={cooking.session.displayedStep}
+          completedSteps={cooking.session.completedSteps}
+          error={cooking.error}
+          onBack={onBack}
+          onShow={cooking.onShow}
+          onFinish={cooking.onFinish}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="ui-shell recipe-screen">
       <Button className="ui-back" variant="primary" onClick={onBack}>
@@ -118,26 +136,29 @@ export function RecipeArticle({
   const ingredients =
     cooking?.mode === "here" ? cooking.session.snapshot.ingredients : recipe.ingredients;
   const steps = cooking?.mode === "here" ? cooking.session.snapshot.steps : recipe.steps;
+  const hideFacts = cooking?.mode === "here";
   return (
     <article className="recipe-article">
       <h1>{title}</h1>
-      <div className="recipe-facts-block">
-        <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
-        {editing && draft ? (
-          <RecipeFactsForm
-            draft={draft}
-            baseline={baseline}
-            status={formStatus}
-            onDraftChange={onDraftChange}
-            onSave={onSaveFacts}
-            onCancel={onCancelFacts}
-          />
-        ) : (
-          <Button variant="tonal" onClick={onEditFacts}>
-            Edit recipe facts
-          </Button>
-        )}
-      </div>
+      {hideFacts ? null : (
+        <div className="recipe-facts-block">
+          <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
+          {editing && draft ? (
+            <RecipeFactsForm
+              draft={draft}
+              baseline={baseline}
+              status={formStatus}
+              onDraftChange={onDraftChange}
+              onSave={onSaveFacts}
+              onCancel={onCancelFacts}
+            />
+          ) : (
+            <Button variant="tonal" onClick={onEditFacts}>
+              Edit recipe facts
+            </Button>
+          )}
+        </div>
+      )}
       {ingredients.length > 0 ? (
         <section>
           <h2>Ingredients</h2>
