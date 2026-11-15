@@ -1,3 +1,5 @@
+import { compileListCriteria, listCriteriaFromSearch } from "@cookbook/shared";
+
 import { fetchRecipeList, fetchRecipeView } from "./api";
 import {
   eventSourceStream,
@@ -13,18 +15,25 @@ export function createBrowserSession(): KitchenSession {
     typeof indexedDB === "undefined"
       ? memoryStorage()
       : indexedDbStorage(indexedDB);
-  return createKitchenSession({
-    storage,
-    lock: typeof navigator === "undefined" ? memoryLock() : webLock(),
-    network: factsPatchNetwork(),
-    stream: eventSourceStream("/api/recipes/events"),
-    recipes: {
-      list: () => fetchRecipeList(),
-      read: (id) => fetchRecipeView(id),
+  const search =
+    typeof window === "undefined" ? "" : window.location.search;
+  return createKitchenSession(
+    {
+      storage,
+      lock: typeof navigator === "undefined" ? memoryLock() : webLock(),
+      network: factsPatchNetwork(),
+      stream: eventSourceStream("/api/recipes/events"),
+      recipes: {
+        list: (query) => fetchRecipeList(query),
+        read: (id) => fetchRecipeView(id),
+      },
+      now: () => Date.now(),
+      id: () => crypto.randomUUID(),
     },
-    now: () => Date.now(),
-    id: () => crypto.randomUUID(),
-  });
+    {
+      initialListQuery: compileListCriteria(listCriteriaFromSearch(search)),
+    },
+  );
 }
 
 export function createDetachedSession(): KitchenSession {
@@ -43,7 +52,7 @@ export function createDetachedSession(): KitchenSession {
     stream: { connect() {} },
     recipes: {
       async list() {
-        return [];
+        return { recipes: [], proteinChoices: [] };
       },
       async read() {
         throw new Error("The recipe was not found.");

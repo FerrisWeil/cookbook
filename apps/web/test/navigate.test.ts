@@ -1,36 +1,48 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { verifies } from "@cookbook/test";
+
 import {
   COOKBOOK_HISTORY,
   leaveRecipe,
+  listScrollFromState,
   pushAppPath,
+  rememberListPosition,
   type CookbookHistory,
 } from "../src/navigate.ts";
 
-function memoryHistory(start: string): CookbookHistory & { path: string; stack: string[] } {
-  const stack = [start];
-  let state: unknown = null;
+type HistoryEntry = { path: string; state: unknown };
+
+function memoryHistory(
+  start: string,
+): CookbookHistory & { path: string; stack: string[]; entries: HistoryEntry[] } {
+  const entries: HistoryEntry[] = [{ path: start, state: null }];
   return {
     get path() {
-      return stack[stack.length - 1] ?? start;
+      return entries[entries.length - 1]?.path ?? start;
     },
-    stack,
+    get stack() {
+      return entries.map((entry) => entry.path);
+    },
+    entries,
     get state() {
-      return state;
+      return entries[entries.length - 1]?.state ?? null;
     },
     pushState(data, _unused, url) {
-      state = data;
-      stack.push(String(url ?? ""));
+      entries.push({ path: String(url ?? ""), state: data });
     },
     replaceState(data, _unused, url) {
-      state = data;
-      stack[stack.length - 1] = String(url ?? "");
+      const current = entries[entries.length - 1];
+      if (!current) {
+        return;
+      }
+      current.state = data;
+      current.path = String(url ?? current.path);
     },
     back() {
-      if (stack.length > 1) {
-        stack.pop();
-        state = null;
+      if (entries.length > 1) {
+        entries.pop();
       }
     },
   };
@@ -49,4 +61,24 @@ describe("in-app Back", () => {
     assert.equal(leaveRecipe(deepLink), "replace");
     assert.deepEqual(deepLink.stack, ["/"]);
   });
+
+  it(
+    "restores list query href and scroll from history",
+    verifies("233", "f6a81c70d242f531", () => {
+    const history = memoryHistory("/");
+    const listHref = "/?title=lemon";
+    rememberListPosition(history, listHref, 240);
+    assert.equal(history.path, listHref);
+    assert.equal(listScrollFromState(history.state), 240);
+    pushAppPath("/recipes/lentils", history, { pathname: "/" });
+    assert.deepEqual(history.stack, [listHref, "/recipes/lentils"]);
+    const recipeEntry = history.entries[1];
+    assert.equal(recipeEntry?.path, "/recipes/lentils");
+    assert.equal(recipeEntry?.state, COOKBOOK_HISTORY);
+    assert.notEqual(recipeEntry?.path, listHref);
+    assert.equal(leaveRecipe(history), "pop");
+    assert.equal(history.path, listHref);
+    assert.equal(listScrollFromState(history.state), 240);
+    }),
+  );
 });

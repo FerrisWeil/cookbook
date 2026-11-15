@@ -20,7 +20,7 @@ Wireframes use invented example recipes. They are not household data. They do no
 
 ### List
 
-The title "Recipes" is the first line of the content. A favorites toggle narrows the list to favorites. Tag filter chips narrow it to recipes that have the chosen tags. Both can be on at once. No chip chosen means every tag. Free-text search is not offered.
+The title "Recipes" is the first line of the content. A labeled title search and a compact Filters control narrow the list. Title search is a phrase in the title only. Filters cover ingredients, primary protein, max total minutes, effort, and meal type. Active filters are removable chips. Clear all clears the title and the filters. Favorites toggle and tag chips are not in this slice.
 
 Cards are a single column on the phone and a grid from the wide breakpoint up. Empty library: "No recipes yet." No rows after a filter: "No recipes match." Failure, after the page has loaded: "Could not load recipes." and a way to try again. The last line stays clear of the safe area. There is no theme control on this screen.
 

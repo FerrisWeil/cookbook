@@ -20,6 +20,26 @@ export function isCookbookHistoryState(state: unknown): boolean {
   );
 }
 
+export function rememberListPosition(
+  history: CookbookHistory,
+  href: string,
+  scroll: number,
+): void {
+  history.replaceState({ cookbook: true, scroll }, "", href);
+}
+
+export function listScrollFromState(state: unknown): number | undefined {
+  if (
+    typeof state === "object" &&
+    state !== null &&
+    "scroll" in state &&
+    typeof (state as { scroll: unknown }).scroll === "number"
+  ) {
+    return (state as { scroll: number }).scroll;
+  }
+  return undefined;
+}
+
 export function pushAppPath(
   to: string,
   history: CookbookHistory,

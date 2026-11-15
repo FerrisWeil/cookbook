@@ -11,7 +11,7 @@ UI for the household cookbook. Kitchen principles are [0016](../decisions/0016-k
 | Package | [system](system.md) |
 | Demos | [demo](demo.md) |
 
-`@cookbook/ui` and the list and recipe screens are in the tree. Settings, `/guide`, filters, and favorite/rating controls are not. Wireframes use invented example recipes. They are not household data and they are not a schema. The live recipe screen uses the two-column layout from [tokens](tokens.md).
+`@cookbook/ui` and the list and recipe screens are in the tree. The list includes title search and filters. Settings, `/guide`, and favorite/rating controls are not. Wireframes use invented example recipes. They are not household data and they are not a schema. The live recipe screen uses the two-column layout from [tokens](tokens.md).
 
 ## Pending
 

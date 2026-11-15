@@ -41,7 +41,7 @@ Valid fields: `id`, `title`, `ingredients`, `steps`, `servings`, `nutrition`, `f
 
 ### `list`
 
-Each item is `id`, `title`, and `facts`. Hidden recipes are omitted.
+Each item is `id`, `title`, and `facts`. Hidden recipes are omitted. Optional `query` is the same bounded AND/OR tree as `GET /recipes`. Omit it for the full visible library. The result also includes `proteinChoices`. A separate search tool is not registered.
 
 ### `save`
 

@@ -4,7 +4,9 @@ Current state for [0023](decisions/0023-kitchen-web-implementation.md). Design i
 
 `/` is the recipe list. `/recipes/:id` is one recipe. Settings and `/guide` are not in this slice. `@cookbook/ui` holds the tokens, Button, Card, and read/error copy used by those screens. Controls are native elements styled with the semantic variables. Radix is still the allowed primitive kit; this slice does not install it.
 
-List cards show the title and the four facts slots from the list payload (`id`, `title`, `facts`). The kitchen does not fetch each card's detail.
+The list has a labeled title search and a compact Filters control (sheet on a phone, panel from the wide breakpoint). Cards and order stay as they are. Filters compile into the same list query the API and MCP use. Protein choices come from the list payload, not the current page. Empty library, no matches, pending, and failure are distinct. `useRecipeList` owns criteria, debounce, and URL restore; screens still do not call `fetch`, `EventSource`, or storage.
+
+List cards show the title and the four facts slots from the list payload (`id`, `title`, `facts`). The kitchen does not fetch each card's detail to match.
 
 ## Rendering
 
@@ -36,7 +38,7 @@ The web token is not in the JavaScript bundle, not in a cookie, and not in a bro
 | Browser request | Forwarded | Notes |
 | --- | --- | --- |
 | `GET /api/health`, `GET /api/health/ready` | yes | Unauthenticated. |
-| `GET /api/recipes` | yes | List, including facts. |
+| `GET /api/recipes` | yes | List, including facts and optional `query`. |
 | `GET /api/recipes/:id` | yes | Read. |
 | `GET /api/recipes/events` | yes | SSE. Nginx buffering off, 1h read timeout. Vite proxy timeout 0. |
 | `PATCH /api/recipes/:id/facts` | yes | Facts only. Same-origin JSON. |
@@ -69,4 +71,4 @@ The designer reviews each UI pull request by running the app locally. [demo](des
 - A full save from the browser is not forwarded.
 - A facts PATCH from the same origin is forwarded; a cross-origin or non-PATCH facts call is not.
 - A same-origin cooking-session call is forwarded; a cross-origin session write is not.
-- When Chrome is present, smoke runs `scripts/browser-outbox.mjs`: an offline facts save survives reload in IndexedDB, two tabs keep both pending edits, auto-retry PATCH keeps omitted Chef fields, a 400 is not retried, and a live update keeps scroll and an unsaved draft. It also runs `scripts/browser-cooking.mjs`: two pages share one live session, and an offline reload keeps the session snapshot and replays the queued step. GitHub runners skip both.
+- When Chrome is present, smoke runs `scripts/browser-outbox.mjs`: an offline facts save survives reload in IndexedDB, two tabs keep both pending edits, auto-retry PATCH keeps omitted Chef fields, a 400 is not retried, and a live update keeps scroll and an unsaved draft. It also runs `scripts/browser-cooking.mjs`: two pages share one live session, and an offline reload keeps the session snapshot and replays the queued step. It also runs `scripts/browser-search.mjs`: title search, filters, remove, clear, detail/Back, no-match, error retry, and filters focus return. GitHub runners skip these.

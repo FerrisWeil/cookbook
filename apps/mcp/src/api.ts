@@ -1,6 +1,7 @@
 import {
   MESSAGES,
   type CookingSession,
+  type QueryNode,
   type Recipe,
   type RecipeListItem,
 } from "@cookbook/shared";
@@ -9,9 +10,14 @@ export type ApiResult<T> =
   | { ok: true; value: T }
   | { ok: false; message: string };
 
+export type ListResult = {
+  recipes: RecipeListItem[];
+  proteinChoices: string[];
+};
+
 export type CookbookApi = {
   read(id: string, fields?: string[]): Promise<ApiResult<Partial<Recipe>>>;
-  list(): Promise<ApiResult<RecipeListItem[]>>;
+  list(query?: QueryNode | null): Promise<ApiResult<ListResult>>;
   save(input: Record<string, unknown>): Promise<ApiResult<Recipe>>;
   sessionResume(): Promise<ApiResult<CookingSession | null>>;
   sessionStart(input: {
@@ -119,8 +125,12 @@ export function createHttpCookbookApi(
       return { ok: true, value: body.recipe as Partial<Recipe> };
     },
 
-    async list() {
-      const { status, body } = await requestJson(`${root}/recipes`, { headers });
+    async list(query) {
+      const url = new URL(`${root}/recipes`);
+      if (query) {
+        url.searchParams.set("query", JSON.stringify(query));
+      }
+      const { status, body } = await requestJson(url.toString(), { headers });
       if (status !== 200) {
         return failure(status, body);
       }
@@ -132,7 +142,17 @@ export function createHttpCookbookApi(
       ) {
         return { ok: false, message: MESSAGES.apiUnavailable };
       }
-      return { ok: true, value: body.recipes as RecipeListItem[] };
+      const record = body as {
+        recipes: RecipeListItem[];
+        proteinChoices?: unknown;
+      };
+      const proteinChoices = Array.isArray(record.proteinChoices)
+        ? record.proteinChoices.filter((item): item is string => typeof item === "string")
+        : [];
+      return {
+        ok: true,
+        value: { recipes: record.recipes, proteinChoices },
+      };
     },
 
     async save(input) {

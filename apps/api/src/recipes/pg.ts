@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import type { RecipeFacts } from "@cookbook/shared";
+import {
+  mergeProteinChoices,
+  type QueryNode,
+  type RecipeFacts,
+} from "@cookbook/shared";
 
 import {
   applyWithAck,
@@ -26,6 +30,7 @@ import type {
   SaveRecipeInput,
 } from "./types.js";
 import type { ReleasableClient, SqlClient } from "../migrate.js";
+import { compileListSql } from "./query-sql.js";
 
 type RecipeRow = {
   id: unknown;
@@ -380,13 +385,15 @@ export function createPgRecipeStore(
       });
     },
 
-    async list(): Promise<RecipeListItem[]> {
+    async list(query: QueryNode | null = null): Promise<RecipeListItem[]> {
+      const filter = compileListSql(query);
       return transaction(checkout, async (client) => {
         const result = await client.query(
           `SELECT id, title, primary_protein, total_minutes, effort, meal_types
            FROM recipes
-           WHERE hidden_at IS NULL
+           WHERE hidden_at IS NULL AND (${filter.sql})
            ORDER BY created_at ASC, id ASC`,
+          filter.params,
         );
         return result.rows.map((row) => {
           const item = row as RecipeRow;
@@ -396,6 +403,21 @@ export function createPgRecipeStore(
             facts: factsFromRow(item),
           };
         });
+      });
+    },
+
+    async proteinChoices(): Promise<string[]> {
+      return transaction(checkout, async (client) => {
+        const result = await client.query(
+          `SELECT primary_protein
+           FROM recipes
+           WHERE hidden_at IS NULL AND primary_protein IS NOT NULL`,
+        );
+        const values = result.rows.flatMap((row) => {
+          const protein = (row as { primary_protein: unknown }).primary_protein;
+          return typeof protein === "string" ? [protein] : [];
+        });
+        return mergeProteinChoices(values);
       });
     },
 

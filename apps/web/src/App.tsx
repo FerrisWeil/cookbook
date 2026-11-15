@@ -79,14 +79,18 @@ function currentPath(): string {
 }
 
 function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
-  const { state, retry, status } = useRecipeList();
+  const { state, retry, status, search, rememberScroll } = useRecipeList();
   const cooking = useCookingSession();
   return (
     <ListScreen
       state={state}
-      onOpen={onOpen}
+      onOpen={(href) => {
+        rememberScroll();
+        onOpen(href);
+      }}
       onRetry={retry}
       status={status.label}
+      search={search}
       resume={
         cooking.resume
           ? {
