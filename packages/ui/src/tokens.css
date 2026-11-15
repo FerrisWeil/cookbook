@@ -1,18 +1,29 @@
 :root {
   color-scheme: light;
-  --bg: #f5f9fc;
-  --bg-elevated: #d7e6f5;
-  --text: #0b2b51;
-  --text-muted: #3a5a78;
-  --accent: #134175;
-  --accent-contrast: #f5f9fc;
-  --danger: #8b2e3a;
-  --danger-bg: #f3d6dc;
-  --border: #5a7390;
-  --focus: #134175;
+  --bg: #f7f5f0;
+  --bg-elevated: #ebe7df;
+  --surface: #ffffff;
+  --text: #132338;
+  --text-muted: #4a5b70;
+  --accent: #174e7a;
+  --accent-contrast: #ffffff;
+  --accent-soft: #e3edf6;
+  --danger: #9b1c2e;
+  --danger-bg: #fce8eb;
+  --success: #1b6546;
+  --success-bg: #e4f2eb;
+  --border: #6d7785;
+  --border-subtle: rgba(19, 35, 56, 0.12);
+  --focus: #174e7a;
+  --shadow-card:
+    0 1px 2px rgba(19, 35, 56, 0.05),
+    0 6px 16px rgba(19, 35, 56, 0.04);
+  --shadow-elevated:
+    0 4px 12px rgba(19, 35, 56, 0.08),
+    0 16px 32px rgba(19, 35, 56, 0.06);
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --text-title: 1.75rem;
+  --text-title: 1.875rem;
   --text-body: 1.125rem;
   --text-ui: 1rem;
   --text-meta: 0.875rem;
@@ -21,8 +32,8 @@
   --radius-control: 0.75rem;
   --radius-card: 1rem;
   --space-page-x: 1.25rem;
-  --space-page-top: 2.5rem;
-  --space-page-bottom: 4rem;
+  --space-page-top: 2.25rem;
+  --space-page-bottom: 4.5rem;
   --space-stack: 1.25rem;
   --duration-fast: 100ms;
   --duration-base: 200ms;
@@ -34,49 +45,83 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0b1a2c;
-    --bg-elevated: #16324c;
-    --text: #e8f3fc;
-    --text-muted: #b7cde3;
-    --accent: #8bbde8;
-    --accent-contrast: #0b1a2c;
-    --danger: #f0b8c0;
-    --danger-bg: #3a2730;
-    --border: #7a93ad;
-    --focus: #8bbde8;
+    --bg: #0f151d;
+    --bg-elevated: #1b2532;
+    --surface: #161f2a;
+    --text: #edf3f8;
+    --text-muted: #a8bacd;
+    --accent: #7ebef2;
+    --accent-contrast: #0f151d;
+    --accent-soft: rgba(126, 190, 242, 0.14);
+    --danger: #f7b2bc;
+    --danger-bg: #3b2027;
+    --success: #73dca6;
+    --success-bg: #132b21;
+    --border: #6e8299;
+    --border-subtle: rgba(237, 243, 248, 0.12);
+    --focus: #7ebef2;
+    --shadow-card:
+      0 1px 3px rgba(0, 0, 0, 0.32),
+      0 8px 20px rgba(0, 0, 0, 0.2);
+    --shadow-elevated:
+      0 6px 16px rgba(0, 0, 0, 0.38),
+      0 18px 36px rgba(0, 0, 0, 0.28);
   }
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f5f9fc;
-  --bg-elevated: #d7e6f5;
-  --text: #0b2b51;
-  --text-muted: #3a5a78;
-  --accent: #134175;
-  --accent-contrast: #f5f9fc;
-  --danger: #8b2e3a;
-  --danger-bg: #f3d6dc;
-  --border: #5a7390;
-  --focus: #134175;
+  --bg: #f7f5f0;
+  --bg-elevated: #ebe7df;
+  --surface: #ffffff;
+  --text: #132338;
+  --text-muted: #4a5b70;
+  --accent: #174e7a;
+  --accent-contrast: #ffffff;
+  --accent-soft: #e3edf6;
+  --danger: #9b1c2e;
+  --danger-bg: #fce8eb;
+  --success: #1b6546;
+  --success-bg: #e4f2eb;
+  --border: #6d7785;
+  --border-subtle: rgba(19, 35, 56, 0.12);
+  --focus: #174e7a;
+  --shadow-card:
+    0 1px 2px rgba(19, 35, 56, 0.05),
+    0 6px 16px rgba(19, 35, 56, 0.04);
+  --shadow-elevated:
+    0 4px 12px rgba(19, 35, 56, 0.08),
+    0 16px 32px rgba(19, 35, 56, 0.06);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b1a2c;
-  --bg-elevated: #16324c;
-  --text: #e8f3fc;
-  --text-muted: #b7cde3;
-  --accent: #8bbde8;
-  --accent-contrast: #0b1a2c;
-  --danger: #f0b8c0;
-  --danger-bg: #3a2730;
-  --border: #7a93ad;
-  --focus: #8bbde8;
+  --bg: #0f151d;
+  --bg-elevated: #1b2532;
+  --surface: #161f2a;
+  --text: #edf3f8;
+  --text-muted: #a8bacd;
+  --accent: #7ebef2;
+  --accent-contrast: #0f151d;
+  --accent-soft: rgba(126, 190, 242, 0.14);
+  --danger: #f7b2bc;
+  --danger-bg: #3b2027;
+  --success: #73dca6;
+  --success-bg: #132b21;
+  --border: #6e8299;
+  --border-subtle: rgba(237, 243, 248, 0.12);
+  --focus: #7ebef2;
+  --shadow-card:
+    0 1px 3px rgba(0, 0, 0, 0.32),
+    0 8px 20px rgba(0, 0, 0, 0.2);
+  --shadow-elevated:
+    0 6px 16px rgba(0, 0, 0, 0.38),
+    0 18px 36px rgba(0, 0, 0, 0.28);
 }
 
 @media (min-width: 48rem) {
   :root {
-    --text-title: 2.25rem;
+    --text-title: 2.375rem;
+    --space-page-x: 2rem;
   }
 }

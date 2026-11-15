@@ -50,6 +50,8 @@ export function CookingModeView({
   const completedSet = new Set(completedSteps);
   const completedCount = completedSteps.length;
   const totalSteps = extras.steps.length;
+  const progressPercent =
+    totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
   const checkedIngSet = new Set(extras.checkedIngredients);
   const checkedStepIngSet = new Set(extras.checkedStepIngredients);
 
@@ -85,7 +87,7 @@ export function CookingModeView({
     <div className="cooking-workspace">
       <div className="cooking-topbar">
         <div className="cooking-topbar-nav">
-          <Button className="ui-back" variant="primary" onClick={onBack}>
+          <Button className="ui-back" variant="tonal" onClick={onBack}>
             Back
           </Button>
           <p className="cooking-session-meta" role="status">
@@ -115,7 +117,18 @@ export function CookingModeView({
         </div>
       </div>
 
-      <h1 className="cooking-title">{extras.recipeTitle}</h1>
+      <div className="cooking-hero">
+        <h1 className="cooking-title">{extras.recipeTitle}</h1>
+        <div className="cooking-progress" aria-hidden="true">
+          <div className="cooking-progress-track">
+            <div
+              className="cooking-progress-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <span className="cooking-progress-label">{`${progressPercent}%`}</span>
+        </div>
+      </div>
       {error ? <Message>{error}</Message> : null}
 
       {extras.timers.length > 0 ? (
@@ -314,6 +327,17 @@ export function CookingModeView({
                       })}
                     </div>
                   ) : null}
+
+                  {!isCompleted && isCurrent ? (
+                    <div className="cooking-step-footer">
+                      <Button
+                        variant="primary"
+                        onClick={() => handleToggleStep(index)}
+                      >
+                        {index < totalSteps - 1 ? "Done · Next step" : "Mark final step done"}
+                      </Button>
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
@@ -354,6 +378,28 @@ export function CookingModeView({
               >
                 {formatTimerSeconds(fullscreenTimer.remainingSeconds)}
               </p>
+              <div className="cooking-fullscreen-meter" aria-hidden="true">
+                <div
+                  className={`cooking-fullscreen-meter-fill${fullscreenTimer.status === "finished" ? " is-finished" : ""}`}
+                  style={{
+                    width: `${
+                      fullscreenTimer.durationSeconds > 0
+                        ? Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              Math.round(
+                                (fullscreenTimer.remainingSeconds /
+                                  fullscreenTimer.durationSeconds) *
+                                  100,
+                              ),
+                            ),
+                          )
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
               <p className="cooking-fullscreen-status" role="status">
                 {fullscreenTimer.status === "finished"
                   ? "Timer finished!"

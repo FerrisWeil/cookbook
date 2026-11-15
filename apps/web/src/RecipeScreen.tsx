@@ -63,14 +63,16 @@ export function RecipeScreen({
 
   return (
     <main className="ui-shell recipe-screen">
-      <Button className="ui-back" variant="primary" onClick={onBack}>
-        Back
-      </Button>
-      {status ? (
-        <p className="sync-status" role="status">
-          {status}
-        </p>
-      ) : null}
+      <div className="recipe-topbar">
+        <Button className="ui-back" variant="tonal" onClick={onBack}>
+          Back
+        </Button>
+        {status ? (
+          <p className="sync-status" role="status">
+            {status}
+          </p>
+        ) : null}
+      </div>
       {state.kind === "loading" ? <LoadingRecipe /> : null}
       {state.kind === "error" ? (
         <Message>
@@ -139,29 +141,35 @@ export function RecipeArticle({
   const hideFacts = cooking?.mode === "here";
   return (
     <article className="recipe-article">
-      <h1>{title}</h1>
-      {hideFacts ? null : (
-        <div className="recipe-facts-block">
-          <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
-          {editing && draft ? (
-            <RecipeFactsForm
-              draft={draft}
-              baseline={baseline}
-              status={formStatus}
-              onDraftChange={onDraftChange}
-              onSave={onSaveFacts}
-              onCancel={onCancelFacts}
-            />
-          ) : (
-            <Button variant="tonal" onClick={onEditFacts}>
-              Edit recipe facts
-            </Button>
-          )}
-        </div>
-      )}
+      <header className="recipe-hero">
+        <h1>{title}</h1>
+        {hideFacts ? null : (
+          <div className="recipe-facts-block">
+            <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
+            {editing && draft ? (
+              <RecipeFactsForm
+                draft={draft}
+                baseline={baseline}
+                status={formStatus}
+                onDraftChange={onDraftChange}
+                onSave={onSaveFacts}
+                onCancel={onCancelFacts}
+              />
+            ) : (
+              <Button variant="tonal" onClick={onEditFacts}>
+                Edit recipe facts
+              </Button>
+            )}
+          </div>
+        )}
+        {cooking ? <CookingControls cooking={cooking} /> : null}
+      </header>
       {ingredients.length > 0 ? (
-        <section>
-          <h2>Ingredients</h2>
+        <section className="recipe-ingredients-section">
+          <div className="recipe-section-header">
+            <h2>Ingredients</h2>
+            <span className="recipe-section-count">{ingredients.length}</span>
+          </div>
           <ul>
             {ingredients.map((line, index) => (
               <li key={index}>{line}</li>
@@ -170,8 +178,11 @@ export function RecipeArticle({
         </section>
       ) : null}
       {steps.length > 0 ? (
-        <section>
-          <h2>Steps</h2>
+        <section className="recipe-steps-section">
+          <div className="recipe-section-header">
+            <h2>Steps</h2>
+            <span className="recipe-section-count">{steps.length}</span>
+          </div>
           <ol className={cooking?.mode === "here" ? "cooking-steps" : undefined}>
             {steps.map((step, index) => {
               const current = cooking?.mode === "here" && cooking.session.displayedStep === index;
@@ -187,7 +198,6 @@ export function RecipeArticle({
           </ol>
         </section>
       ) : null}
-      {cooking ? <CookingControls cooking={cooking} /> : null}
     </article>
   );
 }

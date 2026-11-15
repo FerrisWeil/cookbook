@@ -72,19 +72,28 @@ export function ListScreen({
 
   return (
     <main className="ui-shell">
-      <h1>Recipes</h1>
+      <header className="list-header">
+        <div className="list-header-title">
+          <h1>Recipes</h1>
+          {settledCount !== null ? (
+            <span className="list-count">
+              {settledCount === 1 ? "1 recipe" : `${settledCount} recipes`}
+            </span>
+          ) : null}
+        </div>
+        {resume ? (
+          <div className="cooking-resume">
+            <Button variant="primary" onClick={resume.onOpen}>
+              {resume.runningTimers && resume.runningTimers > 0
+                ? `Cooking ${resume.title} (${resume.runningTimers} timer${resume.runningTimers === 1 ? "" : "s"} running)`
+                : `Cooking ${resume.title}`}
+            </Button>
+          </div>
+        ) : null}
+      </header>
       {status ? (
         <p className="sync-status" role="status">
           {status}
-        </p>
-      ) : null}
-      {resume ? (
-        <p className="cooking-resume">
-          <Button variant="primary" onClick={resume.onOpen}>
-            {resume.runningTimers && resume.runningTimers > 0
-              ? `Cooking ${resume.title} (${resume.runningTimers} timer${resume.runningTimers === 1 ? "" : "s"} running)`
-              : `Cooking ${resume.title}`}
-          </Button>
         </p>
       ) : null}
       <ListSearchControls search={search} />
@@ -196,6 +205,7 @@ function ListSearchControls({ search }: { search?: ListSearchProps }) {
             id={titleId}
             type="search"
             enterKeyHint="search"
+            placeholder="Search titles, ingredients, or proteins…"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -219,6 +229,7 @@ function ListSearchControls({ search }: { search?: ListSearchProps }) {
           id={titleId}
           type="search"
           enterKeyHint="search"
+          placeholder="Search titles, ingredients, or proteins…"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
@@ -271,81 +282,106 @@ function ListSearchControls({ search }: { search?: ListSearchProps }) {
         }}
       >
         <div className="list-filters-panel">
-          <h2 id="list-filters-title">Filters</h2>
+          <div className="list-filters-header">
+            <h2 id="list-filters-title">Filters</h2>
+            <Button
+              variant="quiet"
+              className="list-filters-close"
+              onClick={search.onCloseFilters}
+              aria-label="Close filters"
+            >
+              ✕
+            </Button>
+          </div>
           <fieldset className="facts-field">
             <legend>Ingredients</legend>
-            {search.criteria.ingredients.map((item) => (
-              <p key={item}>{item}</p>
-            ))}
-            <label>
-              Add ingredient
-              <input
-                ref={ingredientRef}
-                type="text"
-                autoComplete="off"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    search.onAddIngredient(event.currentTarget.value);
-                    event.currentTarget.value = "";
+            {search.criteria.ingredients.length > 0 ? (
+              <div className="list-filter-added">
+                {search.criteria.ingredients.map((item) => (
+                  <p key={item} className="list-filter-added-tag">
+                    {item}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+            <div className="list-filter-inline-add">
+              <label>
+                Add ingredient
+                <input
+                  ref={ingredientRef}
+                  type="text"
+                  autoComplete="off"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      search.onAddIngredient(event.currentTarget.value);
+                      event.currentTarget.value = "";
+                    }
+                  }}
+                />
+              </label>
+              <Button
+                variant="tonal"
+                onClick={() => {
+                  const value = ingredientRef.current?.value ?? "";
+                  search.onAddIngredient(value);
+                  if (ingredientRef.current) {
+                    ingredientRef.current.value = "";
                   }
                 }}
-              />
-            </label>
-            <Button
-              variant="tonal"
-              onClick={() => {
-                const value = ingredientRef.current?.value ?? "";
-                search.onAddIngredient(value);
-                if (ingredientRef.current) {
-                  ingredientRef.current.value = "";
-                }
-              }}
-            >
-              Add ingredient
-            </Button>
+              >
+                Add ingredient
+              </Button>
+            </div>
           </fieldset>
           <fieldset className="facts-field">
             <legend>Primary protein</legend>
-            {search.proteinChoices.map((choice) => {
-              const checked = search.criteria.proteins.some(
-                (item) => item.toLowerCase() === choice.toLowerCase(),
-              );
-              return (
-                <label key={choice}>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {
-                      const proteins = checked
-                        ? search.criteria.proteins.filter(
-                            (item) => item.toLowerCase() !== choice.toLowerCase(),
-                          )
-                        : [...search.criteria.proteins, choice];
-                      search.onChangeCriteria({ ...search.criteria, proteins });
-                    }}
-                  />
-                  {choice}
-                </label>
-              );
-            })}
-            <label>
-              Custom protein
-              <input
-                type="text"
-                autoComplete="off"
-                value={search.customProtein}
-                onChange={(event) =>
-                  search.onCustomProteinChange(event.target.value)
-                }
-              />
-            </label>
-            <Button variant="tonal" onClick={search.onAddCustomProtein}>
-              Add protein
-            </Button>
+            <div className="filter-pill-grid">
+              {search.proteinChoices.map((choice) => {
+                const checked = search.criteria.proteins.some(
+                  (item) => item.toLowerCase() === choice.toLowerCase(),
+                );
+                return (
+                  <label
+                    key={choice}
+                    className={`filter-pill-option${checked ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const proteins = checked
+                          ? search.criteria.proteins.filter(
+                              (item) => item.toLowerCase() !== choice.toLowerCase(),
+                            )
+                          : [...search.criteria.proteins, choice];
+                        search.onChangeCriteria({ ...search.criteria, proteins });
+                      }}
+                    />
+                    {choice}
+                  </label>
+                );
+              })}
+            </div>
+            <div className="list-filter-inline-add">
+              <label>
+                Custom protein
+                <input
+                  type="text"
+                  autoComplete="off"
+                  value={search.customProtein}
+                  onChange={(event) =>
+                    search.onCustomProteinChange(event.target.value)
+                  }
+                />
+              </label>
+              <Button variant="tonal" onClick={search.onAddCustomProtein}>
+                Add protein
+              </Button>
+            </div>
           </fieldset>
           <label className="facts-field">
-            Max total minutes
+            <span>Max total minutes</span>
             <input
               type="number"
               min={0}
@@ -364,43 +400,66 @@ function ListSearchControls({ search }: { search?: ListSearchProps }) {
           </label>
           <fieldset className="facts-field">
             <legend>Effort</legend>
-            {RECIPE_EFFORTS.map((effort) => (
-              <label key={effort}>
-                <input
-                  type="checkbox"
-                  checked={search.criteria.efforts.includes(effort)}
-                  onChange={() => {
-                    const efforts = search.criteria.efforts.includes(effort)
-                      ? search.criteria.efforts.filter((item) => item !== effort)
-                      : [...search.criteria.efforts, effort];
-                    search.onChangeCriteria({ ...search.criteria, efforts });
-                  }}
-                />
-                {effort}
-              </label>
-            ))}
+            <div className="filter-pill-grid">
+              {RECIPE_EFFORTS.map((effort) => {
+                const checked = search.criteria.efforts.includes(effort);
+                return (
+                  <label
+                    key={effort}
+                    className={`filter-pill-option${checked ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const efforts = checked
+                          ? search.criteria.efforts.filter((item) => item !== effort)
+                          : [...search.criteria.efforts, effort];
+                        search.onChangeCriteria({ ...search.criteria, efforts });
+                      }}
+                    />
+                    {effort}
+                  </label>
+                );
+              })}
+            </div>
           </fieldset>
           <fieldset className="facts-field">
             <legend>Meal type</legend>
-            {RECIPE_MEAL_TYPES.map((meal) => (
-              <label key={meal}>
-                <input
-                  type="checkbox"
-                  checked={search.criteria.mealTypes.includes(meal)}
-                  onChange={() => {
-                    const mealTypes = search.criteria.mealTypes.includes(meal)
-                      ? search.criteria.mealTypes.filter((item) => item !== meal)
-                      : [...search.criteria.mealTypes, meal];
-                    search.onChangeCriteria({ ...search.criteria, mealTypes });
-                  }}
-                />
-                {meal}
-              </label>
-            ))}
+            <div className="filter-pill-grid">
+              {RECIPE_MEAL_TYPES.map((meal) => {
+                const checked = search.criteria.mealTypes.includes(meal);
+                return (
+                  <label
+                    key={meal}
+                    className={`filter-pill-option${checked ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const mealTypes = checked
+                          ? search.criteria.mealTypes.filter((item) => item !== meal)
+                          : [...search.criteria.mealTypes, meal];
+                        search.onChangeCriteria({ ...search.criteria, mealTypes });
+                      }}
+                    />
+                    {meal}
+                  </label>
+                );
+              })}
+            </div>
           </fieldset>
-          <Button variant="primary" onClick={search.onCloseFilters}>
-            Done
-          </Button>
+          <div className="list-filters-footer">
+            {search.activeFilters.length > 0 ? (
+              <Button variant="quiet" onClick={search.onClearAll}>
+                Clear all
+              </Button>
+            ) : null}
+            <Button variant="primary" onClick={search.onCloseFilters}>
+              Done
+            </Button>
+          </div>
         </div>
       </dialog>
     </div>
