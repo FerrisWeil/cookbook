@@ -211,11 +211,9 @@ export function useRecipeList() {
   }
 
   function commitTitle(value: string, mode: "push" | "replace"): void {
-    setCriteria((current) => {
-      const next = { ...current, title: boundedPhrase(value) };
-      writeListUrl(next, mode);
-      return next;
-    });
+    const next = { ...criteria, title: boundedPhrase(value) };
+    setCriteria(next);
+    writeListUrl(next, mode);
   }
 
   function applyCriteria(next: ListCriteria, mode: "push" | "replace" = "push"): void {
@@ -327,16 +325,12 @@ export function useRecipeList() {
       if (typeof window === "undefined") {
         return;
       }
-      if (titleTimer.current) {
-        clearTimeout(titleTimer.current);
-        titleTimer.current = undefined;
-        commitTitle(titleDraft, "replace");
-      }
-      rememberListPosition(
-        window.history,
-        `${window.location.pathname}${window.location.search}`,
-        window.scrollY,
-      );
+      cancelTitleTimer();
+      const next = { ...criteria, title: boundedPhrase(titleDraft) };
+      setCriteria(next);
+      setTitleDraft(next.title);
+      writeListUrl(next, "replace");
+      rememberListPosition(window.history, listHref(next), window.scrollY);
     },
   };
 }

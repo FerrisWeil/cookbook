@@ -273,6 +273,58 @@ describe("list matching", () => {
     assert.equal(matchRecipe(recipe("Example: No effort"), null), true);
   });
 
+  it("matches a protein by whole terms and not a substring inside a longer term", () => {
+    const query = parseListQuery({ field: "primaryProtein", phrase: "fish" });
+    assert.equal(query.ok, true);
+    if (!query.ok) {
+      return;
+    }
+    assert.equal(
+      matchRecipe(
+        recipe("Example: Fish", {
+          facts: { ...emptyRecipeFacts(), primaryProtein: "fish" },
+        }),
+        query.query,
+      ),
+      true,
+    );
+    assert.equal(
+      matchRecipe(
+        recipe("Example: White fish", {
+          facts: { ...emptyRecipeFacts(), primaryProtein: "white fish" },
+        }),
+        query.query,
+      ),
+      true,
+    );
+    assert.equal(
+      matchRecipe(
+        recipe("Example: Shellfish", {
+          facts: { ...emptyRecipeFacts(), primaryProtein: "shellfish" },
+        }),
+        query.query,
+      ),
+      false,
+    );
+    const slash = parseListQuery({
+      field: "primaryProtein",
+      phrase: "tofu",
+    });
+    assert.equal(slash.ok, true);
+    if (!slash.ok) {
+      return;
+    }
+    assert.equal(
+      matchRecipe(
+        recipe("Example: Tofu", {
+          facts: { ...emptyRecipeFacts(), primaryProtein: "tofu/tempeh" },
+        }),
+        slash.query,
+      ),
+      true,
+    );
+  });
+
   it("treats %, _, and backslash as literal characters in a phrase", () => {
     const query = parseListQuery({ field: "title", phrase: "100%_wheat\\" });
     assert.equal(query.ok, true);

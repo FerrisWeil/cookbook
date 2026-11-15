@@ -87,6 +87,19 @@ export function containsPhrase(haystack: string, phrase: string): boolean {
   return haystack.includes(phrase);
 }
 
+export function proteinSearchText(value: string): string {
+  return normalizeMatchText(value.replaceAll("/", " "));
+}
+
+export function containsProteinPhrase(haystack: string, phrase: string): boolean {
+  const hay = proteinSearchText(haystack);
+  const needle = proteinSearchText(phrase);
+  if (needle === "") {
+    return false;
+  }
+  return ` ${hay} `.includes(` ${needle} `);
+}
+
 export function isQueryGroup(node: QueryNode): node is QueryGroup {
   return "op" in node;
 }
@@ -506,7 +519,7 @@ function matchLeaf(recipe: MatchableRecipe, leaf: QueryLeaf): boolean {
     if (protein === null || isUnsetPrimaryProtein(protein)) {
       return false;
     }
-    return containsPhrase(normalizeMatchText(protein), leaf.phrase);
+    return containsProteinPhrase(protein, leaf.phrase);
   }
   if (leaf.field === "maxTotalMinutes") {
     const minutes = recipe.facts.totalMinutes;

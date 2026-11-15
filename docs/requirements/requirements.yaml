@@ -698,6 +698,9 @@ requirements:
           - id: "219"
             status: implemented
             text: "An ingredient phrase matches inside one ingredient name and does not match by splitting across two ingredients."
+          - id: "237"
+            status: implemented
+            text: "A selected primary-protein phrase matches whole whitespace or slash-separated terms and does not match a substring inside a longer term."
           - id: "220"
             status: implemented
             text: "Every ingredient entry is required, and extra ingredients may remain."

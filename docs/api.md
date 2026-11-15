@@ -28,7 +28,7 @@ These require a bearer. Missing or wrong token: the caller is told the call is n
 | `POST` | `/sessions/:id/steps/:step/complete` | Mark that step complete. Body `{ mutationId }`. |
 | `POST` | `/sessions/:id/steps/:step/undo` | Clear that step. Body `{ mutationId }`. |
 
-List `query` is a bounded typed tree owned by the recipe domain: `and`/`or` groups and leaves `title`, `ingredient`, `primaryProtein`, `maxTotalMinutes`, `effort`, and `mealType`. No NOT, code, or SQL. Missing `query` returns the full visible library in saved order. Malformed, unknown, empty, or over-limit trees are `400`. Matching is parameterized; `%`, `_`, and `\` in a phrase are literal. `proteinChoices` is the full library's primary-protein values plus the recommended names, not the current result page. There is no list pagination; the response is the complete match set.
+List `query` is a bounded typed tree owned by the recipe domain: `and`/`or` groups and leaves `title`, `ingredient`, `primaryProtein`, `maxTotalMinutes`, `effort`, and `mealType`. No NOT, code, or SQL. Missing `query` returns the full visible library in saved order. Malformed, unknown, empty, or over-limit trees are `400`. Matching is parameterized; `%`, `_`, and `\` in a phrase are literal. A primary-protein phrase matches whole whitespace or slash-separated terms. `proteinChoices` is the full library's primary-protein values plus the recommended names, not the current result page. There is no list pagination; the response is the complete match set.
 
 Facts PATCH body:
 

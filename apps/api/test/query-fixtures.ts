@@ -144,6 +144,27 @@ export async function seedQueryLibrary(store: RecipeStore): Promise<void> {
   );
   await store.save(
     base({
+      id: "protein-fish",
+      title: "Example: Protein fish",
+      facts: { ...emptyRecipeFacts(), primaryProtein: "fish" },
+    }),
+  );
+  await store.save(
+    base({
+      id: "protein-shellfish",
+      title: "Example: Protein shellfish",
+      facts: { ...emptyRecipeFacts(), primaryProtein: "shellfish" },
+    }),
+  );
+  await store.save(
+    base({
+      id: "protein-white-fish",
+      title: "Example: Protein white fish",
+      facts: { ...emptyRecipeFacts(), primaryProtein: "white fish" },
+    }),
+  );
+  await store.save(
+    base({
       id: "no-facts",
       title: "Example: No facts",
     }),
@@ -247,5 +268,13 @@ export const FULL_LIBRARY_ORDER = [
   "spaced-title",
   "protein-chicken",
   "protein-seitan",
+  "protein-fish",
+  "protein-shellfish",
+  "protein-white-fish",
   "no-facts",
 ];
+
+export const PROTEIN_FISH_QUERY = mustQuery({
+  field: "primaryProtein",
+  phrase: "fish",
+});

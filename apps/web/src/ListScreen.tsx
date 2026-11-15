@@ -63,8 +63,10 @@ export function ListScreen({
   const hasCriteria = search ? !criteriaIsEmpty(search.criteria) : false;
   const ready = state.kind === "ready";
   const updating = ready && state.updating === true;
-  const emptyLibrary = ready && state.recipes.length === 0 && !hasCriteria;
-  const noMatches = ready && state.recipes.length === 0 && hasCriteria;
+  const emptyLibrary =
+    ready && !updating && state.recipes.length === 0 && !hasCriteria;
+  const noMatches =
+    ready && !updating && state.recipes.length === 0 && hasCriteria;
   const settledCount =
     ready && !updating ? state.recipes.length : null;
 
