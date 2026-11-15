@@ -14,9 +14,13 @@ import {
 } from "./dev-proxy.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
+const sampleData = process.env.VITE_SAMPLE_DATA === "1";
 
 const attachWebToken: NonNullable<ProxyOptions["configure"]> = (proxy) => {
   proxy.on("proxyReq", (proxyReq, req) => {
+    if (sampleData) {
+      return;
+    }
     proxyReq.removeHeader("authorization");
     const url = req.url ?? "";
     const decision = browserProxyDecision(req.method ?? "GET", url, {
@@ -38,6 +42,9 @@ function webTokenProxy(): Plugin {
   return {
     name: "cookbook-web-token-proxy",
     configureServer(server) {
+      if (sampleData) {
+        return;
+      }
       loadWebToken(process.env);
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? "").split("?")[0] ?? "";

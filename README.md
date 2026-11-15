@@ -1,5 +1,18 @@
 # Cookbook
 
+> **This branch is a prototype and is never merged to `master`.**
+>
+> `prototype/TAY-36-frontend` is a clickable kitchen for planning (Linear TAY-36).
+> Sample recipes only. No API, no database, no secrets. When an idea is chosen, it
+> becomes a normal Linear issue and is built properly on `master`. Prototype-only
+> code lives in `apps/web/src/prototype/`. Before each new prototype round, merge
+> `master` into this branch to stay current.
+>
+> Run locally: `pnpm prototype` then open http://127.0.0.1:5173
+>
+> Hosted preview: one Vercel project tracking this branch. See
+> [Prototype hosting](#prototype-hosting-this-branch-only).
+
 A self-hosted family recipe app for Taylor and his wife. Used only at home. Never exposed to the public internet.
 
 [Chef](https://github.com/FerrisWeil/nas-mcp) is a separate cloud-hosted chatbot (not this repo). After a meal Taylor liked, Chef saves the recipe plus notes through this repo's MCP server. Taylor then browses favorites on desktop or iPhone when planning meals.
@@ -86,6 +99,37 @@ The API accepts `DATABASE_URL` and `MIGRATOR_DATABASE_URL` together, or `POSTGRE
 ## Working agreements
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for work types, agent rules, and checks.
+
+## Prototype hosting (this branch only)
+
+The kitchen on this branch can run as a static single-page app with sample data.
+Do not merge this branch. Do not add per-PR preview infrastructure.
+
+Local:
+
+```bash
+pnpm prototype
+```
+
+Opens at http://127.0.0.1:5173 with `VITE_SAMPLE_DATA=1`. No `.env`, API, or
+database. Prototype controls at the top switch empty / loading / error, and
+theme. `?proto=empty`, `?proto=loading`, and `?proto=error` also work on first
+load. No-match: search the name `zzzznope`.
+
+Vercel (one project tracking `prototype/TAY-36-frontend`):
+
+| Setting | Value |
+| --- | --- |
+| Framework Preset | Other |
+| Root Directory | `.` (repository root) |
+| Node.js Version | 22 |
+| Install Command | `pnpm install` |
+| Build Command | `VITE_SAMPLE_DATA=1 pnpm --filter @cookbook/web build` |
+| Output Directory | `apps/web/dist` |
+| Environment variables | none required beyond the build-command flag |
+
+SPA fallback is `vercel.json` on this branch (`/(.*) → /index.html`). Static
+files are served first. The preview contains sample recipes only.
 
 ## License
 

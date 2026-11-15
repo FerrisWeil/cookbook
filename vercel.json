@@ -1,0 +1,7 @@
+{
+  "framework": null,
+  "installCommand": "pnpm install",
+  "buildCommand": "VITE_SAMPLE_DATA=1 pnpm --filter @cookbook/web build",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

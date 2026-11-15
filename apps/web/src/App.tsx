@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import type { CookingClient } from "./cooking/client";
 import { ListScreen } from "./ListScreen";
 import { leaveRecipe, pushAppPath } from "./navigate";
+import { CookingScreen } from "./prototype/CookingScreen";
+import { PrototypeToolbar } from "./prototype/PrototypeToolbar";
+import { usePrototypeCooking, usePrototypeRuntime } from "./prototype/runtime";
 import { parseRoute } from "./route";
 import { RecipeScreen } from "./RecipeScreen";
 import { CookingProvider, cookingPanel, useCookingSession } from "./useCookingSession";
@@ -30,6 +33,7 @@ export function App({
 
 function AppRoutes({ initialPath }: { initialPath?: string }) {
   const [path, setPath] = useState(() => initialPath ?? currentPath());
+  const proto = usePrototypeRuntime();
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -58,16 +62,22 @@ function AppRoutes({ initialPath }: { initialPath?: string }) {
   }
 
   const route = parseRoute(path);
-  if (route.name === "recipe") {
-    return <RecipeRoute id={route.id} onBack={backToList} onOpen={go} />;
-  }
-  if (route.name === "list") {
-    return <ListRoute onOpen={go} />;
-  }
-  return (
+  let screen = (
     <main className="ui-shell">
       <Message>That screen is not available.</Message>
     </main>
+  );
+  if (route.name === "recipe") {
+    screen = <RecipeRoute id={route.id} onBack={backToList} onOpen={go} />;
+  } else if (route.name === "list") {
+    screen = <ListRoute onOpen={go} />;
+  }
+
+  return (
+    <>
+      {proto ? <PrototypeToolbar kitchen={proto.kitchen} /> : null}
+      {screen}
+    </>
   );
 }
 
@@ -114,6 +124,10 @@ function RecipeRoute({
 }) {
   const { state, retry, status, editor } = useRecipe(id);
   const cooking = useCookingSession();
+  const prototypeCooking = usePrototypeCooking();
+  if (prototypeCooking && cooking.view?.recipeId === id) {
+    return <CookingScreen onLeave={onBack} />;
+  }
   return (
     <RecipeScreen
       state={state}
