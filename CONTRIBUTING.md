@@ -61,7 +61,7 @@ The map is [docs/README.md](docs/README.md). Existing ADR files keep their numbe
 
 ```bash
 pnpm check   # lint, unit tests, build, secret scan, requirement catalog
-pnpm smoke   # docker compose up --build and health checks
+pnpm smoke   # docker compose up --build, health checks, and search Playwright
 ```
 
 Unit tests use Node's built-in runner. They live next to the app they test (`apps/*/test`). A product leaf uses `verifies()` from `@cookbook/test`. That binds the test to an ID; it is not acceptance. Requirement IDs are checked by `scripts/requirements.mjs`. Say what is proven, what is only mapped, and what is unproven. What else a pull request must show is in [Work types](#work-types).

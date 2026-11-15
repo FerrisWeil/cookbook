@@ -13,7 +13,7 @@ Browser tests wait until Taylor confirms the feature in chat ([CONTRIBUTING.md](
 3. Both themes, when the change touches color. Otherwise one theme is enough, and the pull request says which.
 4. A short screen recording only when the review is about motion or a sequence of taps.
 
-Captures are taken from the local running app. They are images on the pull request. There is no screenshot package, no screenshot CI job, and no Playwright in the first UI pull request.
+Captures are taken from the local running app. They are images on the pull request. There is no screenshot package and no screenshot CI job. The first UI pull request did not include Playwright.
 
 ## Example data
 
@@ -43,7 +43,7 @@ Not allowed until the feature has been demoed and confirmed in chat:
 - any other real-browser test
 - a screenshot-diff suite
 
-When those browser tests exist, they drive the UI and check behavior. They cover the list, the recipe, an empty list, and a failed load.
+When those browser tests exist, they drive the UI and check behavior. Search list behavior uses Playwright after Taylor confirmed it. Smoke installs Chromium and runs `pnpm test:search`. Outbox and cooking still use the Chrome CDP scripts when a system Chrome is present.
 
 Also not part of the first UI pull request: Testing Library, jsdom, or a React test renderer. Adding a DOM test library is a dependency.
 
