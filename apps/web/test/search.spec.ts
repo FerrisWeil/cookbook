@@ -347,6 +347,51 @@ test.describe("recipe search", () => {
     await expect(recipeLink(page, titles[1] ?? "")).toHaveCount(0);
   });
 
+  test("flushes a typed title before opening a recipe and restores it on Back", async ({
+    page,
+  }) => {
+    const id = stamp();
+    const prefix = `PwNow ${id}`;
+    const titles = Array.from({ length: 8 }, (_, index) => {
+      const n = String(index + 1).padStart(2, "0");
+      return `Example: ${prefix} ${n}`;
+    });
+    await Promise.all(
+      titles.map((title, index) => saveRecipe(`pw-now-${id}-${index + 1}`, title)),
+    );
+
+    await page.setViewportSize({ width: 390, height: 480 });
+    await page.goto("/");
+    await expect(recipeLink(page, titles[0] ?? "")).toBeVisible();
+    const targetTitle = titles[5] ?? "";
+    const target = recipeLink(page, targetTitle);
+    await target.scrollIntoViewIfNeeded();
+    const scrolled = await page.evaluate(() => window.scrollY);
+    expect(scrolled).toBeGreaterThan(80);
+    await page.getByLabel("Recipe name").fill(prefix);
+    await target.click();
+    await expect(page).toHaveURL(/\/recipes\//);
+    const recipeUrl = page.url();
+    expect(new URL(recipeUrl).pathname).toMatch(/^\/recipes\//);
+    expect(new URL(recipeUrl).search).toBe("");
+    await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+    await page.getByRole("button", { name: "Back" }).click();
+
+    await expect(page.getByRole("heading", { name: "Recipes" })).toBeVisible();
+    await expect(page.getByLabel("Recipe name")).toHaveValue(prefix);
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("title"))
+      .toBe(prefix);
+    await expect
+      .poll(async () => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(scrolled - 80);
+
+    await page.goForward();
+    await expect(page).toHaveURL(recipeUrl);
+    await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: targetTitle })).toBeVisible();
+  });
+
   test("keeps a focused title draft through a live library update", async ({
     page,
   }) => {
