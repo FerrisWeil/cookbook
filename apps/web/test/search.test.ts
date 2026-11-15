@@ -138,6 +138,18 @@ describe("kitchen list search", () => {
     assert.match(failed, /Could not load recipes/);
     assert.match(failed, /Try again/);
     assert.match(failed, /lemon/);
+
+    const updatingEmpty = html(
+      createElement(ListScreen, {
+        state: { kind: "ready", recipes: [], updating: true },
+        onOpen() {},
+        onRetry() {},
+        search: searchProps(),
+      }),
+    );
+    assert.match(updatingEmpty, /Updating recipes/);
+    assert.doesNotMatch(updatingEmpty, new RegExp(NO_MATCHES));
+    assert.doesNotMatch(updatingEmpty, /No recipes yet/);
     }),
   );
 

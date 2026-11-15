@@ -506,7 +506,24 @@ describe("kitchen session", () => {
       assert.equal(ready.updating, false);
       assert.equal(ready.recipes[0]?.title, "Current");
     }
+    const afterSettled = harness.ports.recipes.list;
+    const liveGate = deferred<void>();
+    let liveCalls = 0;
+    harness.ports.recipes.list = async (query) => {
+      liveCalls += 1;
+      if (liveCalls === 1) {
+        await liveGate.promise;
+      }
+      return afterSettled(query);
+    };
     harness.handlers()?.onEvent({ recipeId: "r1", op: "saved" });
+    const live = session.list();
+    assert.equal(live.kind, "ready");
+    if (live.kind === "ready") {
+      assert.equal(live.updating, true);
+      assert.equal(live.recipes[0]?.title, "Current");
+    }
+    liveGate.resolve();
     await session.idle();
     assert.equal(
       queries.some(

@@ -204,6 +204,13 @@ export function createKitchenSession(
     return { kind: "ready", recipes: [], updating: listUpdating };
   }
 
+  function markListUpdating(): void {
+    if (listSnapshot) {
+      listUpdating = true;
+      emit();
+    }
+  }
+
   function recipe(id: string): RecipeView {
     const error = recipeErrors.get(id);
     const snapshot = snapshots.get(id);
@@ -416,10 +423,7 @@ export function createKitchenSession(
     },
     setListQuery(query: QueryNode | null) {
       listQuery = query;
-      if (listSnapshot) {
-        listUpdating = true;
-        emit();
-      }
+      markListUpdating();
       return track(refetch());
     },
     async start(): Promise<void> {
@@ -442,6 +446,7 @@ export function createKitchenSession(
             emit();
           },
           onEvent() {
+            markListUpdating();
             void track(refetch());
           },
           onError() {
