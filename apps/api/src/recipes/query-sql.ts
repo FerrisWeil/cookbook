@@ -1,5 +1,6 @@
 import {
   isQueryGroup,
+  proteinSearchText,
   type QueryLeaf,
   type QueryNode,
 } from "@cookbook/shared";
@@ -51,7 +52,7 @@ function compileLeaf(leaf: QueryLeaf, params: unknown[]): string {
       recipes.primary_protein IS NOT NULL
       AND btrim(recipes.primary_protein) <> ''
       AND lower(btrim(recipes.primary_protein)) <> 'no protein'
-      AND ${phraseSql("recipes.primary_protein", leaf.phrase, params)}
+      AND ${proteinPhraseSql("recipes.primary_protein", leaf.phrase, params)}
     )`;
   }
   if (leaf.field === "maxTotalMinutes") {
@@ -69,4 +70,21 @@ function compileLeaf(leaf: QueryLeaf, params: unknown[]): string {
 function phraseSql(expr: string, phrase: string, params: unknown[]): string {
   params.push(phrase);
   return `strpos(lower(btrim(regexp_replace(${expr}, ' +', ' ', 'g'))), $${params.length}) > 0`;
+}
+
+function proteinPhraseSql(
+  expr: string,
+  phrase: string,
+  params: unknown[],
+): string {
+  params.push(proteinSearchText(phrase));
+  return `strpos(
+    ' ' || regexp_replace(
+      replace(lower(btrim(regexp_replace(${expr}, ' +', ' ', 'g'))), '/', ' '),
+      ' +',
+      ' ',
+      'g'
+    ) || ' ',
+    ' ' || $${params.length} || ' '
+  ) > 0`;
 }

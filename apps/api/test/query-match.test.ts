@@ -25,6 +25,7 @@ import {
   FULL_LIBRARY_ORDER,
   INGREDIENT_PHRASE_QUERY,
   MULTI_INGREDIENT_QUERY,
+  PROTEIN_FISH_QUERY,
   SPACED_QUERY,
   TIME_QUERY,
   TITLE_QUERY,
@@ -232,6 +233,17 @@ describe("library query matching", () => {
     verifies("225", "cc7290e3d2eca51e", async () => {
     await onBoth(async (store, label) => {
       assert.deepEqual(await listedIds(store, WILDCARD_QUERY), ["wildcard-title"], label);
+    });
+    }),
+  );
+
+  it(
+    "matches a selected protein by whole terms, not a substring of another term",
+    verifies("237", "68f294c5344ec854", async () => {
+    await onBoth(async (store, label) => {
+      const ids = await listedIds(store, PROTEIN_FISH_QUERY);
+      assert.deepEqual(ids, ["protein-fish", "protein-white-fish"], label);
+      assert.equal(ids.includes("protein-shellfish"), false, label);
     });
     }),
   );
