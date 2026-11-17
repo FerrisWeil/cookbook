@@ -13,6 +13,7 @@ export type CardProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & 
   imageAlt?: string;
   badges?: ReactNode;
   mediaFallback?: ReactNode;
+  overlayTitle?: boolean;
   onNavigate?: (href: string) => void;
 };
 
@@ -24,15 +25,18 @@ export function Card({
   imageAlt,
   badges,
   mediaFallback,
+  overlayTitle = false,
   onNavigate,
   className,
   onClick,
   ...props
 }: CardProps) {
   const hasMedia = Boolean(imageSrc || mediaFallback);
+  const poster = overlayTitle && hasMedia;
   const classes = [
     "ui-card",
-    hasMedia ? "ui-card--with-media" : "",
+    hasMedia && !poster ? "ui-card--with-media" : "",
+    poster ? "ui-card--poster" : "",
     className,
   ]
     .filter(Boolean)
@@ -62,7 +66,11 @@ export function Card({
     hasMedia
       ? createElement(
           "span",
-          { className: "ui-card-media" },
+          {
+            className: poster
+              ? "ui-card-media ui-card-media--poster"
+              : "ui-card-media",
+          },
           imageSrc
             ? createElement("img", {
                 src: imageSrc,
@@ -71,17 +79,32 @@ export function Card({
                 decoding: "async",
               })
             : mediaFallback,
+          poster
+            ? createElement("span", {
+                className: "ui-card-scrim",
+                "aria-hidden": true,
+              })
+            : null,
           badges
             ? createElement("span", { className: "ui-card-badges" }, badges)
             : null,
+          poster
+            ? createElement(
+                "span",
+                { className: "ui-card-title ui-card-poster-title", title },
+                title,
+              )
+            : null,
         )
       : null,
-    createElement(
-      "span",
-      { className: "ui-card-body" },
-      createElement("span", { className: "ui-card-title", title }, title),
-      createElement("span", { className: "ui-card-meta" }, meta ?? null),
-    ),
+    poster
+      ? null
+      : createElement(
+          "span",
+          { className: "ui-card-body" },
+          createElement("span", { className: "ui-card-title", title }, title),
+          createElement("span", { className: "ui-card-meta" }, meta ?? null),
+        ),
   );
 }
 

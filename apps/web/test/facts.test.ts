@@ -107,11 +107,11 @@ describe("kitchen recipe facts", () => {
           onRetry() {},
         }),
       );
-      assert.match(page, />chicken</);
-      assert.match(page, /30 min/);
-      assert.match(page, /Low/);
-      assert.match(page, /Dinner/);
-      assert.match(page, /ui-facts/);
+      assert.match(page, /chicken/);
+      assert.match(page, /30 min · Low/);
+      assert.match(page, /ui-card--poster/);
+      assert.match(page, /ui-card-poster-title/);
+      assert.doesNotMatch(page, /class="ui-card-meta"/);
       assert.doesNotMatch(page, /<button[^>]*class="[^"]*ui-facts-slot/);
     }),
   );

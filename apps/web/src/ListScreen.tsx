@@ -15,10 +15,10 @@ import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { LIST_ERROR } from "./api";
 import {
   factsAccessibleSummary,
+  formatEffort,
   formatMealType,
   formatTotalMinutes,
 } from "./facts";
-import { RecipeFacts } from "./RecipeFacts";
 import { recipePath } from "./route";
 
 export const NO_MATCHES = "No recipes match.";
@@ -205,6 +205,7 @@ export function ListScreen({
                   <Card
                     href={recipePath(recipe.id)}
                     title={displayShortTitle(recipe)}
+                    overlayTitle
                     imageSrc={recipe.imageUrl ?? undefined}
                     imageAlt=""
                     mediaFallback={
@@ -214,9 +215,6 @@ export function ListScreen({
                     }
                     badges={<CardOverlayBadges facts={recipe.facts} />}
                     aria-label={`${recipe.title}. ${factsAccessibleSummary(recipe.facts)}`}
-                    meta={
-                      <RecipeFacts facts={recipe.facts} explanations="hover" />
-                    }
                     onNavigate={onOpen}
                   />
                 </li>
@@ -736,42 +734,48 @@ function SettingsIcon() {
 
 function CardOverlayBadges({ facts }: { facts: RecipeFactsModel }) {
   const minutes = facts.totalMinutes;
+  const effortLabel = facts.effort ? formatEffort(facts.effort) : null;
+  const timeEffortLabel =
+    minutes !== null && effortLabel
+      ? `${formatTotalMinutes(minutes)} · ${effortLabel}`
+      : minutes !== null
+        ? formatTotalMinutes(minutes)
+        : effortLabel;
   const specifiedProtein = isUnsetPrimaryProtein(facts.primaryProtein)
     ? null
     : facts.primaryProtein;
-  const rightLabel =
-    specifiedProtein ??
-    (facts.mealTypes[0] ? formatMealType(facts.mealTypes[0]) : null);
 
-  if (minutes === null && !rightLabel) {
+  if (!timeEffortLabel && !specifiedProtein) {
     return null;
   }
 
   return (
     <>
-      {minutes !== null ? (
+      {timeEffortLabel ? (
         <span className="ui-card-pill ui-card-pill--time" aria-hidden="true">
-          <svg
-            viewBox="0 0 24 24"
-            width="13"
-            height="13"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.1"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 2" />
-          </svg>
-          <span>{formatTotalMinutes(minutes)}</span>
+          {minutes !== null ? (
+            <svg
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          ) : null}
+          <span>{timeEffortLabel}</span>
         </span>
       ) : (
         <span />
       )}
-      {rightLabel ? (
+      {specifiedProtein ? (
         <span className="ui-card-pill ui-card-pill--tag" aria-hidden="true">
-          {rightLabel}
+          {specifiedProtein}
         </span>
       ) : null}
     </>

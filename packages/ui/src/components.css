@@ -151,6 +151,10 @@ body {
   grid-template-rows: auto 1fr;
 }
 
+.ui-card--poster {
+  grid-template-rows: 1fr;
+}
+
 .ui-card-media {
   position: relative;
   display: block;
@@ -159,6 +163,35 @@ body {
   overflow: hidden;
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.ui-card-media--poster {
+  border-bottom: 0;
+  height: 100%;
+}
+
+.ui-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(9, 13, 19, 0.88) 0%,
+    rgba(9, 13, 19, 0.44) 42%,
+    rgba(9, 13, 19, 0.08) 72%,
+    rgba(9, 13, 19, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.ui-card-poster-title {
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 0.72rem;
+  z-index: 2;
+  color: #ffffff;
+  font-size: 1.125rem;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.65);
 }
 
 .ui-card-media img {
