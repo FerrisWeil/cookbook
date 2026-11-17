@@ -18,6 +18,7 @@ export const RECIPE_READ_FIELDS = "title,ingredients,steps,facts";
 export type RecipeView = {
   title: string;
   imageUrl?: string | null;
+  ingredientImages?: Array<string | null>;
   ingredients: string[];
   steps: string[];
   facts: RecipeFacts;

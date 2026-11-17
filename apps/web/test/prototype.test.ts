@@ -16,6 +16,8 @@ import {
   formatTimerClockValue,
   formatTimerSeconds,
 } from "../src/prototype/cookingStore.ts";
+import { GlobalCookingBanner } from "../src/prototype/GlobalCookingBanner.tsx";
+import { resolvePantryIngredientAsset } from "../src/prototype/pantryCatalog.ts";
 import { SevenSegmentClock } from "../src/prototype/SevenSegmentClock.tsx";
 import { TimersDrawerProvider } from "../src/prototype/TimersDrawer.tsx";
 import {
@@ -437,5 +439,59 @@ describe("TAY-36 cooking mode client & UI", () => {
     assert.equal((a!.endAtMs ?? 1) % 1000, 0);
     assert.equal((b!.endAtMs ?? 1) % 1000, 0);
     syncedClient.close();
+  });
+
+  it("renders raw pantry ingredient images for beef & barley stew and renders global banner when navigated away", async () => {
+    const client = createPrototypeCookingClient({
+      findRecipe: (id) => SAMPLE_RECIPES.find((r) => r.id === id),
+      now: () => 5_000,
+      persist: false,
+    });
+    const stew = SAMPLE_RECIPES.find(
+      (r) => r.id === "three-hour-beef-barley-stew",
+    )!;
+    for (const ing of stew.ingredients) {
+      assert.ok(
+        resolvePantryIngredientAsset(ing.line),
+        `Missing pantry asset for: ${ing.line}`,
+      );
+    }
+
+    const detailHtml = html(
+      createElement(RecipeScreen, {
+        state: {
+          kind: "ready",
+          recipe: {
+            title: stew.title,
+            imageUrl: stew.imageUrl ?? null,
+            ingredientImages: stew.ingredients.map(
+              (entry) => resolvePantryIngredientAsset(entry.line)?.imageUrl ?? null,
+            ),
+            ingredients: stew.ingredients.map((i) => i.line),
+            steps: stew.steps.map((s) => s.text),
+            facts: stew.facts,
+          },
+        },
+        editing: false,
+        draft: null,
+        formStatus: { kind: "idle" },
+        onBack() {},
+        onRetry() {},
+        onEditFacts() {},
+        onDraftChange() {},
+        onSaveFacts() {},
+        onCancelFacts() {},
+      }),
+    );
+    assert.match(detailHtml, /\/images\/ingredients\/beef-chuck\.svg/);
+    assert.match(detailHtml, /\/images\/ingredients\/carrot\.svg/);
+    assert.match(detailHtml, /recipe-hero--with-media/);
+
+    await client.begin("three-hour-beef-barley-stew");
+    const bannerHtml = html(createElement(GlobalCookingBanner, { client }));
+    assert.match(bannerHtml, /Cooking: Beef &amp; Barley Stew/);
+    assert.match(bannerHtml, /Step 1 of 4/);
+    assert.match(bannerHtml, /Return to cooking/);
+    client.close();
   });
 });

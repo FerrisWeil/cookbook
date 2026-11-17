@@ -180,9 +180,26 @@ export function RecipeArticle({
             <span className="recipe-section-count">{ingredients.length}</span>
           </div>
           <ul>
-            {ingredients.map((line, index) => (
-              <li key={index}>{line}</li>
-            ))}
+            {ingredients.map((line, index) => {
+              const imageSrc = recipe.ingredientImages?.[index];
+              if (!imageSrc) {
+                return <li key={index}>{line}</li>;
+              }
+              return (
+                <li key={index} className="recipe-ingredient-item">
+                  <span className="ingredient-thumb-wrap" aria-hidden="true">
+                    <img
+                      className="ingredient-thumb"
+                      src={imageSrc}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                  <span className="recipe-ingredient-line">{line}</span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}

@@ -16,6 +16,7 @@ import {
   type RecipeView,
   type StreamHandlers,
 } from "../sync/session";
+import { resolvePantryIngredientAsset } from "./pantryCatalog";
 import { SAMPLE_RECIPES, type PrototypeRecipe } from "./sampleData";
 
 export type PrototypeViewMode = "normal" | "empty" | "loading" | "error";
@@ -211,11 +212,18 @@ export function createPrototypeController(
       const res = inner.recipe(id);
       if (res.kind === "ready") {
         const sample = findRecipe(id);
+        const ingredientImages =
+          sample?.id === "three-hour-beef-barley-stew"
+            ? sample.ingredients.map(
+                (entry) => resolvePantryIngredientAsset(entry.line)?.imageUrl ?? null,
+              )
+            : undefined;
         return {
           ...res,
           recipe: {
             ...res.recipe,
             imageUrl: sample?.imageUrl ?? null,
+            ingredientImages,
           },
         };
       }

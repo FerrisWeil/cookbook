@@ -8,6 +8,7 @@ import {
   type PrototypeCookingClient,
   type PrototypeCookingExtras,
 } from "./cookingStore";
+import { resolvePantryIngredientAsset } from "./pantryCatalog";
 import { useTimersDrawer } from "./TimersDrawer";
 
 export function CookingModeView({
@@ -253,6 +254,7 @@ export function CookingModeView({
           <ul className="cooking-ingredient-checklist">
             {extras.fullIngredients.map((line, index) => {
               const checked = checkedIngSet.has(index);
+              const imageSrc = extras.ingredientImages?.[index];
               return (
                 <li key={index}>
                   <label
@@ -266,6 +268,17 @@ export function CookingModeView({
                     <span className="cooking-check-box" aria-hidden="true">
                       {checked ? <CheckMarkIcon /> : null}
                     </span>
+                    {imageSrc ? (
+                      <span className="ingredient-thumb-wrap" aria-hidden="true">
+                        <img
+                          className="ingredient-thumb"
+                          src={imageSrc}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </span>
+                    ) : null}
                     <span className="cooking-check-label">{line}</span>
                   </label>
                 </li>
@@ -424,6 +437,10 @@ export function CookingModeView({
                         {step.ingredients.map((item, ingIdx) => {
                           const key = `${index}:${ingIdx}`;
                           const checked = checkedStepIngSet.has(key);
+                          const miniThumb =
+                            isCurrent && !isCompleted && extras.ingredientImages
+                              ? resolvePantryIngredientAsset(item.label)?.imageUrl
+                              : null;
                           return (
                             <li key={ingIdx}>
                               <label
@@ -439,6 +456,15 @@ export function CookingModeView({
                                 <span className="cooking-check-box" aria-hidden="true">
                                   {checked ? <CheckMarkIcon /> : null}
                                 </span>
+                                {miniThumb ? (
+                                  <img
+                                    className="ingredient-thumb ingredient-thumb--mini"
+                                    src={miniThumb}
+                                    alt=""
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
+                                ) : null}
                                 <span>{item.label}</span>
                               </label>
                             </li>

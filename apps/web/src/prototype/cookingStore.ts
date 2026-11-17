@@ -1,6 +1,7 @@
 import { MESSAGES, type CookingSession } from "@cookbook/shared";
 
 import type { CookingClient } from "../cooking/client";
+import { resolvePantryIngredientAsset } from "./pantryCatalog";
 import type { PrototypeRecipe, PrototypeStep, PrototypeStepTimer } from "./sampleData";
 
 const COOKING_STORAGE_KEY = "cookbook-prototype-cooking-v1";
@@ -24,6 +25,9 @@ export type PrototypeCookingExtras = {
   sessionId: string;
   recipeId: string;
   recipeTitle: string;
+  recipeShortTitle?: string;
+  recipeImageUrl?: string | null;
+  ingredientImages?: Array<string | null>;
   steps: PrototypeStep[];
   fullIngredients: string[];
   checkedIngredients: number[];
@@ -415,6 +419,14 @@ export function createPrototypeCookingClient(options: {
           sessionId,
           recipeId: recipe.id,
           recipeTitle: recipe.title,
+          recipeShortTitle: recipe.shortTitle,
+          recipeImageUrl: recipe.imageUrl ?? null,
+          ingredientImages:
+            recipe.id === "three-hour-beef-barley-stew"
+              ? fullIngredients.map(
+                  (line) => resolvePantryIngredientAsset(line)?.imageUrl ?? null,
+                )
+              : undefined,
           steps: recipe.steps,
           fullIngredients,
           checkedIngredients: [],
