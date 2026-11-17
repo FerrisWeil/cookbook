@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { App } from "../App";
 import { PreferencesProvider, usePreferences } from "../settings/preferences";
 import { createPrototypeCookingClient, type PrototypeCookingClient } from "./cookingStore";
+import { TimersDrawerProvider } from "./TimersDrawer";
 import {
   createPrototypeController,
   type PrototypeController,
@@ -172,7 +173,9 @@ function PrototypeShell({
         ) : null}
       </aside>
 
-      <App session={controller.session} cooking={cooking} />
+      <TimersDrawerProvider client={cooking}>
+        <App session={controller.session} cooking={cooking} />
+      </TimersDrawerProvider>
     </div>
   );
 }

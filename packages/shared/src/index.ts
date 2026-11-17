@@ -30,6 +30,8 @@ export {
   RECIPE_FIELDS,
   RECIPE_MEAL_TYPES,
   RECOMMENDED_PROTEINS,
+  SHORT_TITLE_MAX_LENGTH,
+  displayShortTitle,
   emptyRecipeFacts,
   isUnsetPrimaryProtein,
   invalidFieldMessage,

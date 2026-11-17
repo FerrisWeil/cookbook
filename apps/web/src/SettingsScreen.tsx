@@ -2,7 +2,11 @@ import type { ThemeChoice } from "@cookbook/ui";
 import { Button } from "@cookbook/ui";
 import { useState } from "react";
 
-import { playTimerChime, usePreferences } from "./settings/preferences";
+import {
+  TIMER_CHECKPOINT_OPTIONS,
+  playTimerChime,
+  usePreferences,
+} from "./settings/preferences";
 
 const THEME_OPTIONS: Array<{
   id: ThemeChoice;
@@ -31,6 +35,14 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
     usePreferences();
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  function toggleCheckpoint(seconds: number) {
+    const exists = cooking.timerChimeCheckpoints.includes(seconds);
+    const next = exists
+      ? cooking.timerChimeCheckpoints.filter((item) => item !== seconds)
+      : [...cooking.timerChimeCheckpoints, seconds].sort((a, b) => b - a);
+    updateCooking({ timerChimeCheckpoints: next });
+  }
+
   return (
     <main className="ui-shell settings-screen">
       <div className="recipe-topbar">
@@ -43,7 +55,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
         <header className="settings-header">
           <h1>Settings</h1>
           <p className="settings-subtitle">
-            Customize appearance, cooking step flow, timer alerts, and sample data.
+            Customize appearance, cooking step flow, timer chimes, and sample data.
           </p>
         </header>
 
@@ -123,15 +135,60 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
                 }
               />
             </label>
+          </div>
+        </section>
+
+        <section className="settings-card" aria-labelledby="settings-timers">
+          <div className="settings-card-header">
+            <h2 id="settings-timers">Timers &amp; audio alerts</h2>
+          </div>
+
+          <div className="settings-toggle-list">
+            <label className="settings-toggle-row">
+              <div className="settings-toggle-copy">
+                <span className="settings-toggle-title">
+                  Auto-open timer panel at finish
+                </span>
+                <span className="settings-toggle-desc">
+                  Expand the right-side Timers panel and highlight the timer when it
+                  hits 00:00.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={cooking.autoOpenTimersOnFinish}
+                onChange={(event) =>
+                  updateCooking({ autoOpenTimersOnFinish: event.target.checked })
+                }
+              />
+            </label>
+
+            <label className="settings-toggle-row">
+              <div className="settings-toggle-copy">
+                <span className="settings-toggle-title">
+                  Show &ldquo;Ready at&rdquo; target time
+                </span>
+                <span className="settings-toggle-desc">
+                  Display the projected wall-clock finish time under running timers.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={cooking.showReadyAtTime}
+                onChange={(event) =>
+                  updateCooking({ showReadyAtTime: event.target.checked })
+                }
+              />
+            </label>
 
             <div className="settings-toggle-row settings-toggle-row--with-action">
               <label className="settings-toggle-inline">
                 <div className="settings-toggle-copy">
                   <span className="settings-toggle-title">
-                    Timer completion chime
+                    Timer audio chimes
                   </span>
                   <span className="settings-toggle-desc">
-                    Play a soft two-note tone when a cooking timer reaches 00:00.
+                    Play soft Web Audio chimes at your selected checkpoints.
                   </span>
                 </div>
                 <input
@@ -146,7 +203,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
                 variant="tonal"
                 className="settings-chime-test"
                 onClick={() => {
-                  const ok = playTimerChime();
+                  const ok = playTimerChime("complete");
                   setFeedback(
                     ok
                       ? "Played timer completion chime."
@@ -156,6 +213,42 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
               >
                 Test chime
               </Button>
+            </div>
+
+            <div className="settings-checkpoints-block">
+              <div className="settings-checkpoints-header">
+                <span className="settings-toggle-title">
+                  Chime checkpoints
+                </span>
+                <span className="settings-toggle-desc">
+                  Defaults to 1 minute remaining and completion (00:00).
+                </span>
+              </div>
+              <div
+                className="filter-pill-grid"
+                role="group"
+                aria-label="Timer chime checkpoints"
+              >
+                {TIMER_CHECKPOINT_OPTIONS.map((opt) => {
+                  const checked = cooking.timerChimeCheckpoints.includes(
+                    opt.seconds,
+                  );
+                  return (
+                    <label
+                      key={opt.seconds}
+                      className={`filter-pill-option${checked ? " is-selected" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={!cooking.timerSoundEnabled}
+                        onChange={() => toggleCheckpoint(opt.seconds)}
+                      />
+                      {opt.label}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>

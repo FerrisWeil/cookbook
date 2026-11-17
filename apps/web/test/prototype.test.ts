@@ -1,15 +1,23 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { compileListCriteria, emptyListCriteria } from "@cookbook/shared";
+import {
+  SHORT_TITLE_MAX_LENGTH,
+  compileListCriteria,
+  displayShortTitle,
+  emptyListCriteria,
+} from "@cookbook/shared";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 
 import { CookingModeView } from "../src/prototype/CookingModeView.tsx";
 import {
   createPrototypeCookingClient,
+  formatTimerClockValue,
   formatTimerSeconds,
 } from "../src/prototype/cookingStore.ts";
+import { SevenSegmentClock } from "../src/prototype/SevenSegmentClock.tsx";
+import { TimersDrawerProvider } from "../src/prototype/TimersDrawer.tsx";
 import {
   createPrototypeController,
   initialPrototypeModeFromSearch,
@@ -18,7 +26,10 @@ import { SAMPLE_RECIPES } from "../src/prototype/sampleData.ts";
 import { RecipeScreen } from "../src/RecipeScreen.tsx";
 import { parseRoute, SETTINGS_PATH } from "../src/route.ts";
 import { SettingsScreen } from "../src/SettingsScreen.tsx";
-import { initialThemeChoice } from "../src/settings/preferences.tsx";
+import {
+  DEFAULT_COOKING_PREFERENCES,
+  initialThemeChoice,
+} from "../src/settings/preferences.tsx";
 
 function html(node: ReturnType<typeof createElement>): string {
   return renderToString(node).replaceAll("<!-- -->", "");
@@ -328,15 +339,103 @@ describe("TAY-36 cooking mode client & UI", () => {
     client.close();
   });
 
-  it("defaults theme to dark and renders /settings screen cleanly", () => {
+  it("defaults theme to dark, chime checkpoints to 1m + 0s, Ready-at off, and renders /settings", () => {
     assert.equal(initialThemeChoice(), "dark");
+    assert.equal(DEFAULT_COOKING_PREFERENCES.showReadyAtTime, false);
+    assert.equal(DEFAULT_COOKING_PREFERENCES.autoOpenTimersOnFinish, true);
+    assert.deepEqual(DEFAULT_COOKING_PREFERENCES.timerChimeCheckpoints, [60, 0]);
     assert.deepEqual(parseRoute(SETTINGS_PATH), { name: "settings" });
     const page = html(createElement(SettingsScreen, { onBack() {} }));
     assert.match(page, /<h1>Settings<\/h1>/);
     assert.match(page, /Dark \(Default\)/);
     assert.match(page, /Auto-collapse completed steps/);
     assert.match(page, /Auto-advance to next step/);
-    assert.match(page, /Timer completion chime/);
+    assert.match(page, /Timer audio chimes/);
+    assert.match(page, /1 min before/);
+    assert.match(page, /Complete \(00:00\)/);
     assert.match(page, /Test chime/);
+  });
+
+  it("supports global ad-hoc timers, negative nudges, overtime count-up, and 7-segment display", async () => {
+    let clock = 1_000;
+    const client = createPrototypeCookingClient({
+      findRecipe: (id) => SAMPLE_RECIPES.find((r) => r.id === id),
+      now: () => clock,
+      persist: false,
+    });
+    client.startAdhocTimer(120, "Toast garlic");
+    assert.equal(client.runningTimerCount(), 1);
+    const created = client.getTimers()[0]!;
+    assert.equal(created.stepIndex, null);
+    assert.equal(created.label, "Toast garlic");
+    assert.equal(formatTimerClockValue(created), "02:00");
+
+    client.addTimerSeconds(created.id, -60);
+    assert.equal(client.getTimers()[0]!.remainingSeconds, 60);
+
+    clock += 74_000;
+    await client.open();
+    const finished = client.getTimers()[0]!;
+    assert.equal(finished.status, "finished");
+    assert.equal(finished.remainingSeconds, 0);
+    assert.equal(finished.overtimeSeconds, 14);
+    assert.equal(formatTimerClockValue(finished), "+00:14");
+
+    client.restartTimer(finished.id);
+    assert.equal(client.getTimers()[0]!.status, "running");
+    assert.equal(client.getTimers()[0]!.remainingSeconds, 120);
+
+    const seg = html(
+      createElement(SevenSegmentClock, {
+        value: "+00:14",
+        tone: "finished",
+        size: "sm",
+        ariaLabel: "Overtime 14 seconds",
+      }),
+    );
+    assert.match(seg, /seg-clock--finished/);
+    assert.match(seg, /seg-plus/);
+    assert.match(seg, /seg-digit/);
+
+    const drawerHtml = html(
+      createElement(
+        TimersDrawerProvider,
+        { client },
+        createElement("div", null, "App body"),
+      ),
+    );
+    assert.match(drawerHtml, /timers-edge-handle/);
+    assert.match(drawerHtml, /seg-clock/);
+    client.close();
+  });
+
+  it("enforces shortTitle length limit across all 25 sample recipes and syncs multi-timer ticks to whole seconds", async () => {
+    for (const recipe of SAMPLE_RECIPES) {
+      assert.ok(
+        recipe.shortTitle.trim().length > 0 &&
+          recipe.shortTitle.length <= SHORT_TITLE_MAX_LENGTH,
+        `${recipe.id}: "${recipe.shortTitle}" (${recipe.shortTitle.length})`,
+      );
+      assert.equal(displayShortTitle(recipe), recipe.shortTitle);
+    }
+    assert.equal(
+      displayShortTitle({ title: "Fallback full title", shortTitle: null }),
+      "Fallback full title",
+    );
+
+    // Timer A starts at .200ms, Timer B starts at .800ms -> both anchor endAtMs to :000ms
+    let clock = 10_200;
+    const syncedClient = createPrototypeCookingClient({
+      findRecipe: (id) => SAMPLE_RECIPES.find((r) => r.id === id),
+      now: () => clock,
+      persist: false,
+    });
+    syncedClient.startAdhocTimer(60, "Timer A");
+    clock = 12_800;
+    syncedClient.startAdhocTimer(60, "Timer B");
+    const [a, b] = syncedClient.getTimers();
+    assert.equal((a!.endAtMs ?? 1) % 1000, 0);
+    assert.equal((b!.endAtMs ?? 1) % 1000, 0);
+    syncedClient.close();
   });
 });

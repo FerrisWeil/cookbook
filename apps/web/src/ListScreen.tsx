@@ -3,6 +3,7 @@ import {
   RECIPE_EFFORTS,
   RECIPE_MEAL_TYPES,
   criteriaIsEmpty,
+  displayShortTitle,
   type ListCriteria,
 } from "@cookbook/shared";
 import type { RecipeListItem } from "@cookbook/shared";
@@ -137,13 +138,6 @@ export function ListScreen({
       <div
         className={`list-content-layout${search?.filtersOpen ? " has-filters-open" : ""}`}
       >
-        {search ? (
-          <ListFiltersDialog
-            search={search}
-            isDesktop={isDesktop}
-            filtersRef={filtersRef}
-          />
-        ) : null}
         <div className="list-results">
           {updating ? (
             <p className="list-updating" role="status">
@@ -202,7 +196,9 @@ export function ListScreen({
                 <li key={recipe.id}>
                   <Card
                     href={recipePath(recipe.id)}
-                    title={recipe.title}
+                    title={displayShortTitle(recipe)}
+                    imageSrc={recipe.imageUrl ?? undefined}
+                    imageAlt=""
                     aria-label={`${recipe.title}. ${factsAccessibleSummary(recipe.facts)}`}
                     meta={
                       <RecipeFacts facts={recipe.facts} explanations="hover" />
@@ -214,6 +210,13 @@ export function ListScreen({
             </ul>
           ) : null}
         </div>
+        {search ? (
+          <ListFiltersDialog
+            search={search}
+            isDesktop={isDesktop}
+            filtersRef={filtersRef}
+          />
+        ) : null}
       </div>
     </main>
   );

@@ -18,16 +18,29 @@ import type { PrototypeViewMode } from "../prototype/prototypeSession";
 
 export const SETTINGS_STORAGE_KEY = "cookbook-settings-v1";
 
+export const TIMER_CHECKPOINT_OPTIONS = [
+  { seconds: 300, label: "5 min before" },
+  { seconds: 60, label: "1 min before" },
+  { seconds: 30, label: "30 sec before" },
+  { seconds: 0, label: "Complete (00:00)" },
+] as const;
+
 export type CookingPreferences = {
   autoAdvanceStep: boolean;
   autoCollapseCompletedSteps: boolean;
   timerSoundEnabled: boolean;
+  timerChimeCheckpoints: number[];
+  showReadyAtTime: boolean;
+  autoOpenTimersOnFinish: boolean;
 };
 
 export const DEFAULT_COOKING_PREFERENCES: CookingPreferences = {
   autoAdvanceStep: true,
   autoCollapseCompletedSteps: true,
   timerSoundEnabled: true,
+  timerChimeCheckpoints: [60, 0],
+  showReadyAtTime: false,
+  autoOpenTimersOnFinish: true,
 };
 
 export type PrototypeControlsBinding = {
@@ -85,6 +98,12 @@ export function loadCookingPreferences(): CookingPreferences {
       return DEFAULT_COOKING_PREFERENCES;
     }
     const parsed = JSON.parse(raw) as Partial<CookingPreferences>;
+    const checkpoints = Array.isArray(parsed.timerChimeCheckpoints)
+      ? parsed.timerChimeCheckpoints.filter(
+          (item): item is number =>
+            typeof item === "number" && Number.isFinite(item) && item >= 0,
+        )
+      : DEFAULT_COOKING_PREFERENCES.timerChimeCheckpoints;
     return {
       autoAdvanceStep:
         typeof parsed.autoAdvanceStep === "boolean"
@@ -98,6 +117,15 @@ export function loadCookingPreferences(): CookingPreferences {
         typeof parsed.timerSoundEnabled === "boolean"
           ? parsed.timerSoundEnabled
           : DEFAULT_COOKING_PREFERENCES.timerSoundEnabled,
+      timerChimeCheckpoints: checkpoints,
+      showReadyAtTime:
+        typeof parsed.showReadyAtTime === "boolean"
+          ? parsed.showReadyAtTime
+          : DEFAULT_COOKING_PREFERENCES.showReadyAtTime,
+      autoOpenTimersOnFinish:
+        typeof parsed.autoOpenTimersOnFinish === "boolean"
+          ? parsed.autoOpenTimersOnFinish
+          : DEFAULT_COOKING_PREFERENCES.autoOpenTimersOnFinish,
     };
   } catch {
     return DEFAULT_COOKING_PREFERENCES;
@@ -140,28 +168,54 @@ function applyThemeToDocument(choice: ThemeChoice): "light" | "dark" {
   return resolved;
 }
 
-export function playTimerChime(): boolean {
+let sharedAudioContext: AudioContext | null = null;
+
+function ensureAudioContext(): AudioContext | null {
   if (typeof window === "undefined") {
-    return false;
+    return null;
   }
   const AudioCtx =
     window.AudioContext ||
     (window as unknown as { webkitAudioContext?: typeof AudioContext })
       .webkitAudioContext;
   if (!AudioCtx) {
+    return null;
+  }
+  try {
+    if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+      sharedAudioContext = new AudioCtx();
+    }
+    if (sharedAudioContext.state === "suspended") {
+      void sharedAudioContext.resume();
+    }
+    return sharedAudioContext;
+  } catch {
+    return null;
+  }
+}
+
+export function primeTimerAudio(): void {
+  ensureAudioContext();
+}
+
+export function playTimerChime(kind: "reminder" | "complete" = "complete"): boolean {
+  const ctx = ensureAudioContext();
+  if (!ctx) {
     return false;
   }
   try {
-    const ctx = new AudioCtx();
     const now = ctx.currentTime;
-    const notes = [659.25, 880];
+    const notes = kind === "reminder" ? [587.33] : [659.25, 880];
     notes.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, now + idx * 0.14);
       gain.gain.setValueAtTime(0.001, now + idx * 0.14);
-      gain.gain.exponentialRampToValueAtTime(0.14, now + idx * 0.14 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(
+        kind === "reminder" ? 0.1 : 0.15,
+        now + idx * 0.14 + 0.02,
+      );
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.14 + 0.36);
       osc.connect(gain);
       gain.connect(ctx.destination);

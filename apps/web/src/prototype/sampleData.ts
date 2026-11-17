@@ -19,10 +19,96 @@ export type PrototypeStep = {
 export type PrototypeRecipe = {
   id: string;
   title: string;
+  shortTitle: string;
+  imageUrl?: string;
   servings: number;
   ingredients: Ingredient[];
   steps: PrototypeStep[];
   facts: RecipeFacts;
+};
+
+type RawPrototypeRecipe = Omit<PrototypeRecipe, "shortTitle" | "imageUrl">;
+
+const CARD_META: Record<string, { shortTitle: string; imageUrl?: string }> = {
+  "duck-breast-cherry-reduction": {
+    shortTitle: "Duck & Cherry Glaze",
+    imageUrl: "/images/meals/duck-breast-cherry-reduction.jpg",
+  },
+  "three-hour-beef-barley-stew": {
+    shortTitle: "Beef & Barley Stew",
+    imageUrl: "/images/meals/three-hour-beef-barley-stew.jpg",
+  },
+  "lemon-garlic-chicken-thighs": {
+    shortTitle: "Lemon-Garlic Chicken",
+  },
+  "long-title-chickpea-cabbage-braise": {
+    shortTitle: "Chickpea Cabbage Braise",
+  },
+  "flash-seared-scallops-pasta": {
+    shortTitle: "Seared Scallops Pasta",
+  },
+  "oaxacan-chicken-mole-20-ingredients": {
+    shortTitle: "Oaxacan Chicken Mole",
+  },
+  "jammy-eggs-ricotta-toast": {
+    shortTitle: "Jammy Egg Toast",
+  },
+  "mystery-pantry-noodle-soup": {
+    shortTitle: "Pantry Noodle Soup",
+  },
+  "warm-farro-squash-salad": {
+    shortTitle: "Warm Farro & Squash",
+  },
+  "cast-iron-pork-chops": {
+    shortTitle: "Cast-Iron Pork Chops",
+    imageUrl: "/images/meals/cast-iron-pork-chops.jpg",
+  },
+  "charred-broccoli-polenta-bowls": {
+    shortTitle: "Broccoli Polenta Bowl",
+  },
+  "maple-seitan-skewers": {
+    shortTitle: "Maple Seitan Skewers",
+  },
+  "herb-crusted-rack-of-lamb": {
+    shortTitle: "Herb Rack of Lamb",
+  },
+  "tofu-banh-mi-bowls": {
+    shortTitle: "Tofu Banh Mi Bowls",
+    imageUrl: "/images/meals/tofu-banh-mi-bowls.jpg",
+  },
+  "pan-roasted-cod-fennel": {
+    shortTitle: "Pan-Roasted Cod",
+  },
+  "miso-salmon-parcels": {
+    shortTitle: "Miso Salmon Parcels",
+  },
+  "garlic-butter-shrimp-skillet": {
+    shortTitle: "Garlic Shrimp Skillet",
+  },
+  "ginger-scallion-ground-chicken-cups": {
+    shortTitle: "Ginger Chicken Cups",
+  },
+  "roasted-turkey-breast-gravy": {
+    shortTitle: "Roast Turkey & Gravy",
+  },
+  "cardamom-orange-overnight-oats": {
+    shortTitle: "Cardamom Overnight Oats",
+  },
+  "laminated-rosemary-brioche-galette": {
+    shortTitle: "Rosemary Brioche Tart",
+  },
+  "crispy-smoked-paprika-chickpeas": {
+    shortTitle: "Smoky Crisp Chickpeas",
+  },
+  "burnt-basque-cheesecake": {
+    shortTitle: "Basque Cheesecake",
+  },
+  "poached-pears-hibiscus": {
+    shortTitle: "Hibiscus Poached Pears",
+  },
+  "skillet-white-beans-sweet-paprika": {
+    shortTitle: "Skillet White Beans",
+  },
 };
 
 function ing(line: string, name?: string): Ingredient {
@@ -34,7 +120,7 @@ function ing(line: string, name?: string): Ingredient {
   };
 }
 
-export const SAMPLE_RECIPES: PrototypeRecipe[] = [
+const RAW_SAMPLE_RECIPES: RawPrototypeRecipe[] = [
   {
     id: "duck-breast-cherry-reduction",
     title: "Crispy-Skin Duck Breast with Cherry Reduction and Roasted Potatoes",
@@ -1395,3 +1481,14 @@ export const SAMPLE_RECIPES: PrototypeRecipe[] = [
     ],
   },
 ];
+
+export const SAMPLE_RECIPES: PrototypeRecipe[] = RAW_SAMPLE_RECIPES.map(
+  (recipe) => {
+    const meta = CARD_META[recipe.id];
+    return {
+      ...recipe,
+      shortTitle: meta?.shortTitle ?? recipe.title.slice(0, 26),
+      imageUrl: meta?.imageUrl,
+    };
+  },
+);

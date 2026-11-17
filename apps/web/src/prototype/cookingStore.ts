@@ -4,15 +4,20 @@ import type { CookingClient } from "../cooking/client";
 import type { PrototypeRecipe, PrototypeStep, PrototypeStepTimer } from "./sampleData";
 
 const COOKING_STORAGE_KEY = "cookbook-prototype-cooking-v1";
+const STANDALONE_TIMERS_STORAGE_KEY = "cookbook-prototype-timers-v1";
 
 export type PrototypeTimer = {
   id: string;
-  stepIndex: number;
+  stepIndex: number | null;
+  recipeId?: string;
+  recipeTitle?: string;
   label: string;
   durationSeconds: number;
   remainingSeconds: number;
+  overtimeSeconds?: number;
   status: "running" | "paused" | "finished";
   endAtMs: number | null;
+  finishedAtMs?: number | null;
 };
 
 export type PrototypeCookingExtras = {
@@ -32,16 +37,25 @@ type PersistedCooking = {
   extras: PrototypeCookingExtras;
 };
 
+type PersistedStandaloneTimers = {
+  timers: PrototypeTimer[];
+  fullscreenTimerId: string | null;
+};
+
 export type PrototypeCookingClient = CookingClient & {
   getExtras(): PrototypeCookingExtras | null;
+  getTimers(): PrototypeTimer[];
+  getFullscreenTimerId(): string | null;
   toggleStepCompleted(stepIndex: number): void;
   toggleIngredient(index: number): void;
   clearIngredients(): void;
   toggleStepIngredient(stepIndex: number, ingredientIndex: number): void;
   startTimer(stepIndex: number, timer: PrototypeStepTimer): void;
+  startAdhocTimer(durationSeconds: number, label?: string): void;
   pauseTimer(timerId: string): void;
   resumeTimer(timerId: string): void;
   resetTimer(timerId: string): void;
+  restartTimer(timerId: string): void;
   addTimerSeconds(timerId: string, deltaSeconds: number): void;
   dismissTimer(timerId: string): void;
   openTimerFullscreen(timerId: string): void;
@@ -60,6 +74,13 @@ export function formatTimerSeconds(totalSeconds: number): string {
     return `${hours}:${mm}:${ss}`;
   }
   return `${mm}:${ss}`;
+}
+
+export function formatTimerClockValue(timer: PrototypeTimer): string {
+  if (timer.status === "finished") {
+    return `+${formatTimerSeconds(timer.overtimeSeconds ?? 0)}`;
+  }
+  return formatTimerSeconds(timer.remainingSeconds);
 }
 
 function readStorage(): PersistedCooking | null {
@@ -96,6 +117,102 @@ function writeStorage(value: PersistedCooking | null): void {
   }
 }
 
+function readStandaloneStorage(): PersistedStandaloneTimers {
+  if (typeof window === "undefined") {
+    return { timers: [], fullscreenTimerId: null };
+  }
+  try {
+    const raw = window.localStorage.getItem(STANDALONE_TIMERS_STORAGE_KEY);
+    if (!raw) {
+      return { timers: [], fullscreenTimerId: null };
+    }
+    const parsed = JSON.parse(raw) as Partial<PersistedStandaloneTimers>;
+    return {
+      timers: Array.isArray(parsed.timers) ? parsed.timers : [],
+      fullscreenTimerId:
+        typeof parsed.fullscreenTimerId === "string"
+          ? parsed.fullscreenTimerId
+          : null,
+    };
+  } catch {
+    return { timers: [], fullscreenTimerId: null };
+  }
+}
+
+function writeStandaloneStorage(value: PersistedStandaloneTimers): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    if (value.timers.length === 0 && value.fullscreenTimerId === null) {
+      window.localStorage.removeItem(STANDALONE_TIMERS_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(
+        STANDALONE_TIMERS_STORAGE_KEY,
+        JSON.stringify(value),
+      );
+    }
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function alignedEndAtMs(currentMs: number, seconds: number): number {
+  return Math.ceil(currentMs / 1000) * 1000 + seconds * 1000;
+}
+
+function syncTimerList(
+  timers: PrototypeTimer[],
+  currentMs: number,
+): { timers: PrototypeTimer[]; changed: boolean } {
+  let changed = false;
+  const nextTimers = timers.map((timer) => {
+    if (timer.status === "running" && timer.endAtMs !== null) {
+      const diffMs = timer.endAtMs - currentMs;
+      if (diffMs <= 0) {
+        const finishedAtMs = timer.endAtMs;
+        const overtimeSeconds = Math.max(
+          0,
+          Math.floor((currentMs - finishedAtMs) / 1000),
+        );
+        changed = true;
+        return {
+          ...timer,
+          remainingSeconds: 0,
+          overtimeSeconds,
+          status: "finished" as const,
+          endAtMs: null,
+          finishedAtMs,
+        };
+      }
+      const nextRemaining = Math.max(0, Math.floor(diffMs / 1000));
+      if (nextRemaining !== timer.remainingSeconds) {
+        changed = true;
+        return {
+          ...timer,
+          remainingSeconds: nextRemaining,
+        };
+      }
+      return timer;
+    }
+    if (timer.status === "finished" && timer.finishedAtMs != null) {
+      const nextOvertime = Math.max(
+        0,
+        Math.floor((currentMs - timer.finishedAtMs) / 1000),
+      );
+      if (nextOvertime !== (timer.overtimeSeconds ?? 0)) {
+        changed = true;
+        return {
+          ...timer,
+          overtimeSeconds: nextOvertime,
+        };
+      }
+    }
+    return timer;
+  });
+  return { timers: nextTimers, changed };
+}
+
 export function createPrototypeCookingClient(options: {
   findRecipe: (id: string) => PrototypeRecipe | undefined;
   now?: () => number;
@@ -105,78 +222,104 @@ export function createPrototypeCookingClient(options: {
   const persist = options.persist ?? true;
   const listeners = new Set<() => void>();
   let state: PersistedCooking | null = persist ? readStorage() : null;
+  let standalone: PersistedStandaloneTimers = persist
+    ? readStandaloneStorage()
+    : { timers: [], fullscreenTimerId: null };
   let errorMessage: string | null = null;
   let tickHandle: ReturnType<typeof setInterval> | undefined;
 
+  function activeTimers(): PrototypeTimer[] {
+    return state ? state.extras.timers : standalone.timers;
+  }
+
   function syncTimersToNow(): boolean {
-    if (!state) {
-      return false;
-    }
-    let changed = false;
     const currentMs = now();
-    const nextTimers = state.extras.timers.map((timer) => {
-      if (timer.status !== "running" || timer.endAtMs === null) {
-        return timer;
-      }
-      const nextRemaining = Math.max(0, Math.ceil((timer.endAtMs - currentMs) / 1000));
-      if (nextRemaining === 0) {
-        changed = true;
-        return {
-          ...timer,
-          remainingSeconds: 0,
-          status: "finished" as const,
-          endAtMs: null,
+    if (state) {
+      const res = syncTimerList(state.extras.timers, currentMs);
+      if (res.changed) {
+        state = {
+          ...state,
+          extras: { ...state.extras, timers: res.timers },
         };
+        if (persist) {
+          writeStorage(state);
+        }
       }
-      if (nextRemaining !== timer.remainingSeconds) {
-        changed = true;
-        return {
-          ...timer,
-          remainingSeconds: nextRemaining,
-        };
-      }
-      return timer;
-    });
-    if (changed) {
-      state = {
-        ...state,
-        extras: {
-          ...state.extras,
-          timers: nextTimers,
-        },
-      };
+      return res.changed;
+    }
+    const res = syncTimerList(standalone.timers, currentMs);
+    if (res.changed) {
+      standalone = { ...standalone, timers: res.timers };
       if (persist) {
-        writeStorage(state);
+        writeStandaloneStorage(standalone);
       }
     }
-    return changed;
+    return res.changed;
+  }
+
+  function needsTicker(timers: PrototypeTimer[]): boolean {
+    return timers.some(
+      (timer) => timer.status === "running" || timer.status === "finished",
+    );
   }
 
   function ensureTicker(): void {
-    const hasRunning =
-      state?.extras.timers.some((timer) => timer.status === "running") ?? false;
-    if (hasRunning && tickHandle === undefined) {
+    const active = needsTicker(activeTimers());
+    if (active && tickHandle === undefined) {
       tickHandle = setInterval(() => {
         if (syncTimersToNow()) {
           emit();
         }
-        const stillRunning =
-          state?.extras.timers.some((timer) => timer.status === "running") ?? false;
-        if (!stillRunning && tickHandle !== undefined) {
+        if (!needsTicker(activeTimers()) && tickHandle !== undefined) {
           clearInterval(tickHandle);
           tickHandle = undefined;
         }
-      }, 250);
-    } else if (!hasRunning && tickHandle !== undefined) {
+      }, 100);
+    } else if (!active && tickHandle !== undefined) {
       clearInterval(tickHandle);
       tickHandle = undefined;
     }
   }
 
-  function commit(next: PersistedCooking | null): void {
+  function commitSession(next: PersistedCooking | null): void {
     state = next;
     if (persist) {
       writeStorage(state);
+    }
+    ensureTicker();
+    emit();
+  }
+
+  function commitTimers(
+    timers: PrototypeTimer[],
+    fullscreenTimerId?: string | null,
+  ): void {
+    if (state) {
+      state = {
+        ...state,
+        extras: {
+          ...state.extras,
+          timers,
+          fullscreenTimerId:
+            fullscreenTimerId !== undefined
+              ? fullscreenTimerId
+              : state.extras.fullscreenTimerId,
+        },
+      };
+      if (persist) {
+        writeStorage(state);
+      }
+    } else {
+      standalone = {
+        timers,
+        fullscreenTimerId:
+          fullscreenTimerId !== undefined
+            ? fullscreenTimerId
+            : standalone.fullscreenTimerId,
+      };
+      if (persist) {
+        writeStandaloneStorage(standalone);
+      }
     }
     ensureTicker();
     emit();
@@ -188,14 +331,15 @@ export function createPrototypeCookingClient(options: {
     }
   }
 
-  if (state) {
-    syncTimersToNow();
-  }
+  syncTimersToNow();
 
   return {
     async open() {
       if (persist && !state) {
         state = readStorage();
+      }
+      if (persist && !state && standalone.timers.length === 0) {
+        standalone = readStandaloneStorage();
       }
       syncTimersToNow();
       ensureTicker();
@@ -246,8 +390,14 @@ export function createPrototypeCookingClient(options: {
           : `proto-session-${now()}`;
       const fullIngredients = recipe.ingredients.map((item) => item.line);
       const stepTexts = recipe.steps.map((step) => step.text);
+      const carriedTimers = standalone.timers;
+      const carriedFullscreen = standalone.fullscreenTimerId;
+      standalone = { timers: [], fullscreenTimerId: null };
+      if (persist) {
+        writeStandaloneStorage(standalone);
+      }
       errorMessage = null;
-      commit({
+      commitSession({
         session: {
           id: sessionId,
           recipeId: recipe.id,
@@ -269,15 +419,30 @@ export function createPrototypeCookingClient(options: {
           fullIngredients,
           checkedIngredients: [],
           checkedStepIngredients: [],
-          timers: [],
-          fullscreenTimerId: null,
+          timers: carriedTimers,
+          fullscreenTimerId: carriedFullscreen,
         },
       });
     },
 
     async end() {
       errorMessage = null;
-      commit(null);
+      const preservedAdhoc =
+        state?.extras.timers.filter((timer) => timer.stepIndex === null) ?? [];
+      const preservedFullscreen =
+        state &&
+        state.extras.fullscreenTimerId &&
+        preservedAdhoc.some((t) => t.id === state!.extras.fullscreenTimerId)
+          ? state.extras.fullscreenTimerId
+          : null;
+      standalone = {
+        timers: preservedAdhoc,
+        fullscreenTimerId: preservedFullscreen,
+      };
+      if (persist) {
+        writeStandaloneStorage(standalone);
+      }
+      commitSession(null);
     },
 
     async show(step) {
@@ -299,7 +464,7 @@ export function createPrototypeCookingClient(options: {
         return;
       }
       errorMessage = null;
-      commit({
+      commitSession({
         ...state,
         session: {
           ...state.session,
@@ -316,7 +481,7 @@ export function createPrototypeCookingClient(options: {
       if (state.session.completedSteps.includes(step)) {
         return;
       }
-      commit({
+      commitSession({
         ...state,
         session: {
           ...state.session,
@@ -330,7 +495,7 @@ export function createPrototypeCookingClient(options: {
         return;
       }
       const step = state.session.displayedStep;
-      commit({
+      commitSession({
         ...state,
         session: {
           ...state.session,
@@ -343,6 +508,14 @@ export function createPrototypeCookingClient(options: {
       return state?.extras ?? null;
     },
 
+    getTimers() {
+      return activeTimers();
+    },
+
+    getFullscreenTimerId() {
+      return state ? state.extras.fullscreenTimerId : standalone.fullscreenTimerId;
+    },
+
     toggleStepCompleted(stepIndex) {
       if (!state) {
         return;
@@ -351,7 +524,7 @@ export function createPrototypeCookingClient(options: {
       const completedSteps = exists
         ? state.session.completedSteps.filter((item) => item !== stepIndex)
         : [...state.session.completedSteps, stepIndex].sort((a, b) => a - b);
-      commit({
+      commitSession({
         ...state,
         session: {
           ...state.session,
@@ -368,7 +541,7 @@ export function createPrototypeCookingClient(options: {
       const next = checked.includes(index)
         ? checked.filter((item) => item !== index)
         : [...checked, index].sort((a, b) => a - b);
-      commit({
+      commitSession({
         ...state,
         extras: {
           ...state.extras,
@@ -381,7 +554,7 @@ export function createPrototypeCookingClient(options: {
       if (!state) {
         return;
       }
-      commit({
+      commitSession({
         ...state,
         extras: {
           ...state.extras,
@@ -400,7 +573,7 @@ export function createPrototypeCookingClient(options: {
       const next = checked.includes(key)
         ? checked.filter((item) => item !== key)
         : [...checked, key];
-      commit({
+      commitSession({
         ...state,
         extras: {
           ...state.extras,
@@ -418,27 +591,44 @@ export function createPrototypeCookingClient(options: {
       const timer: PrototypeTimer = {
         id: instanceId,
         stepIndex,
+        recipeId: state.session.recipeId,
+        recipeTitle: state.session.snapshot.title,
         label: timerDef.label,
         durationSeconds: timerDef.durationSeconds,
         remainingSeconds: timerDef.durationSeconds,
+        overtimeSeconds: 0,
         status: "running",
-        endAtMs: currentMs + timerDef.durationSeconds * 1000,
+        endAtMs: alignedEndAtMs(currentMs, timerDef.durationSeconds),
+        finishedAtMs: null,
       };
-      commit({
-        ...state,
-        extras: {
-          ...state.extras,
-          timers: [...state.extras.timers, timer],
-        },
-      });
+      commitTimers([...activeTimers(), timer]);
+    },
+
+    startAdhocTimer(durationSeconds, label) {
+      const safeDuration = Math.max(10, Math.min(24 * 3600, Math.round(durationSeconds)));
+      const currentMs = now();
+      const adhocCount =
+        activeTimers().filter((item) => item.stepIndex === null).length + 1;
+      const cleanLabel =
+        label && label.trim() !== "" ? label.trim() : `Kitchen timer ${adhocCount}`;
+      const instanceId = `adhoc-${currentMs}-${Math.random().toString(36).slice(2, 6)}`;
+      const timer: PrototypeTimer = {
+        id: instanceId,
+        stepIndex: null,
+        label: cleanLabel,
+        durationSeconds: safeDuration,
+        remainingSeconds: safeDuration,
+        overtimeSeconds: 0,
+        status: "running",
+        endAtMs: alignedEndAtMs(currentMs, safeDuration),
+        finishedAtMs: null,
+      };
+      commitTimers([...activeTimers(), timer]);
     },
 
     pauseTimer(timerId) {
-      if (!state) {
-        return;
-      }
       syncTimersToNow();
-      const timers = state.extras.timers.map((timer) => {
+      const timers = activeTimers().map((timer) => {
         if (timer.id !== timerId || timer.status !== "running") {
           return timer;
         }
@@ -448,18 +638,12 @@ export function createPrototypeCookingClient(options: {
           endAtMs: null,
         };
       });
-      commit({
-        ...state,
-        extras: { ...state.extras, timers },
-      });
+      commitTimers(timers);
     },
 
     resumeTimer(timerId) {
-      if (!state) {
-        return;
-      }
       const currentMs = now();
-      const timers = state.extras.timers.map((timer) => {
+      const timers = activeTimers().map((timer) => {
         if (
           timer.id !== timerId ||
           timer.status !== "paused" ||
@@ -470,44 +654,56 @@ export function createPrototypeCookingClient(options: {
         return {
           ...timer,
           status: "running" as const,
-          endAtMs: currentMs + timer.remainingSeconds * 1000,
+          endAtMs: alignedEndAtMs(currentMs, timer.remainingSeconds),
+          finishedAtMs: null,
         };
       });
-      commit({
-        ...state,
-        extras: { ...state.extras, timers },
-      });
+      commitTimers(timers);
     },
 
     resetTimer(timerId) {
-      if (!state) {
-        return;
-      }
-      const timers = state.extras.timers.map((timer) => {
+      const timers = activeTimers().map((timer) => {
         if (timer.id !== timerId) {
           return timer;
         }
         return {
           ...timer,
           remainingSeconds: timer.durationSeconds,
+          overtimeSeconds: 0,
           status: "paused" as const,
           endAtMs: null,
+          finishedAtMs: null,
         };
       });
-      commit({
-        ...state,
-        extras: { ...state.extras, timers },
+      commitTimers(timers);
+    },
+
+    restartTimer(timerId) {
+      const currentMs = now();
+      const timers = activeTimers().map((timer) => {
+        if (timer.id !== timerId) {
+          return timer;
+        }
+        return {
+          ...timer,
+          remainingSeconds: timer.durationSeconds,
+          overtimeSeconds: 0,
+          status: "running" as const,
+          endAtMs: alignedEndAtMs(currentMs, timer.durationSeconds),
+          finishedAtMs: null,
+        };
       });
+      commitTimers(timers);
     },
 
     addTimerSeconds(timerId, deltaSeconds) {
-      if (!state) {
-        return;
-      }
       syncTimersToNow();
       const currentMs = now();
-      const timers = state.extras.timers.map((timer) => {
+      const timers = activeTimers().map((timer) => {
         if (timer.id !== timerId) {
+          return timer;
+        }
+        if (timer.status === "finished" && deltaSeconds <= 0) {
           return timer;
         }
         const nextRemaining = Math.max(0, timer.remainingSeconds + deltaSeconds);
@@ -515,79 +711,55 @@ export function createPrototypeCookingClient(options: {
           return {
             ...timer,
             remainingSeconds: 0,
+            overtimeSeconds: 0,
             status: "finished" as const,
             endAtMs: null,
+            finishedAtMs: Math.floor(currentMs / 1000) * 1000,
           };
         }
-        if (timer.status === "running" || (timer.status === "finished" && deltaSeconds > 0)) {
+        if (
+          timer.status === "running" ||
+          (timer.status === "finished" && deltaSeconds > 0)
+        ) {
           return {
             ...timer,
             remainingSeconds: nextRemaining,
+            overtimeSeconds: 0,
             status: "running" as const,
-            endAtMs: currentMs + nextRemaining * 1000,
+            endAtMs: alignedEndAtMs(currentMs, nextRemaining),
+            finishedAtMs: null,
           };
         }
         return {
           ...timer,
           remainingSeconds: nextRemaining,
+          overtimeSeconds: 0,
+          finishedAtMs: null,
         };
       });
-      commit({
-        ...state,
-        extras: { ...state.extras, timers },
-      });
+      commitTimers(timers);
     },
 
     dismissTimer(timerId) {
-      if (!state) {
-        return;
-      }
-      const timers = state.extras.timers.filter((timer) => timer.id !== timerId);
+      const timers = activeTimers().filter((timer) => timer.id !== timerId);
+      const currentFullscreen = state
+        ? state.extras.fullscreenTimerId
+        : standalone.fullscreenTimerId;
       const fullscreenTimerId =
-        state.extras.fullscreenTimerId === timerId
-          ? (timers[0]?.id ?? null)
-          : state.extras.fullscreenTimerId;
-      commit({
-        ...state,
-        extras: {
-          ...state.extras,
-          timers,
-          fullscreenTimerId: timers.length === 0 ? null : fullscreenTimerId,
-        },
-      });
+        currentFullscreen === timerId ? (timers[0]?.id ?? null) : currentFullscreen;
+      commitTimers(timers, timers.length === 0 ? null : fullscreenTimerId);
     },
 
     openTimerFullscreen(timerId) {
-      if (!state) {
-        return;
-      }
-      commit({
-        ...state,
-        extras: {
-          ...state.extras,
-          fullscreenTimerId: timerId,
-        },
-      });
+      commitTimers(activeTimers(), timerId);
     },
 
     closeTimerFullscreen() {
-      if (!state) {
-        return;
-      }
-      commit({
-        ...state,
-        extras: {
-          ...state.extras,
-          fullscreenTimerId: null,
-        },
-      });
+      commitTimers(activeTimers(), null);
     },
 
     runningTimerCount() {
-      if (!state) {
-        return 0;
-      }
-      return state.extras.timers.filter((timer) => timer.status === "running").length;
+      return activeTimers().filter((timer) => timer.status === "running").length;
     },
   };
 }

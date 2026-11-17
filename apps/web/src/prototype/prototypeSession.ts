@@ -135,6 +135,8 @@ export function createPrototypeController(
             .map((item) => ({
               id: item.id,
               title: item.title,
+              shortTitle: item.shortTitle,
+              imageUrl: item.imageUrl ?? null,
               facts: { ...item.facts, mealTypes: [...item.facts.mealTypes] },
             }));
           return {

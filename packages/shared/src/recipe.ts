@@ -50,6 +50,7 @@ export const RECOMMENDED_PROTEINS = [
 
 export const MAX_PRIMARY_PROTEIN_LENGTH = 80;
 export const MAX_TOTAL_MINUTES = 10_080;
+export const SHORT_TITLE_MAX_LENGTH = 26;
 
 export type Ingredient = {
   line: string;
@@ -78,6 +79,8 @@ export type RecipeFactsUpdate = RecipeFacts | null;
 export type Recipe = {
   id: string;
   title: string;
+  shortTitle?: string | null;
+  imageUrl?: string | null;
   ingredients: Ingredient[];
   steps: string[];
   servings: number;
@@ -91,8 +94,17 @@ export type Recipe = {
 export type RecipeListItem = {
   id: string;
   title: string;
+  shortTitle?: string | null;
+  imageUrl?: string | null;
   facts: RecipeFacts;
 };
+
+export function displayShortTitle(
+  recipe: Pick<RecipeListItem, "title" | "shortTitle">,
+): string {
+  const trimmed = recipe.shortTitle?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : recipe.title;
+}
 
 export const MESSAGES = {
   idRequired: "An ID is required.",
