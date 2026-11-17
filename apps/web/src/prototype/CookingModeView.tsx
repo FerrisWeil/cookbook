@@ -1,6 +1,7 @@
 import { Button, Message } from "@cookbook/ui";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { playTimerChime, usePreferences } from "../settings/preferences";
 import {
   formatTimerSeconds,
   type PrototypeCookingClient,
@@ -27,8 +28,34 @@ export function CookingModeView({
   onShow: (step: number) => void;
   onFinish: () => void;
 }) {
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const stickyDockRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const fullscreenDialogRef = useRef<HTMLDialogElement>(null);
+  const pendingScrollStepRef = useRef<number | null>(null);
+  const { cooking: cookingPrefs } = usePreferences();
+  const prevTimerStatusRef = useRef<Map<string, PrototypeTimer["status"]>>(
+    new Map(),
+  );
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(
+    () => new Set(),
+  );
+
+  useEffect(() => {
+    const prevMap = prevTimerStatusRef.current;
+    let newlyFinished = false;
+    const nextMap = new Map<string, PrototypeTimer["status"]>();
+    for (const timer of extras.timers) {
+      nextMap.set(timer.id, timer.status);
+      if (prevMap.get(timer.id) === "running" && timer.status === "finished") {
+        newlyFinished = true;
+      }
+    }
+    prevTimerStatusRef.current = nextMap;
+    if (newlyFinished && cookingPrefs.timerSoundEnabled) {
+      playTimerChime();
+    }
+  }, [cookingPrefs.timerSoundEnabled, extras.timers]);
 
   const fullscreenTimer =
     extras.fullscreenTimerId !== null
@@ -54,37 +81,107 @@ export function CookingModeView({
     totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
   const checkedIngSet = new Set(extras.checkedIngredients);
   const checkedStepIngSet = new Set(extras.checkedStepIngredients);
+  const currentStepCompleted = completedSet.has(displayedStep);
+
+  const syncStickyOffset = useCallback(() => {
+    const workspace = workspaceRef.current;
+    const dock = stickyDockRef.current;
+    if (!workspace || !dock) {
+      return;
+    }
+    const height = Math.ceil(dock.getBoundingClientRect().height);
+    if (height > 0) {
+      workspace.style.setProperty("--cooking-sticky-offset", `${height + 20}px`);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncStickyOffset();
+    const dock = stickyDockRef.current;
+    if (!dock || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    const observer = new ResizeObserver(() => syncStickyOffset());
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, [extras.timers.length, syncStickyOffset]);
+
+  const scrollStepToTop = useCallback(
+    (index: number) => {
+      syncStickyOffset();
+      const node = stepRefs.current[index];
+      if (node && typeof node.scrollIntoView === "function") {
+        const reduced =
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        node.scrollIntoView({
+          behavior: reduced ? "auto" : "smooth",
+          block: "start",
+        });
+      }
+    },
+    [syncStickyOffset],
+  );
+
+  useEffect(() => {
+    if (pendingScrollStepRef.current === displayedStep) {
+      pendingScrollStepRef.current = null;
+      scrollStepToTop(displayedStep);
+    }
+  }, [displayedStep, scrollStepToTop]);
 
   function focusAndScrollToStep(index: number) {
-    onShow(index);
-    const node = stepRefs.current[index];
-    if (node && typeof node.scrollIntoView === "function") {
-      const reduced =
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      node.scrollIntoView({
-        behavior: reduced ? "auto" : "smooth",
-        block: "nearest",
-      });
+    if (index < 0 || index >= totalSteps) {
+      return;
     }
+    if (index === displayedStep) {
+      scrollStepToTop(index);
+      return;
+    }
+    pendingScrollStepRef.current = index;
+    onShow(index);
+  }
+
+  function expandStep(index: number) {
+    setExpandedSteps((prev) => {
+      if (prev.has(index)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  }
+
+  function collapseStep(index: number) {
+    setExpandedSteps((prev) => {
+      if (!prev.has(index)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
   }
 
   function handleToggleStep(index: number) {
     const wasCompleted = completedSet.has(index);
     client.toggleStepCompleted(index);
-    if (!wasCompleted && index === displayedStep) {
+    collapseStep(index);
+    if (!wasCompleted && index === displayedStep && cookingPrefs.autoAdvanceStep) {
       const nextSet = new Set([...completedSteps, index]);
       const nextIncomplete = extras.steps.findIndex(
         (_, candidate) => candidate > index && !nextSet.has(candidate),
       );
       if (nextIncomplete !== -1) {
+        pendingScrollStepRef.current = nextIncomplete;
         onShow(nextIncomplete);
       }
     }
   }
 
   return (
-    <div className="cooking-workspace">
+    <div ref={workspaceRef} className="cooking-workspace">
       <div className="cooking-topbar">
         <div className="cooking-topbar-nav">
           <Button className="ui-back" variant="tonal" onClick={onBack}>
@@ -94,65 +191,97 @@ export function CookingModeView({
             {`${completedCount} of ${totalSteps} steps done · Saved in this browser`}
           </p>
         </div>
-        <div className="cooking-topbar-actions">
-          <Button
-            variant="tonal"
-            onClick={() => focusAndScrollToStep(Math.max(0, displayedStep - 1))}
-            disabled={displayedStep === 0}
-          >
-            Previous step
-          </Button>
-          <Button
-            variant="tonal"
-            onClick={() =>
-              focusAndScrollToStep(Math.min(totalSteps - 1, displayedStep + 1))
-            }
-            disabled={displayedStep >= totalSteps - 1}
-          >
-            Next step
-          </Button>
-          <Button variant="danger" onClick={onFinish}>
-            End cooking session
-          </Button>
-        </div>
       </div>
 
       <div className="cooking-hero">
         <h1 className="cooking-title">{extras.recipeTitle}</h1>
-        <div className="cooking-progress" aria-hidden="true">
-          <div className="cooking-progress-track">
-            <div
-              className="cooking-progress-fill"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <span className="cooking-progress-label">{`${progressPercent}%`}</span>
-        </div>
       </div>
       {error ? <Message>{error}</Message> : null}
 
-      {extras.timers.length > 0 ? (
-        <section className="cooking-timer-dock" aria-label="Active timers">
-          <div className="cooking-timer-dock-header">
-            <span className="cooking-timer-dock-title">
-              {`Timers (${extras.timers.length})`}
+      <div ref={stickyDockRef} className="cooking-sticky-dock">
+        <div
+          className="cooking-control-bar"
+          role="region"
+          aria-label="Cooking controls"
+        >
+          <div className="cooking-control-progress">
+            <span className="cooking-control-step-label">
+              {`Step ${displayedStep + 1} of ${totalSteps}`}
             </span>
+            <div className="cooking-progress" aria-hidden="true">
+              <div className="cooking-progress-track">
+                <div
+                  className="cooking-progress-fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className="cooking-progress-label">
+                {`${completedCount}/${totalSteps}`}
+              </span>
+            </div>
           </div>
-          <ul className="cooking-timer-list">
-            {extras.timers.map((timer) => (
-              <TimerStripCard
-                key={timer.id}
-                timer={timer}
-                onPause={() => client.pauseTimer(timer.id)}
-                onResume={() => client.resumeTimer(timer.id)}
-                onAddMinute={() => client.addTimerSeconds(timer.id, 60)}
-                onFullscreen={() => client.openTimerFullscreen(timer.id)}
-                onDismiss={() => client.dismissTimer(timer.id)}
-              />
-            ))}
-          </ul>
-        </section>
-      ) : null}
+
+          <div className="cooking-control-actions">
+            <Button
+              variant="tonal"
+              onClick={() => focusAndScrollToStep(Math.max(0, displayedStep - 1))}
+              disabled={displayedStep === 0}
+            >
+              Previous step
+            </Button>
+            <Button
+              variant={currentStepCompleted ? "tonal" : "primary"}
+              className="cooking-control-complete-btn"
+              onClick={() => handleToggleStep(displayedStep)}
+            >
+              {currentStepCompleted
+                ? "Undo step"
+                : displayedStep < totalSteps - 1
+                  ? "Done · Next step"
+                  : "Mark step done"}
+            </Button>
+            <Button
+              variant="tonal"
+              onClick={() =>
+                focusAndScrollToStep(Math.min(totalSteps - 1, displayedStep + 1))
+              }
+              disabled={displayedStep >= totalSteps - 1}
+            >
+              Next step
+            </Button>
+            <Button
+              variant="danger"
+              className="cooking-control-end-btn"
+              onClick={onFinish}
+            >
+              End cooking session
+            </Button>
+          </div>
+        </div>
+
+        {extras.timers.length > 0 ? (
+          <section className="cooking-timer-dock" aria-label="Active timers">
+            <div className="cooking-timer-dock-header">
+              <span className="cooking-timer-dock-title">
+                {`Timers (${extras.timers.length})`}
+              </span>
+            </div>
+            <ul className="cooking-timer-list">
+              {extras.timers.map((timer) => (
+                <TimerStripCard
+                  key={timer.id}
+                  timer={timer}
+                  onPause={() => client.pauseTimer(timer.id)}
+                  onResume={() => client.resumeTimer(timer.id)}
+                  onAddMinute={() => client.addTimerSeconds(timer.id, 60)}
+                  onFullscreen={() => client.openTimerFullscreen(timer.id)}
+                  onDismiss={() => client.dismissTimer(timer.id)}
+                />
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
 
       <div className="cooking-columns">
         <aside className="cooking-ingredients-panel" aria-label="Full ingredient list">
@@ -206,6 +335,69 @@ export function CookingModeView({
             {extras.steps.map((step, index) => {
               const isCompleted = completedSet.has(index);
               const isCurrent = displayedStep === index;
+              const isExpanded = expandedSteps.has(index);
+              const isCollapsed =
+                cookingPrefs.autoCollapseCompletedSteps &&
+                isCompleted &&
+                !isCurrent &&
+                !isExpanded;
+
+              if (isCollapsed) {
+                return (
+                  <li
+                    key={index}
+                    ref={(node) => {
+                      stepRefs.current[index] = node;
+                    }}
+                    className="cooking-step-card cooking-step-card--completed cooking-step-card--collapsed"
+                  >
+                    <div className="cooking-step-collapsed-row">
+                      <span
+                        className="cooking-step-collapsed-check"
+                        aria-hidden="true"
+                      >
+                        <CheckMarkIcon />
+                      </span>
+                      <span className="cooking-step-collapsed-summary">
+                        <strong className="cooking-step-collapsed-label">
+                          {`Step ${index + 1}`}
+                        </strong>
+                        <span
+                          className="cooking-step-collapsed-sep"
+                          aria-hidden="true"
+                        >
+                          {" — "}
+                        </span>
+                        <span className="cooking-step-collapsed-preview">
+                          {step.text}
+                        </span>
+                      </span>
+                      <div className="cooking-step-collapsed-actions">
+                        <Button
+                          variant="quiet"
+                          className="cooking-step-collapsed-btn"
+                          aria-expanded={false}
+                          aria-label={`Expand step ${index + 1}`}
+                          onClick={() => expandStep(index)}
+                        >
+                          Expand
+                        </Button>
+                        <Button
+                          variant="quiet"
+                          role="checkbox"
+                          aria-checked={true}
+                          aria-label={`Undo step ${index + 1} completion`}
+                          className="cooking-step-collapsed-btn"
+                          onClick={() => handleToggleStep(index)}
+                        >
+                          Undo
+                        </Button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              }
+
               const stateKind = isCompleted
                 ? "completed"
                 : isCurrent
@@ -239,9 +431,19 @@ export function CookingModeView({
                         <Button
                           variant="quiet"
                           className="cooking-step-focus-btn"
-                          onClick={() => onShow(index)}
+                          onClick={() => focusAndScrollToStep(index)}
                         >
                           Focus step
+                        </Button>
+                      ) : null}
+                      {isCompleted && !isCurrent && isExpanded ? (
+                        <Button
+                          variant="quiet"
+                          className="cooking-step-focus-btn"
+                          aria-expanded={true}
+                          onClick={() => collapseStep(index)}
+                        >
+                          Collapse
                         </Button>
                       ) : null}
                     </div>
@@ -325,17 +527,6 @@ export function CookingModeView({
                           </div>
                         );
                       })}
-                    </div>
-                  ) : null}
-
-                  {!isCompleted && isCurrent ? (
-                    <div className="cooking-step-footer">
-                      <Button
-                        variant="primary"
-                        onClick={() => handleToggleStep(index)}
-                      >
-                        {index < totalSteps - 1 ? "Done · Next step" : "Mark final step done"}
-                      </Button>
                     </div>
                   ) : null}
                 </li>

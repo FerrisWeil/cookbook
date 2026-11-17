@@ -175,6 +175,9 @@ describe("kitchen list search", () => {
     assert.match(open, /<dialog\b/);
     assert.match(open, /aria-labelledby="list-filters-title"/);
     assert.match(open, /aria-expanded="true"/);
+    assert.match(open, /has-filters-open/);
+    assert.match(open, /Remove ingredient garlic/);
+    assert.match(open, /≤ 30 min/);
 
     const updating = html(
       createElement(ListScreen, {

@@ -16,6 +16,9 @@ import {
 } from "../src/prototype/prototypeSession.ts";
 import { SAMPLE_RECIPES } from "../src/prototype/sampleData.ts";
 import { RecipeScreen } from "../src/RecipeScreen.tsx";
+import { parseRoute, SETTINGS_PATH } from "../src/route.ts";
+import { SettingsScreen } from "../src/SettingsScreen.tsx";
+import { initialThemeChoice } from "../src/settings/preferences.tsx";
 
 function html(node: ReturnType<typeof createElement>): string {
   return renderToString(node).replaceAll("<!-- -->", "");
@@ -287,6 +290,53 @@ describe("TAY-36 cooking mode client & UI", () => {
       }),
     );
     assert.match(pureCooking, /Jammy eggs/);
+    assert.match(pureCooking, /cooking-sticky-dock/);
+    assert.match(pureCooking, /cooking-control-bar/);
+
+    const collapsedView = html(
+      createElement(CookingModeView, {
+        client,
+        extras: client.getExtras()!,
+        displayedStep: 1,
+        completedSteps: [0],
+        error: null,
+        onBack() {},
+        onShow() {},
+        onFinish() {},
+      }),
+    );
+    assert.match(collapsedView, /cooking-step-card--collapsed/);
+    assert.match(collapsedView, /Expand step 1/);
+    assert.match(collapsedView, /Undo step 1 completion/);
+    assert.match(collapsedView, /Step 1/);
+    assert.match(collapsedView, /Step 2 of /);
+
+    const focusedCompletedView = html(
+      createElement(CookingModeView, {
+        client,
+        extras: client.getExtras()!,
+        displayedStep: 0,
+        completedSteps: [0],
+        error: null,
+        onBack() {},
+        onShow() {},
+        onFinish() {},
+      }),
+    );
+    assert.doesNotMatch(focusedCompletedView, /cooking-step-card--collapsed/);
+    assert.match(focusedCompletedView, /Undo step/);
     client.close();
+  });
+
+  it("defaults theme to dark and renders /settings screen cleanly", () => {
+    assert.equal(initialThemeChoice(), "dark");
+    assert.deepEqual(parseRoute(SETTINGS_PATH), { name: "settings" });
+    const page = html(createElement(SettingsScreen, { onBack() {} }));
+    assert.match(page, /<h1>Settings<\/h1>/);
+    assert.match(page, /Dark \(Default\)/);
+    assert.match(page, /Auto-collapse completed steps/);
+    assert.match(page, /Auto-advance to next step/);
+    assert.match(page, /Timer completion chime/);
+    assert.match(page, /Test chime/);
   });
 });

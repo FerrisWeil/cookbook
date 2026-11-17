@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import type { CookingClient } from "./cooking/client";
 import { ListScreen } from "./ListScreen";
 import { leaveRecipe, pushAppPath } from "./navigate";
-import { parseRoute } from "./route";
+import { SETTINGS_PATH, parseRoute } from "./route";
 import { RecipeScreen } from "./RecipeScreen";
+import { SettingsScreen } from "./SettingsScreen";
 import { CookingProvider, cookingPanel, useCookingSession } from "./useCookingSession";
 import { KitchenProvider, useRecipe, useRecipeList } from "./useKitchen";
 import type { KitchenSession } from "./sync/session";
@@ -61,8 +62,16 @@ function AppRoutes({ initialPath }: { initialPath?: string }) {
   if (route.name === "recipe") {
     return <RecipeRoute id={route.id} onBack={backToList} onOpen={go} />;
   }
+  if (route.name === "settings") {
+    return <SettingsScreen onBack={backToList} />;
+  }
   if (route.name === "list") {
-    return <ListRoute onOpen={go} />;
+    return (
+      <ListRoute
+        onOpen={go}
+        onOpenSettings={() => go(SETTINGS_PATH)}
+      />
+    );
   }
   return (
     <main className="ui-shell">
@@ -78,7 +87,13 @@ function currentPath(): string {
   return window.location.pathname;
 }
 
-function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
+function ListRoute({
+  onOpen,
+  onOpenSettings,
+}: {
+  onOpen: (href: string) => void;
+  onOpenSettings: () => void;
+}) {
   const { state, retry, status, search, rememberScroll } = useRecipeList();
   const cooking = useCookingSession();
   return (
@@ -88,6 +103,7 @@ function ListRoute({ onOpen }: { onOpen: (href: string) => void }) {
         rememberScroll();
         onOpen(href);
       }}
+      onOpenSettings={onOpenSettings}
       onRetry={retry}
       status={status.label}
       search={search}

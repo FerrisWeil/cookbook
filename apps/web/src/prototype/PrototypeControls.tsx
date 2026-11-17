@@ -1,56 +1,14 @@
-import {
-  Button,
-  THEME_STORAGE_KEY,
-  applyDocumentTheme,
-  readThemeChoice,
-  resolveTheme,
-  type ThemeChoice,
-} from "@cookbook/ui";
-import { useEffect, useState } from "react";
+import { Button } from "@cookbook/ui";
+import { useCallback, useEffect, useState } from "react";
 
 import { App } from "../App";
+import { PreferencesProvider, usePreferences } from "../settings/preferences";
 import { createPrototypeCookingClient, type PrototypeCookingClient } from "./cookingStore";
 import {
   createPrototypeController,
   type PrototypeController,
   type PrototypeViewMode,
 } from "./prototypeSession";
-
-function initialThemeChoice(): ThemeChoice {
-  if (typeof window === "undefined") {
-    return "system";
-  }
-  const param = new URLSearchParams(window.location.search).get("theme");
-  if (param === "light" || param === "dark" || param === "system") {
-    return param;
-  }
-  return readThemeChoice(window.localStorage);
-}
-
-function writeThemeChoice(choice: ThemeChoice): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  try {
-    if (choice === "system") {
-      window.localStorage.removeItem(THEME_STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(THEME_STORAGE_KEY, choice);
-    }
-  } catch {
-    // Ignore storage failures.
-  }
-}
-
-function applyTheme(choice: ThemeChoice): void {
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    return;
-  }
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const resolved = resolveTheme(choice, prefersDark);
-  const meta = document.querySelector('meta[name="theme-color"]');
-  applyDocumentTheme(document.documentElement, resolved, meta);
-}
 
 export function PrototypeApp() {
   const [controller] = useState<PrototypeController>(() =>
@@ -64,8 +22,6 @@ export function PrototypeApp() {
     }),
   );
   const [mode, setMode] = useState<PrototypeViewMode>(() => controller.getMode());
-  const [theme, setTheme] = useState<ThemeChoice>(() => initialThemeChoice());
-  const [open, setOpen] = useState<boolean>(() => controller.getMode() !== "normal");
 
   useEffect(() => {
     return controller.subscribe(() => {
@@ -73,30 +29,61 @@ export function PrototypeApp() {
     });
   }, [controller]);
 
-  useEffect(() => {
-    applyTheme(theme);
-    writeThemeChoice(theme);
-    if (theme !== "system" || typeof window === "undefined") {
-      return;
-    }
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => applyTheme("system");
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, [theme]);
+  const selectMode = useCallback(
+    (next: PrototypeViewMode) => {
+      if (
+        next === "empty" &&
+        typeof window !== "undefined" &&
+        window.location.pathname === "/" &&
+        window.location.search !== ""
+      ) {
+        window.history.replaceState(null, "", "/");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
+      controller.setMode(next);
+    },
+    [controller],
+  );
 
-  function selectMode(next: PrototypeViewMode) {
-    if (
-      next === "empty" &&
-      typeof window !== "undefined" &&
-      window.location.pathname === "/" &&
-      window.location.search !== ""
-    ) {
-      window.history.replaceState(null, "", "/");
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-    controller.setMode(next);
-  }
+  const resetAll = useCallback(() => {
+    void controller.resetFacts();
+    void cooking.end();
+  }, [controller, cooking]);
+
+  return (
+    <PreferencesProvider
+      prototype={{
+        mode,
+        onChangeMode: selectMode,
+        onResetAll: resetAll,
+      }}
+    >
+      <PrototypeShell
+        controller={controller}
+        cooking={cooking}
+        mode={mode}
+        onSelectMode={selectMode}
+        onResetAll={resetAll}
+      />
+    </PreferencesProvider>
+  );
+}
+
+function PrototypeShell({
+  controller,
+  cooking,
+  mode,
+  onSelectMode,
+  onResetAll,
+}: {
+  controller: PrototypeController;
+  cooking: PrototypeCookingClient;
+  mode: PrototypeViewMode;
+  onSelectMode: (next: PrototypeViewMode) => void;
+  onResetAll: () => void;
+}) {
+  const { theme, setTheme } = usePreferences();
+  const [open, setOpen] = useState<boolean>(() => mode !== "normal");
 
   return (
     <div className="prototype-frame">
@@ -127,7 +114,11 @@ export function PrototypeApp() {
           <div className="prototype-controls-panel">
             <div className="prototype-control-group">
               <span className="prototype-control-label">View state:</span>
-              <div className="prototype-control-buttons" role="group" aria-label="Simulated view state">
+              <div
+                className="prototype-control-buttons"
+                role="group"
+                aria-label="Simulated view state"
+              >
                 {(
                   [
                     { id: "normal", label: "Normal (25)" },
@@ -139,7 +130,7 @@ export function PrototypeApp() {
                   <Button
                     key={item.id}
                     variant={mode === item.id ? "primary" : "tonal"}
-                    onClick={() => selectMode(item.id)}
+                    onClick={() => onSelectMode(item.id)}
                   >
                     {item.label}
                   </Button>
@@ -149,12 +140,16 @@ export function PrototypeApp() {
 
             <div className="prototype-control-group">
               <span className="prototype-control-label">Theme:</span>
-              <div className="prototype-control-buttons" role="group" aria-label="Theme override">
+              <div
+                className="prototype-control-buttons"
+                role="group"
+                aria-label="Theme override"
+              >
                 {(
                   [
-                    { id: "system", label: "System" },
-                    { id: "light", label: "Light" },
                     { id: "dark", label: "Dark" },
+                    { id: "light", label: "Light" },
+                    { id: "system", label: "System" },
                   ] as const
                 ).map((item) => (
                   <Button
@@ -169,14 +164,8 @@ export function PrototypeApp() {
             </div>
 
             <div className="prototype-control-group">
-              <Button
-                variant="quiet"
-                onClick={() => {
-                  void controller.resetFacts();
-                  void cooking.end();
-                }}
-              >
-                Reset edits & session
+              <Button variant="quiet" onClick={onResetAll}>
+                Reset edits &amp; session
               </Button>
             </div>
           </div>

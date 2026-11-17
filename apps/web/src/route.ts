@@ -1,11 +1,17 @@
+export const SETTINGS_PATH = "/settings";
+
 export type AppRoute =
   | { name: "list" }
+  | { name: "settings" }
   | { name: "recipe"; id: string }
   | { name: "unknown" };
 
 export function parseRoute(pathname: string): AppRoute {
   if (pathname === "/" || pathname === "") {
     return { name: "list" };
+  }
+  if (pathname === SETTINGS_PATH) {
+    return { name: "settings" };
   }
   const match = /^\/recipes\/([^/]+)$/.exec(pathname);
   if (!match) {

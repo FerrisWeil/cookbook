@@ -129,10 +129,10 @@ body {
 .ui-card {
   display: grid;
   grid-template-rows: 1fr auto;
-  gap: 1rem;
-  min-height: 132px;
+  gap: 0.7rem;
+  min-height: 6.25rem;
   height: 100%;
-  padding: 1.25rem;
+  padding: 0.9rem 1rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -175,25 +175,30 @@ body {
 .ui-card-title {
   align-self: start;
   font-family: var(--font-serif);
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   font-weight: 600;
   line-height: 1.25;
-  max-height: 2.5em;
   letter-spacing: -0.01em;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+  overflow-wrap: break-word;
 }
 
 .ui-card-meta {
   min-height: 1.225rem;
-  padding-top: 0.75rem;
+  padding-top: 0.55rem;
   border-top: 1px solid var(--border-subtle);
   font-family: var(--font-sans);
   font-size: var(--text-meta);
   line-height: 1.4;
   color: var(--text-muted);
+}
+
+.ui-card-meta .ui-facts {
+  gap: 0.25rem;
+}
+
+.ui-card-meta .ui-facts-slot {
+  gap: 0.15rem;
+  padding: 0.2rem 0.15rem;
 }
 
 .ui-card-meta .ui-facts-value {
@@ -313,6 +318,10 @@ button.ui-facts-slot:focus-visible {
   opacity: 0.35;
   border-radius: 4px;
   color: transparent;
+}
+
+.ui-card--skeleton .ui-card-title {
+  min-height: 1.5em;
 }
 
 .ui-message {
