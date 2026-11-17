@@ -12,6 +12,7 @@ import type { FieldPatch, JsonValue, Mutation } from "./types";
 
 export type RecipeSnapshot = {
   title: string;
+  imageUrl?: string | null;
   ingredients: string[];
   steps: string[];
   facts: RecipeFacts;

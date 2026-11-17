@@ -39,12 +39,22 @@
 
 /* Home / Library Screen */
 
+.list-discovery-bar {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+}
+
 .list-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem 1rem;
 }
 
 .list-header-actions {
@@ -68,7 +78,7 @@
 .list-count {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.7rem;
+  padding: 0.22rem 0.65rem;
   border-radius: 999px;
   background: var(--bg-elevated);
   color: var(--text-muted);
@@ -78,21 +88,116 @@
 }
 
 .list-toolbar {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.list-toolbar-main {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 0.75rem;
-  margin-top: var(--space-stack);
-  padding: 1rem;
-  border-radius: var(--radius-card);
-  background: var(--surface);
+  gap: 0.65rem;
+}
+
+.list-quick-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.list-quick-tab {
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border-radius: 999px;
   border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-card);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .list-quick-tab:hover {
+    color: var(--text);
+    background: var(--bg-elevated);
+  }
+}
+
+.list-quick-tab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.list-quick-tab.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.ui-card-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  padding: 0.22rem 0.58rem;
+  border-radius: 999px;
+  background: rgba(11, 16, 24, 0.74);
+  backdrop-filter: blur(8px);
+  color: #f4f7fb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-transform: capitalize;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ui-card-pill {
+    background: #0f151d;
+    backdrop-filter: none;
+  }
+}
+
+.vessel-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: radial-gradient(
+    circle at 50% 35%,
+    color-mix(in srgb, var(--accent-soft) 65%, var(--bg-elevated)),
+    var(--bg)
+  );
+  color: var(--text-muted);
+}
+
+.vessel-fallback-svg {
+  width: 5.5rem;
+  height: 3.4rem;
+  opacity: 0.85;
+}
+
+.vessel-fallback-caption {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
 }
 
 .list-search {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex: 1 1 16rem;
 }
 
@@ -393,6 +498,39 @@
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card);
+}
+
+.recipe-hero--with-media {
+  align-items: center;
+}
+
+@media (min-width: 54rem) {
+  .recipe-hero--with-media {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 24rem);
+    gap: 1.5rem;
+  }
+}
+
+.recipe-hero-content {
+  display: grid;
+  gap: 1.15rem;
+  min-width: 0;
+}
+
+.recipe-hero-media {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.recipe-hero-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .recipe-hero h1 {

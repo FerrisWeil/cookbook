@@ -40,21 +40,25 @@ const CARD_META: Record<string, { shortTitle: string; imageUrl?: string }> = {
   },
   "lemon-garlic-chicken-thighs": {
     shortTitle: "Lemon-Garlic Chicken",
+    imageUrl: "/images/meals/lemon-garlic-chicken-thighs.jpg",
   },
   "long-title-chickpea-cabbage-braise": {
     shortTitle: "Chickpea Cabbage Braise",
+    imageUrl: "/images/meals/long-title-chickpea-cabbage-braise.jpg",
   },
   "flash-seared-scallops-pasta": {
     shortTitle: "Seared Scallops Pasta",
   },
   "oaxacan-chicken-mole-20-ingredients": {
     shortTitle: "Oaxacan Chicken Mole",
+    imageUrl: "/images/meals/oaxacan-chicken-mole-20-ingredients.jpg",
   },
   "jammy-eggs-ricotta-toast": {
     shortTitle: "Jammy Egg Toast",
   },
   "mystery-pantry-noodle-soup": {
     shortTitle: "Pantry Noodle Soup",
+    imageUrl: "/images/meals/mystery-pantry-noodle-soup.jpg",
   },
   "warm-farro-squash-salad": {
     shortTitle: "Warm Farro & Squash",
@@ -84,6 +88,7 @@ const CARD_META: Record<string, { shortTitle: string; imageUrl?: string }> = {
   },
   "garlic-butter-shrimp-skillet": {
     shortTitle: "Garlic Shrimp Skillet",
+    imageUrl: "/images/meals/garlic-butter-shrimp-skillet.jpg",
   },
   "ginger-scallion-ground-chicken-cups": {
     shortTitle: "Ginger Chicken Cups",
@@ -105,6 +110,7 @@ const CARD_META: Record<string, { shortTitle: string; imageUrl?: string }> = {
   },
   "poached-pears-hibiscus": {
     shortTitle: "Hibiscus Poached Pears",
+    imageUrl: "/images/meals/poached-pears-hibiscus.jpg",
   },
   "skillet-white-beans-sweet-paprika": {
     shortTitle: "Skillet White Beans",

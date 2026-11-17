@@ -208,7 +208,18 @@ export function createPrototypeController(
       if (mode === "error") {
         return { kind: "error", message: RECIPE_ERROR };
       }
-      return inner.recipe(id);
+      const res = inner.recipe(id);
+      if (res.kind === "ready") {
+        const sample = findRecipe(id);
+        return {
+          ...res,
+          recipe: {
+            ...res.recipe,
+            imageUrl: sample?.imageUrl ?? null,
+          },
+        };
+      }
+      return res;
     },
     async refetch() {
       if (mode === "error") {

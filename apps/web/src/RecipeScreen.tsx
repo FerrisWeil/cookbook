@@ -141,28 +141,37 @@ export function RecipeArticle({
   const hideFacts = cooking?.mode === "here";
   return (
     <article className="recipe-article">
-      <header className="recipe-hero">
-        <h1>{title}</h1>
-        {hideFacts ? null : (
-          <div className="recipe-facts-block">
-            <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
-            {editing && draft ? (
-              <RecipeFactsForm
-                draft={draft}
-                baseline={baseline}
-                status={formStatus}
-                onDraftChange={onDraftChange}
-                onSave={onSaveFacts}
-                onCancel={onCancelFacts}
-              />
-            ) : (
-              <Button variant="tonal" onClick={onEditFacts}>
-                Edit recipe facts
-              </Button>
-            )}
+      <header
+        className={`recipe-hero${recipe.imageUrl ? " recipe-hero--with-media" : ""}`}
+      >
+        <div className="recipe-hero-content">
+          <h1>{title}</h1>
+          {hideFacts ? null : (
+            <div className="recipe-facts-block">
+              <RecipeFactsDisplay facts={recipe.facts} explanations="focusable" />
+              {editing && draft ? (
+                <RecipeFactsForm
+                  draft={draft}
+                  baseline={baseline}
+                  status={formStatus}
+                  onDraftChange={onDraftChange}
+                  onSave={onSaveFacts}
+                  onCancel={onCancelFacts}
+                />
+              ) : (
+                <Button variant="tonal" onClick={onEditFacts}>
+                  Edit recipe facts
+                </Button>
+              )}
+            </div>
+          )}
+          {cooking ? <CookingControls cooking={cooking} /> : null}
+        </div>
+        {recipe.imageUrl ? (
+          <div className="recipe-hero-media">
+            <img src={recipe.imageUrl} alt="" decoding="async" />
           </div>
-        )}
-        {cooking ? <CookingControls cooking={cooking} /> : null}
+        ) : null}
       </header>
       {ingredients.length > 0 ? (
         <section className="recipe-ingredients-section">

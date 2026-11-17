@@ -11,6 +11,8 @@ export type CardProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & 
   meta?: ReactNode;
   imageSrc?: string;
   imageAlt?: string;
+  badges?: ReactNode;
+  mediaFallback?: ReactNode;
   onNavigate?: (href: string) => void;
 };
 
@@ -20,14 +22,17 @@ export function Card({
   meta,
   imageSrc,
   imageAlt,
+  badges,
+  mediaFallback,
   onNavigate,
   className,
   onClick,
   ...props
 }: CardProps) {
+  const hasMedia = Boolean(imageSrc || mediaFallback);
   const classes = [
     "ui-card",
-    imageSrc ? "ui-card--with-media" : "",
+    hasMedia ? "ui-card--with-media" : "",
     className,
   ]
     .filter(Boolean)
@@ -54,16 +59,21 @@ export function Card({
   return createElement(
     "a",
     { href, className: classes, onClick: handleClick, ...props },
-    imageSrc
+    hasMedia
       ? createElement(
           "span",
           { className: "ui-card-media" },
-          createElement("img", {
-            src: imageSrc,
-            alt: imageAlt ?? "",
-            loading: "lazy",
-            decoding: "async",
-          }),
+          imageSrc
+            ? createElement("img", {
+                src: imageSrc,
+                alt: imageAlt ?? "",
+                loading: "lazy",
+                decoding: "async",
+              })
+            : mediaFallback,
+          badges
+            ? createElement("span", { className: "ui-card-badges" }, badges)
+            : null,
         )
       : null,
     createElement(

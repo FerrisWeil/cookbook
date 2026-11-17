@@ -4,14 +4,20 @@ import {
   RECIPE_MEAL_TYPES,
   criteriaIsEmpty,
   displayShortTitle,
+  isUnsetPrimaryProtein,
   type ListCriteria,
+  type RecipeFacts as RecipeFactsModel,
 } from "@cookbook/shared";
 import type { RecipeListItem } from "@cookbook/shared";
 import { Button, Card, Message, SkeletonCard } from "@cookbook/ui";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 
 import { LIST_ERROR } from "./api";
-import { factsAccessibleSummary } from "./facts";
+import {
+  factsAccessibleSummary,
+  formatMealType,
+  formatTotalMinutes,
+} from "./facts";
 import { RecipeFacts } from "./RecipeFacts";
 import { recipePath } from "./route";
 
@@ -98,43 +104,45 @@ export function ListScreen({
 
   return (
     <main className="ui-shell">
-      <header className="list-header">
-        <div className="list-header-title">
-          <h1>Recipes</h1>
-          {settledCount !== null ? (
-            <span className="list-count">
-              {settledCount === 1 ? "1 recipe" : `${settledCount} recipes`}
-            </span>
-          ) : null}
-        </div>
-        <div className="list-header-actions">
-          {resume ? (
-            <div className="cooking-resume">
-              <Button variant="primary" onClick={resume.onOpen}>
-                {resume.runningTimers && resume.runningTimers > 0
-                  ? `Cooking ${resume.title} (${resume.runningTimers} timer${resume.runningTimers === 1 ? "" : "s"} running)`
-                  : `Cooking ${resume.title}`}
+      <div className="list-discovery-bar">
+        <header className="list-header">
+          <div className="list-header-title">
+            <h1>Recipes</h1>
+            {settledCount !== null ? (
+              <span className="list-count">
+                {settledCount === 1 ? "1 recipe" : `${settledCount} recipes`}
+              </span>
+            ) : null}
+          </div>
+          <div className="list-header-actions">
+            {resume ? (
+              <div className="cooking-resume">
+                <Button variant="primary" onClick={resume.onOpen}>
+                  {resume.runningTimers && resume.runningTimers > 0
+                    ? `Cooking ${resume.title} (${resume.runningTimers} timer${resume.runningTimers === 1 ? "" : "s"} running)`
+                    : `Cooking ${resume.title}`}
+                </Button>
+              </div>
+            ) : null}
+            {onOpenSettings ? (
+              <Button
+                variant="tonal"
+                className="list-settings-btn"
+                onClick={onOpenSettings}
+              >
+                <SettingsIcon />
+                <span>Settings</span>
               </Button>
-            </div>
-          ) : null}
-          {onOpenSettings ? (
-            <Button
-              variant="tonal"
-              className="list-settings-btn"
-              onClick={onOpenSettings}
-            >
-              <SettingsIcon />
-              <span>Settings</span>
-            </Button>
-          ) : null}
-        </div>
-      </header>
-      {status ? (
-        <p className="sync-status" role="status">
-          {status}
-        </p>
-      ) : null}
-      <ListSearchControls search={search} filtersRef={filtersRef} />
+            ) : null}
+          </div>
+        </header>
+        {status ? (
+          <p className="sync-status" role="status">
+            {status}
+          </p>
+        ) : null}
+        <ListSearchControls search={search} filtersRef={filtersRef} />
+      </div>
       <div
         className={`list-content-layout${search?.filtersOpen ? " has-filters-open" : ""}`}
       >
@@ -199,6 +207,12 @@ export function ListScreen({
                     title={displayShortTitle(recipe)}
                     imageSrc={recipe.imageUrl ?? undefined}
                     imageAlt=""
+                    mediaFallback={
+                      recipe.imageUrl ? undefined : (
+                        <VesselFallbackArt recipe={recipe} />
+                      )
+                    }
+                    badges={<CardOverlayBadges facts={recipe.facts} />}
                     aria-label={`${recipe.title}. ${factsAccessibleSummary(recipe.facts)}`}
                     meta={
                       <RecipeFacts facts={recipe.facts} explanations="hover" />
@@ -256,41 +270,97 @@ function ListSearchControls({
     );
   }
 
+  const allMealsEmpty =
+    search.criteria.mealTypes.length === 0 &&
+    search.criteria.maxTotalMinutes === null;
+  const quick30 = search.criteria.maxTotalMinutes === 30;
+
   return (
     <div className="list-toolbar">
-      <div className="list-search">
-        <label htmlFor={titleId}>Recipe name</label>
-        <input
-          id={titleId}
-          type="search"
-          enterKeyHint="search"
-          placeholder="Search titles, ingredients, or proteins…"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          maxLength={QUERY_LIMITS.maxPhraseLength}
-          value={search.title}
-          onChange={(event) => search.onTitleChange(event.target.value)}
-        />
-      </div>
-      <Button
-        ref={filtersRef}
-        variant={search.filtersOpen ? "primary" : "tonal"}
-        aria-expanded={search.filtersOpen}
-        aria-haspopup="dialog"
-        onClick={() =>
-          search.filtersOpen ? search.onCloseFilters() : search.onOpenFilters()
-        }
-      >
-        {search.activeFilters.length > 0
-          ? `Filters (${search.activeFilters.length})`
-          : "Filters"}
-      </Button>
-      {search.activeFilters.length > 0 || search.title.trim() !== "" ? (
-        <Button variant="quiet" onClick={search.onClearAll}>
-          Clear all
+      <div className="list-toolbar-main">
+        <div className="list-search">
+          <label htmlFor={titleId}>Recipe name</label>
+          <input
+            id={titleId}
+            type="search"
+            enterKeyHint="search"
+            placeholder="Search titles, ingredients, or proteins…"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            maxLength={QUERY_LIMITS.maxPhraseLength}
+            value={search.title}
+            onChange={(event) => search.onTitleChange(event.target.value)}
+          />
+        </div>
+        <Button
+          ref={filtersRef}
+          variant={search.filtersOpen ? "primary" : "tonal"}
+          aria-expanded={search.filtersOpen}
+          aria-haspopup="dialog"
+          onClick={() =>
+            search.filtersOpen ? search.onCloseFilters() : search.onOpenFilters()
+          }
+        >
+          {search.activeFilters.length > 0
+            ? `Filters (${search.activeFilters.length})`
+            : "Filters"}
         </Button>
-      ) : null}
+        {search.activeFilters.length > 0 || search.title.trim() !== "" ? (
+          <Button variant="quiet" onClick={search.onClearAll}>
+            Clear all
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="list-quick-tabs" role="group" aria-label="Menu quick categories">
+        <button
+          type="button"
+          className={`list-quick-tab${allMealsEmpty ? " is-active" : ""}`}
+          onClick={() =>
+            search.onChangeCriteria({
+              ...search.criteria,
+              mealTypes: [],
+              maxTotalMinutes: null,
+            })
+          }
+        >
+          All
+        </button>
+        {RECIPE_MEAL_TYPES.map((meal) => {
+          const active =
+            search.criteria.mealTypes.length === 1 &&
+            search.criteria.mealTypes[0] === meal;
+          return (
+            <button
+              key={meal}
+              type="button"
+              className={`list-quick-tab${active ? " is-active" : ""}`}
+              onClick={() =>
+                search.onChangeCriteria({
+                  ...search.criteria,
+                  mealTypes: active ? [] : [meal],
+                })
+              }
+            >
+              {formatMealType(meal)}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          className={`list-quick-tab${quick30 ? " is-active" : ""}`}
+          onClick={() =>
+            search.onChangeCriteria({
+              ...search.criteria,
+              maxTotalMinutes: quick30 ? null : 30,
+            })
+          }
+        >
+          Quick ≤ 30m
+        </button>
+      </div>
+
       {search.activeFilters.length > 0 ? (
         <ul className="list-active-filters">
           {search.activeFilters.map((filter) => (
@@ -661,5 +731,117 @@ function SettingsIcon() {
       <circle cx="12" cy="12" r="3.2" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .68.4 1.3 1.02 1.58.3.13.62.2.98.2H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
     </svg>
+  );
+}
+
+function CardOverlayBadges({ facts }: { facts: RecipeFactsModel }) {
+  const minutes = facts.totalMinutes;
+  const specifiedProtein = isUnsetPrimaryProtein(facts.primaryProtein)
+    ? null
+    : facts.primaryProtein;
+  const rightLabel =
+    specifiedProtein ??
+    (facts.mealTypes[0] ? formatMealType(facts.mealTypes[0]) : null);
+
+  if (minutes === null && !rightLabel) {
+    return null;
+  }
+
+  return (
+    <>
+      {minutes !== null ? (
+        <span className="ui-card-pill ui-card-pill--time" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            width="13"
+            height="13"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          <span>{formatTotalMinutes(minutes)}</span>
+        </span>
+      ) : (
+        <span />
+      )}
+      {rightLabel ? (
+        <span className="ui-card-pill ui-card-pill--tag" aria-hidden="true">
+          {rightLabel}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+type VesselKind = "pot" | "skillet" | "bowl" | "bake" | "plate";
+
+function inferVesselKind(recipe: RecipeListItem): VesselKind {
+  const lower = `${recipe.id} ${recipe.title}`.toLowerCase();
+  if (/stew|soup|braise|poach|mole/.test(lower)) {
+    return "pot";
+  }
+  if (/skillet|chops|shrimp/.test(lower)) {
+    return "skillet";
+  }
+  if (/bowl|oats|farro|salad|chickpeas/.test(lower)) {
+    return "bowl";
+  }
+  if (/galette|tart|cheesecake|skewers|parcels/.test(lower)) {
+    return "bake";
+  }
+  return "plate";
+}
+
+function VesselFallbackArt({ recipe }: { recipe: RecipeListItem }) {
+  const kind = inferVesselKind(recipe);
+  const labelMap: Record<VesselKind, string> = {
+    pot: "Simmer pot",
+    skillet: "Skillet dish",
+    bowl: "Bowl meal",
+    bake: "Roasted & baked",
+    plate: "Plated dinner",
+  };
+  return (
+    <span className={`vessel-fallback vessel-fallback--${kind}`} aria-hidden="true">
+      <svg viewBox="0 0 120 76" className="vessel-fallback-svg">
+        {kind === "pot" ? (
+          <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M35 32h50v21a10 10 0 0 1-10 10H45a10 10 0 0 1-10-10V32Z" />
+            <path d="M29 36h6M85 36h6" />
+            <path d="M33 32h54" />
+            <path d="M51 22c0-4 3-5 3-9M60 20c0-4 3-5 3-9M69 22c0-4 3-5 3-9" opacity="0.7" />
+          </g>
+        ) : kind === "skillet" ? (
+          <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <ellipse cx="52" cy="41" rx="24" ry="12" />
+            <path d="M28 41v6c0 6.5 10.7 12 24 12s24-5.5 24-12v-6" />
+            <path d="M76 41l22-6" strokeWidth="3" />
+          </g>
+        ) : kind === "bowl" ? (
+          <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <ellipse cx="60" cy="34" rx="25" ry="8" />
+            <path d="M35 34c1 17 11 26 25 26s24-9 25-26" />
+            <path d="M48 60h24" />
+          </g>
+        ) : kind === "bake" ? (
+          <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="32" y="29" width="56" height="28" rx="6" />
+            <path d="M27 36h5M88 36h5" />
+            <path d="M44 43h32" opacity="0.65" />
+          </g>
+        ) : (
+          <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <ellipse cx="60" cy="41" rx="28" ry="15" />
+            <ellipse cx="60" cy="41" rx="17" ry="8.5" opacity="0.65" />
+          </g>
+        )}
+      </svg>
+      <span className="vessel-fallback-caption">{labelMap[kind]}</span>
+    </span>
   );
 }
