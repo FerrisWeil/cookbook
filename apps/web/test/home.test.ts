@@ -83,7 +83,7 @@ describe("kitchen session boundaries", () => {
 describe("home page", () => {
   it(
     "loads",
-    verifies("137", "2b00b1e0d162577e", () => {
+    verifies("xt3k", "81cc013aa3b6d3fb", () => {
       const page = html(createElement(App, { initialPath: "/" }));
       assert.match(page, /<h1>Recipes<\/h1>/);
       assert.match(page, /Loading recipes/);
@@ -94,7 +94,7 @@ describe("home page", () => {
 describe("kitchen list and recipe", () => {
   it(
     "tells a failed read in words",
-    verifies("39", "0a91f37db72a9708", () => {
+    verifies("nzab", "8ac8024c702f09ff", () => {
       const list = html(
         createElement(ListScreen, {
           state: { kind: "error", message: LIST_ERROR },
@@ -115,7 +115,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "shows each recipe title on the list",
-    verifies("43", "5e9b7b3140c9f090", () => {
+    verifies("5xxm", "1cc3e1bcad9fcbfa", () => {
       const page = html(
         createElement(ListScreen, {
           state: {
@@ -136,7 +136,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "includes a recipe whose favorite is off",
-    verifies("51", "e7db71de3b615d01", () => {
+    verifies("pesf", "d1eca56d52f0e8d8", () => {
       const stored = {
         id: "oats",
         title: "Example: Weeknight oats",
@@ -162,7 +162,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "shows the recipe title",
-    verifies("45", "63b0704835d62e20", () => {
+    verifies("sxey", "e28f7e372805a778", () => {
       const page = recipeHtml({ kind: "ready", recipe: view() });
       assert.match(page, /<h1>Example: Tomato lentils<\/h1>/);
     }),
@@ -170,7 +170,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "shows the ingredient lines",
-    verifies("46", "a80761f7e25d25cc", () => {
+    verifies("jsjn", "c69b83a4b8faaf49", () => {
       const page = recipeHtml({
         kind: "ready",
         recipe: view({ ingredients: ["1 cup lentils", "salt to taste"] }),
@@ -187,7 +187,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "shows the steps in saved order",
-    verifies("47", "9fd0756aa0cd0917", () => {
+    verifies("kfe8", "37b70e4b2d8cee73", () => {
       const page = recipeHtml({
         kind: "ready",
         recipe: view({
@@ -203,7 +203,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "shows each ingredient as one written line",
-    verifies("50", "6ab37b8ba835bea5", () => {
+    verifies("6x6h", "33c4846651d37ef0", () => {
       const page = recipeHtml({
         kind: "ready",
         recipe: view({
@@ -219,7 +219,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "does not overlap recipe text with controls",
-    verifies("57", "16224c80a4c906e2", () => {
+    verifies("rdv6", "269856c29b56ac00", () => {
       const page = recipeHtml({ kind: "ready", recipe: view() });
       const back = page.indexOf(">Back<");
       const title = page.indexOf("<h1>Example: Tomato lentils</h1>");
@@ -233,7 +233,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "makes every action a click or a tap",
-    verifies("55", "cd1d1fe5f6b68da1", () => {
+    verifies("mwbn", "37bebb3abd01d0d0", () => {
       const list = html(
         createElement(ListScreen, {
           state: {
@@ -268,7 +268,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "makes every action reachable from the keyboard",
-    verifies("161", "b7830f49843dc529", () => {
+    verifies("ry7t", "d21dacf14d3052e5", () => {
       const list = html(
         createElement(ListScreen, {
           state: {
@@ -303,7 +303,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "lets the user zoom the page",
-    verifies("56", "951bbf23cd1df764", () => {
+    verifies("mbvk", "5c58bebc41de4b6f", () => {
       const document = readWeb("index.html");
       assert.match(
         document,
@@ -316,7 +316,7 @@ describe("kitchen list and recipe", () => {
 
   it(
     "responds to the screen size",
-    verifies("36", "84f862b8b1b787a3", () => {
+    verifies("xpk2", "eea7d4da3a09249e", () => {
       const css = readWeb("src/screens.css");
       assert.match(css, /@media \(min-width: 48rem\)/);
       const wide = css.split("@media (min-width: 48rem)")[1] ?? "";

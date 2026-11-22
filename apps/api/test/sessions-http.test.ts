@@ -92,7 +92,7 @@ describe("cooking session HTTP", () => {
 
   it(
     "keeps the snapshot after the recipe changes",
-    verifies("200", "c5b91d2e352a2b25", async () => {
+    verifies("uaje", "8aed0d9b68e5b4f0", async () => {
       const started = await auth("POST", "/sessions", {
         mutationId: "http-start",
         recipeId: "soup",
@@ -127,7 +127,7 @@ describe("cooking session HTTP", () => {
 
   it(
     "names a step change that arrives after finish",
-    verifies("204", "c204caff290d410d", async () => {
+    verifies("qusb", "0e54a8abea3f64c3", async () => {
       const active = await auth("GET", "/sessions/active");
       const current = (await active.json()) as { session: { id: string } };
       const finished = await auth("POST", `/sessions/${current.session.id}/finish`, {
@@ -154,7 +154,7 @@ describe("cooking session HTTP", () => {
 
   it(
     "sends a session change on the open event stream",
-    verifies("208", "3aa1e397375c1770", async () => {
+    verifies("27wy", "938a536120429c1b", async () => {
       const stream = await fetch(`${baseUrl}/recipes/events`, {
         headers: { authorization: `Bearer ${MCP_TOKEN}` },
       });

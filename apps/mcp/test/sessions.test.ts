@@ -82,7 +82,7 @@ describe("mcp cooking session", () => {
 
   it(
     "lets Chef run the session and says when it has ended",
-    verifies("207", "ca4c2d5c64cdcd58", async () => {
+    verifies("4sew", "22bbc1631cd8d880", async () => {
       const client = await connectClient(baseUrl);
       try {
         const none = await client.callTool({ name: "session_resume", arguments: {} });

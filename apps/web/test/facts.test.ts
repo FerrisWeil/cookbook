@@ -90,7 +90,7 @@ describe("kitchen recipe facts", () => {
 
   it(
     "shows each recipe's facts on the list",
-    verifies("177", "58e706f6a8e651f9", () => {
+    verifies("ptzh", "0277e29c35995dbd", () => {
       const page = html(
         createElement(ListScreen, {
           state: {
@@ -118,7 +118,7 @@ describe("kitchen recipe facts", () => {
 
   it(
     "shows the recipe's facts on the recipe screen",
-    verifies("178", "66a37def89c6c3f6", () => {
+    verifies("5h4n", "b5dc27385af8e3b4", () => {
       const page = html(
         createElement(RecipeScreen, {
           state: { kind: "ready", recipe: view({ facts: filledFacts }) },
@@ -140,7 +140,7 @@ describe("kitchen recipe facts", () => {
 
   it(
     "shows a dash and an accessible explanation for missing facts",
-    verifies("180", "abf958cd75c8e6b2", () => {
+    verifies("ejy8", "0a6343deafa9a172", () => {
       const page = html(
         createElement(RecipeFacts, {
           facts: emptyRecipeFacts(),
@@ -192,7 +192,7 @@ describe("kitchen recipe facts", () => {
 
   it(
     "offers a form on the recipe screen to edit that recipe's facts",
-    verifies("181", "7dd20f8b5a044821", () => {
+    verifies("6rzs", "47244d92aaedb033", () => {
       const closed = html(
         createElement(RecipeScreen, {
           state: { kind: "ready", recipe: view({ facts: filledFacts }) },
@@ -226,7 +226,7 @@ describe("kitchen recipe facts", () => {
 
   it(
     "keeps the facts draft and stored facts when a save fails",
-    verifies("182", "18530c7138ee4b02", () => {
+    verifies("zz4u", "495343badf670f8a", () => {
       const draft = draftFromFacts({
         primaryProtein: "seitan",
         totalMinutes: 15,
@@ -255,7 +255,7 @@ describe("kitchen recipe facts", () => {
 
   it(
     "leaves stored facts unchanged when the facts form is canceled",
-    verifies("183", "614b901854fb4300", () => {
+    verifies("m54s", "294229d84a4eeafe", () => {
       const canceled = html(
         createElement(RecipeScreen, {
           state: { kind: "ready", recipe: view({ facts: filledFacts }) },

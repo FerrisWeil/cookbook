@@ -33,7 +33,7 @@ function start(
 describe("cooking session rules", () => {
   it(
     "keeps a single active session and does not revive a finished one",
-    verifies("199", "312a4c7f175eef3c", async () => {
+    verifies("caqe", "fa9913550f030f37", async () => {
       const store = createMemorySessionStore();
       const first = await start(store, "start-1");
       const retry = await start(store, "start-1");
@@ -58,7 +58,7 @@ describe("cooking session rules", () => {
 
   it(
     "keeps the displayed step and completed steps independent",
-    verifies("201", "f03ec42b9d54300e", async () => {
+    verifies("8pqu", "61623d193951652a", async () => {
       const store = createMemorySessionStore();
       const session = await start(store, "start-1");
       const shown = await store.display({
@@ -87,7 +87,7 @@ describe("cooking session rules", () => {
 
   it(
     "does not toggle a step when complete or undo is repeated",
-    verifies("202", "d8e2a559733feaa4", async () => {
+    verifies("n2z8", "1fd6ab748135135a", async () => {
       const store = createMemorySessionStore();
       const session = await start(store, "start-1");
       await store.complete({ mutationId: "done-a", sessionId: session.id, step: 0 });
@@ -122,7 +122,7 @@ describe("cooking session rules", () => {
 
   it(
     "resumes the active session and stays finished when finish is repeated",
-    verifies("203", "1389385fd296ebfd", async () => {
+    verifies("u3pr", "ee6e008c1799e157", async () => {
       const store = createMemorySessionStore();
       assert.equal(await store.resume(), null);
       const session = await start(store, "start-1");

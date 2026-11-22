@@ -34,7 +34,7 @@ async function reject(code: string, input: SaveRecipeInput): Promise<void> {
 describe("recipe schema", () => {
   it(
     "ships taylor, chef, and system as actors in git",
-    verifies("116", "8b7c3d56c5da0273", () => {
+    verifies("mrjj", "52e6000fb4435005", () => {
       const sql = readFileSync(
         join(repoRoot, "db/migrations/0002_recipes.sql"),
         "utf8",
@@ -51,7 +51,7 @@ describe("recipe schema", () => {
 describe("ingredients", () => {
   it(
     "allows empty amount, unit, and name",
-    verifies("85", "a82fdf573329d5c4", async () => {
+    verifies("8dvg", "7c4b8517f3144046", async () => {
       const store = createMemoryRecipeStore();
       const recipe = await store.save(
         base({
@@ -66,7 +66,7 @@ describe("ingredients", () => {
 
   it(
     "stores unstated amount, unit, or name empty given a written line",
-    verifies("86", "0b45c5d6c11092a2", async () => {
+    verifies("8wxr", "3fdf7ba1aaee681e", async () => {
       const store = createMemoryRecipeStore();
       const recipe = await store.save(
         base({
@@ -81,14 +81,14 @@ describe("ingredients", () => {
 
   it(
     "requires the written ingredient line",
-    verifies("87", "a72739fa7243d52a", async () => {
+    verifies("b4fe", "276758ef60482d41", async () => {
       await reject("ingredient_line_required", base({ ingredients: [{ name: "salt" }] }));
     }),
   );
 
   it(
     "keeps ingredient order",
-    verifies("88", "6c7386061e85ceb0", async () => {
+    verifies("cww3", "82ad09895c8f7733", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -107,7 +107,7 @@ describe("ingredients", () => {
 
   it(
     "replaces the ingredient list on save",
-    verifies("89", "5eddb2cbd429516c", async () => {
+    verifies("duwp", "55bbe295eea9ff6c", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -133,7 +133,7 @@ describe("ingredients", () => {
 describe("favorite and rating", () => {
   it(
     "stores one favorite",
-    verifies("91", "e9afc5245ac5d455", async () => {
+    verifies("scfv", "02dffbd077d36f98", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       assert.equal(typeof created.favorite, "boolean");
@@ -145,7 +145,7 @@ describe("favorite and rating", () => {
 
   it(
     "treats favorite as the household's one flag",
-    verifies("92", "711356ef3ce0baef", async () => {
+    verifies("yfxf", "7bbb86a41d33ad3f", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ favorite: true }));
       const rated = await store.save(
@@ -158,7 +158,7 @@ describe("favorite and rating", () => {
 
   it(
     "defaults favorite to off",
-    verifies("93", "621bb3a1b8b98224", async () => {
+    verifies("2fp6", "cc77b6936a00e413", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       assert.equal(created.favorite, false);
@@ -167,7 +167,7 @@ describe("favorite and rating", () => {
 
   it(
     "stores a rating empty or 1 to 5",
-    verifies("95", "530a3e18f96faa88", async () => {
+    verifies("9zcr", "d742906d51ecfe4b", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       assert.equal(created.rating, null);
@@ -181,7 +181,7 @@ describe("favorite and rating", () => {
 
   it(
     "keeps favorite when a rating is set",
-    verifies("96", "b03ac5f300d241ca", async () => {
+    verifies("gfnm", "6feb0f90570b5cbc", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ favorite: true }));
       const rated = await store.save(base({ id: created.id, rating: 5 }));
@@ -191,7 +191,7 @@ describe("favorite and rating", () => {
 
   it(
     "allows a favorite with an empty rating",
-    verifies("97", "cf977ae0ce2f49df", async () => {
+    verifies("5xwe", "66fc8d6ced390227", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ favorite: true }));
       assert.equal(created.favorite, true);
@@ -203,7 +203,7 @@ describe("favorite and rating", () => {
 describe("nutrition", () => {
   it(
     "stores one nutrition row",
-    verifies("99", "ddc4561a4a458152", async () => {
+    verifies("chgk", "d35b87ca1092c551", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -217,7 +217,7 @@ describe("nutrition", () => {
 
   it(
     "stores nutrition numbers with the recipe",
-    verifies("100", "7996b985b5f029f0", async () => {
+    verifies("xtvz", "dd2b34014f4e7f96", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -242,7 +242,7 @@ describe("nutrition", () => {
 
   it(
     "stores the entered nutrition label",
-    verifies("102", "9f97cede8d96da75", async () => {
+    verifies("9yha", "6d13650b7a1e01bf", async () => {
       const store = createMemoryRecipeStore();
       const entered = await store.save(
         base({
@@ -255,7 +255,7 @@ describe("nutrition", () => {
 
   it(
     "stores the copied nutrition label",
-    verifies("103", "98dc876c434b1d33", async () => {
+    verifies("tr86", "eacb6a02c2b8b139", async () => {
       const store = createMemoryRecipeStore();
       const copied = await store.save(
         base({
@@ -268,7 +268,7 @@ describe("nutrition", () => {
 
   it(
     "rejects a nutrition label that is not estimated, entered, or copied",
-    verifies("104", "768f762c2850fc2d", async () => {
+    verifies("ra6n", "13dfe97a287796aa", async () => {
       await reject(
         "invalid_nutrition",
         base({ nutrition: { source: "guessed", calories: 1 } }),
@@ -278,7 +278,7 @@ describe("nutrition", () => {
 
   it(
     "keeps stored servings alongside nutrition",
-    verifies("105", "76f56d1171f4098d", async () => {
+    verifies("78dv", "1dfe1e93c12d8a81", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -292,14 +292,14 @@ describe("nutrition", () => {
 
   it(
     "refuses nutrition when servings is not greater than zero",
-    verifies("106", "dda39dd9104875ae", async () => {
+    verifies("a5bm", "284cf21cbaafd3e6", async () => {
       await reject("servings_required", base({ servings: 0 }));
     }),
   );
 
   it(
     "keeps nutrition when a save omits it",
-    verifies("107", "2b5d86aad780a337", async () => {
+    verifies("z3ua", "57a0a80c34df031c", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({ nutrition: { source: "copied", calories: 90 } }),
@@ -317,7 +317,7 @@ describe("nutrition", () => {
 
   it(
     "removes nutrition when a save clears it",
-    verifies("108", "227bb00061587758", async () => {
+    verifies("89xm", "c45ae300266b7f2c", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({ nutrition: { source: "copied", calories: 90 } }),
@@ -331,7 +331,7 @@ describe("nutrition", () => {
 describe("delete", () => {
   it(
     "hides a deleted recipe from read and list",
-    verifies("110", "3796df269fe022c2", async () => {
+    verifies("chjv", "548f270ecb447de8", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       await store.hide({ id: created.id, actor: "taylor" });
@@ -342,7 +342,7 @@ describe("delete", () => {
 
   it(
     "keeps a deleted recipe stored",
-    verifies("111", "4f86e079e1493fd2", async () => {
+    verifies("p6wz", "ba6c5ba9a12a27dd", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       await store.hide({ id: created.id, actor: "taylor" });
@@ -354,7 +354,7 @@ describe("delete", () => {
 
   it(
     "does not make a hidden recipe visible again on save",
-    verifies("112", "4818651add947ab0", async () => {
+    verifies("zdgk", "9979fe712be0d9f7", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       await store.hide({ id: created.id, actor: "chef" });
@@ -370,7 +370,7 @@ describe("delete", () => {
 
   it(
     "records when a recipe was hidden",
-    verifies("113", "47cccb6ce54d246e", async () => {
+    verifies("7zay", "3e983e4b4b251862", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       const before = Date.now();
@@ -385,7 +385,7 @@ describe("delete", () => {
 
   it(
     "records who hid a recipe",
-    verifies("114", "ed6414509931f047", async () => {
+    verifies("pwz2", "c286b23c3db325f8", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base());
       await store.hide({ id: created.id, actor: "taylor" });
@@ -397,7 +397,7 @@ describe("delete", () => {
 describe("actors, title, steps, servings, and id", () => {
   it(
     "refuses a save without an actor",
-    verifies("117", "f92872e5387c8d0c", async () => {
+    verifies("2ajm", "05424e1f82f05ed8", async () => {
       await reject("actor_required", {
         title: "Example: Soup",
         servings: 2,
@@ -409,7 +409,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "requires a non-empty title",
-    verifies("119", "5dfb1e27522f24cc", async () => {
+    verifies("v2vv", "b2b22b25e337d756", async () => {
       await reject("title_required", base({ title: "" }));
       await reject("title_required", base({ title: "   " }));
     }),
@@ -417,7 +417,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "allows two recipes to share a title",
-    verifies("120", "c63c9fe17a0f4860", async () => {
+    verifies("b8yu", "676ccaa693da1b4e", async () => {
       const store = createMemoryRecipeStore();
       const first = await store.save(base({ title: "Example: Bread" }));
       const second = await store.save(base({ title: "Example: Bread" }));
@@ -429,7 +429,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "stores steps in the saved order",
-    verifies("122", "da3db214349a5e37", async () => {
+    verifies("amu3", "889e2e1f2488cb1a", async () => {
       const store = createMemoryRecipeStore();
       const recipe = await store.save(
         base({ steps: ["Chop.", "Stir.", "Serve."] }),
@@ -440,7 +440,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "stores a step as plain text",
-    verifies("123", "6a02abd53b3af739", async () => {
+    verifies("8tpz", "89ab0c6a7c807f75", async () => {
       const store = createMemoryRecipeStore();
       const recipe = await store.save(base({ steps: ["Chop."] }));
       assert.equal(typeof recipe.steps[0], "string");
@@ -450,7 +450,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "stores servings",
-    verifies("125", "7445b95dc576d161", async () => {
+    verifies("r6t9", "5aa99857e658c715", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ servings: 2 }));
       assert.equal(created.servings, 2);
@@ -459,7 +459,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "refuses a servings count that is not greater than zero",
-    verifies("126", "e24706aa609101b0", async () => {
+    verifies("x4mp", "be001f530f59c17c", async () => {
       await reject("servings_required", base({ servings: 0 }));
       await reject("servings_required", base({ servings: -1 }));
       await reject("servings_required", base({ servings: Number.POSITIVE_INFINITY }));
@@ -483,7 +483,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "keeps an opaque id",
-    verifies("129", "44fbb8c06fade29b", async () => {
+    verifies("pjr8", "d62c01eec6c38133", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ title: "Example: Soup" }));
       assert.notEqual(created.id, "Example: Soup");
@@ -493,7 +493,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "uses a caller-supplied id",
-    verifies("130", "a2a5381da39b6112", async () => {
+    verifies("qe3z", "351c91bcf401d4ea", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({ id: "family-soup", title: "Example: Soup" }),
@@ -504,7 +504,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "updates a visible recipe with that id",
-    verifies("131", "b752570ec05e3a3d", async () => {
+    verifies("jk6v", "da02e6ce30fe4d61", async () => {
       const store = createMemoryRecipeStore();
       await store.save(base({ id: "family-soup", title: "Example: Soup" }));
       const updated = await store.save(
@@ -529,7 +529,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "does not change the actor recorded at creation",
-    verifies("132", "ea0af45c4be35606", async () => {
+    verifies("djas", "e694b6573bbe01c2", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ actor: "chef" }));
       const renamed = await store.save(
@@ -545,7 +545,7 @@ describe("actors, title, steps, servings, and id", () => {
 
   it(
     "keeps the recipe id when the title changes",
-    verifies("133", "67246a8e6e1b486e", async () => {
+    verifies("mn6v", "d5abc2c19ec0b992", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(base({ title: "Example: Soup" }));
       const renamed = await store.save(

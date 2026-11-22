@@ -35,7 +35,7 @@ describe("config", () => {
 
   it(
     "allows the local dev token only when MCP_ALLOW_DEV_TOKEN=1",
-    verifies("80", "7f6982aad3bdef67", () => {
+    verifies("yg2s", "4d93f0e8933a57a6", () => {
       assert.throws(
         () =>
           loadConfig({
@@ -139,7 +139,7 @@ describe("http auth", () => {
 
   it(
     "serves /health without a token",
-    verifies("2", "d42ebfae36e332ed", async () => {
+    verifies("wn8s", "da28d0c1dc57423d", async () => {
       const response = await fetch(`${baseUrl}/health`);
       assert.equal(response.status, 200);
     }),
@@ -147,7 +147,7 @@ describe("http auth", () => {
 
   it(
     "tells whether the MCP server is up",
-    verifies("3", "52744c358a8149d5", async () => {
+    verifies("vhfs", "47ad9649c60e933f", async () => {
       const response = await fetch(`${baseUrl}/health`);
       assert.deepEqual(await response.json(), { status: "ok" });
     }),
@@ -155,7 +155,7 @@ describe("http auth", () => {
 
   it(
     "does not give recipe data on liveness",
-    verifies("4", "d0381bc31e3f6408", async () => {
+    verifies("r8f2", "831680132a178874", async () => {
       const response = await fetch(`${baseUrl}/health`);
       const body = await response.json();
       assert.deepEqual(Object.keys(body), ["status"]);
@@ -166,7 +166,7 @@ describe("http auth", () => {
 
   it(
     "rejects /mcp when the token is missing",
-    verifies("1", "d631eefaf753e9d7", async () => {
+    verifies("6kbq", "a75ddbaee1641a3f", async () => {
       const response = await fetch(`${baseUrl}/mcp`, { method: "POST" });
       assert.equal(response.status, 401);
       assert.equal(

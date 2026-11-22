@@ -3,7 +3,7 @@
 // Requirement catalog check. Policy is CONTRIBUTING.md.
 // Fixture IDs stay in this file. The reference scan does not read it.
 
-import { createHash } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -20,11 +20,12 @@ const SCHEMA = JSON.parse(readFileSync(path.join(REQUIREMENTS_DIR, "schema.json"
 
 const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage", ".requirements-evidence"]);
 const STATUSES = new Set(["accepted", "implemented", "verified"]);
-const ID_RE = /^[1-9][0-9]*$/;
+const ID_RE = /^(?=.*[a-z])[a-z0-9]{4}$/;
+const READABLE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const PART = "[1-9][0-9]*";
 const LETTER_ID_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){0,2}(?![A-Za-z0-9.])`, "g");
 const LETTER_OVERLONG_RE = new RegExp(`(?<![A-Za-z0-9.])[FNS]${PART}(?:\\.${PART}){3,}(?![A-Za-z0-9.])`, "g");
-const REQ_REF_RE = new RegExp(`(?<![A-Za-z0-9_])req:(${PART})(?![A-Za-z0-9])`, "g");
+const REQ_REF_RE = /(?<![A-Za-z0-9_])req:([a-z0-9]{1,8})(?![A-Za-z0-9_])/g;
 const TEST_CALL_RE =
   /(?:^|\n)[ \t]*(?:await\s+)?(?:[A-Za-z_$][\w$]*\.)?(?:it|test)(?![A-Za-z0-9_$])(?:\.(skip|only|todo))?\s*\(\s*(?:\n[ \t]*)?"([^"\n]*)"/g;
 
@@ -601,7 +602,7 @@ function parseCatalog(name, text) {
       return null;
     }
     if (!ID_RE.test(node.value)) {
-      errors.push(`${name}:${at(node)}: ${key} must be a positive integer id`);
+      errors.push(`${name}:${at(node)}: ${key} must be a 4-character alphanumeric id containing a letter`);
       return null;
     }
     return { text: node.value, line: at(node) };
@@ -876,7 +877,7 @@ function check({ requirementFiles, testFiles, decisionFiles = [], evidence = [] 
     }
   }
 
-  for (const [id, list] of [...bindings.entries()].sort((a, b) => Number(a[0]) - Number(b[0]))) {
+  for (const [id, list] of [...bindings.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const node = byId.get(id);
     if (!node) {
       errors.push(`unknown id ${id} in ${list[0].file}`);
@@ -936,7 +937,7 @@ function check({ requirementFiles, testFiles, decisionFiles = [], evidence = [] 
 
   return {
     errors,
-    ids: [...byId.keys()].sort((a, b) => Number(a) - Number(b)),
+    ids: [...byId.keys()].sort((a, b) => a.localeCompare(b)),
   };
 }
 
@@ -955,24 +956,39 @@ function catalogYaml(body) {
 
 function twoLeaves(status = "accepted") {
   return [
-    '  - id: "1"',
+    '  - id: "a2b3"',
     `    status: ${status}`,
     '    text: Agents can read a recipe.',
     "    children:",
-    '      - id: "2"',
+    '      - id: "c4d5"',
     `        status: ${status}`,
     '        text: Given a recipe ID, the agent receives that recipe.',
-    '      - id: "3"',
+    '      - id: "e6f7"',
     `        status: ${status}`,
     '        text: Without a recipe ID, the agent is told an ID is required.',
     "",
   ].join("\n");
 }
 
+function generateUnusedIds(existingIds, count) {
+  const used = new Set(existingIds);
+  const generated = [];
+  while (generated.length < count) {
+    let candidate = "";
+    for (let i = 0; i < 4; i += 1) {
+      candidate += READABLE_ALPHABET[randomInt(READABLE_ALPHABET.length)];
+    }
+    if (!ID_RE.test(candidate) || used.has(candidate)) continue;
+    used.add(candidate);
+    generated.push(candidate);
+  }
+  return generated;
+}
+
 function runCanary() {
   const failures = [];
-  const fp2 = requirementFingerprint("2", "Given a recipe ID, the agent receives that recipe.");
-  const fp3 = requirementFingerprint("3", "Without a recipe ID, the agent is told an ID is required.");
+  const fp2 = requirementFingerprint("c4d5", "Given a recipe ID, the agent receives that recipe.");
+  const fp3 = requirementFingerprint("e6f7", "Without a recipe ID, the agent is told an ID is required.");
 
   function pass(label, input, ids) {
     const result = check(input);
@@ -1002,10 +1018,10 @@ function runCanary() {
   );
 
   const accepted = [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")) }];
-  pass("accepted leaves need no test", { requirementFiles: accepted, testFiles: [] }, ["1", "2", "3"]);
+  pass("accepted leaves need no test", { requirementFiles: accepted, testFiles: [] }, ["a2b3", "c4d5", "e6f7"]);
 
   const implemented = [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("implemented")) }];
-  pass("implemented leaves need no test", { requirementFiles: implemented, testFiles: [] }, ["1", "2", "3"]);
+  pass("implemented leaves need no test", { requirementFiles: implemented, testFiles: [] }, ["a2b3", "c4d5", "e6f7"]);
 
   const verifiedYaml = catalogYaml(twoLeaves("verified"));
   fail(
@@ -1017,7 +1033,7 @@ function runCanary() {
   const verifiedTests = [
     {
       name: "read.test.ts",
-      text: `it("receives that recipe", verifies("2", "${fp2}", () => {\n  assert.ok(true);\n}));\nit("requires an id", verifies("3", "${fp3}", () => {\n  assert.ok(true);\n}));\n`,
+      text: `it("receives that recipe", verifies("c4d5", "${fp2}", () => {\n  assert.ok(true);\n}));\nit("requires an id", verifies("e6f7", "${fp3}", () => {\n  assert.ok(true);\n}));\n`,
     },
   ];
   fail(
@@ -1035,11 +1051,11 @@ function runCanary() {
       requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
       testFiles: verifiedTests,
       evidence: [
-        { id: "2", fingerprint: fp2, passed: true },
-        { id: "3", fingerprint: fp3, passed: true },
+        { id: "c4d5", fingerprint: fp2, passed: true },
+        { id: "e6f7", fingerprint: fp3, passed: true },
       ],
     },
-    ["1", "2", "3"],
+    ["a2b3", "c4d5", "e6f7"],
   );
   fail(
     "skipped test is not executed evidence",
@@ -1048,12 +1064,12 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it.skip("receives that recipe", verifies("2", "${fp2}", () => {}));\nit("requires an id", verifies("3", "${fp3}", () => {}));\n`,
+          text: `it.skip("receives that recipe", verifies("c4d5", "${fp2}", () => {}));\nit("requires an id", verifies("e6f7", "${fp3}", () => {}));\n`,
         },
       ],
       evidence: [
-        { id: "2", fingerprint: fp2, passed: true },
-        { id: "3", fingerprint: fp3, passed: true },
+        { id: "c4d5", fingerprint: fp2, passed: true },
+        { id: "e6f7", fingerprint: fp3, passed: true },
       ],
     },
     "is verified and has no test binding",
@@ -1064,8 +1080,8 @@ function runCanary() {
       requirementFiles: [{ name: CATALOG_NAME, text: verifiedYaml }],
       testFiles: verifiedTests,
       evidence: [
-        { id: "2", fingerprint: fp2, passed: false },
-        { id: "3", fingerprint: fp3, passed: true },
+        { id: "c4d5", fingerprint: fp2, passed: false },
+        { id: "e6f7", fingerprint: fp3, passed: true },
       ],
     },
     "without an executed passing test",
@@ -1077,12 +1093,12 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it("receives that recipe", verifies("2", "deadbeefdeadbeef", () => {}));\nit("requires an id", verifies("3", "${fp3}", () => {}));\n`,
+          text: `it("receives that recipe", verifies("c4d5", "deadbeefdeadbeef", () => {}));\nit("requires an id", verifies("e6f7", "${fp3}", () => {}));\n`,
         },
       ],
       evidence: [
-        { id: "2", fingerprint: fp2, passed: true },
-        { id: "3", fingerprint: fp3, passed: true },
+        { id: "c4d5", fingerprint: fp2, passed: true },
+        { id: "e6f7", fingerprint: fp3, passed: true },
       ],
     },
     "does not match",
@@ -1094,7 +1110,7 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it("parent", verifies("1", "${requirementFingerprint("1", "Agents can read a recipe.")}", () => {}));\n`,
+          text: `it("parent", verifies("a2b3", "${requirementFingerprint("a2b3", "Agents can read a recipe.")}", () => {}));\n`,
         },
       ],
     },
@@ -1107,7 +1123,7 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it("a", verifies("2", "${fp2}", () => {}));\nit("b", verifies("2", "${fp2}", () => {}));\n`,
+          text: `it("a", verifies("c4d5", "${fp2}", () => {}));\nit("b", verifies("c4d5", "${fp2}", () => {}));\n`,
         },
       ],
     },
@@ -1120,12 +1136,12 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it("receives that recipe", () => {\n  verifies("2", "${fp2}");\n});\nit("requires an id", verifies("3", "${fp3}", () => {}));\n`,
+          text: `it("receives that recipe", () => {\n  verifies("c4d5", "${fp2}");\n});\nit("requires an id", verifies("e6f7", "${fp3}", () => {}));\n`,
         },
       ],
       evidence: [
-        { id: "2", fingerprint: fp2, passed: true },
-        { id: "3", fingerprint: fp3, passed: true },
+        { id: "c4d5", fingerprint: fp2, passed: true },
+        { id: "e6f7", fingerprint: fp3, passed: true },
       ],
     },
     "must wrap the test function",
@@ -1134,7 +1150,7 @@ function runCanary() {
     "covers is removed",
     {
       requirementFiles: accepted,
-      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("2");\n});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("reads", () => {\n  covers("c4d5");\n});\n' }],
     },
     "covers() is removed",
   );
@@ -1146,11 +1162,11 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "1"',
+              '  - id: "a2b3"',
               "    status: accepted",
               '    text: Agents can list recipes.',
               "    children:",
-              '      - id: "2"',
+              '      - id: "c4d5"',
               "        status: accepted",
               '        text: Given a deleted recipe, the list does not include it.',
               "",
@@ -1165,10 +1181,18 @@ function runCanary() {
   fail(
     "unquoted id",
     {
-      requirementFiles: [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")).replace('id: "1"', "id: 1") }],
+      requirementFiles: [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")).replace('id: "a2b3"', "id: a2b3") }],
       testFiles: [],
     },
     "double-quoted",
+  );
+  fail(
+    "legacy numeric id rejected",
+    {
+      requirementFiles: [{ name: CATALOG_NAME, text: catalogYaml(twoLeaves("accepted")).replace('id: "a2b3"', 'id: "1234"') }],
+      testFiles: [],
+    },
+    "4-character alphanumeric id",
   );
   fail(
     "missing reference",
@@ -1178,23 +1202,23 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "1"',
+              '  - id: "a2b3"',
               "    kind: shared",
               "    status: accepted",
               '    text: Shared auth.',
               "    children:",
-              '      - id: "2"',
+              '      - id: "c4d5"',
               "        status: accepted",
               '        text: Without the secret, the call is refused.',
-              '      - id: "3"',
+              '      - id: "e6f7"',
               "        status: accepted",
               '        text: Liveness does not ask for the secret.',
-              '  - id: "4"',
+              '  - id: "g8h9"',
               "    status: accepted",
               '    text: Recipe calls require the secret.',
               "    children:",
-              '      - ref: "2"',
-              '      - ref: "9"',
+              '      - ref: "c4d5"',
+              '      - ref: "m9n2"',
               "",
             ].join("\n"),
           ),
@@ -1202,7 +1226,7 @@ function runCanary() {
       ],
       testFiles: [],
     },
-    "unknown id 9",
+    "unknown id m9n2",
   );
   fail(
     "reference to a normal tree node",
@@ -1212,22 +1236,22 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "1"',
+              '  - id: "a2b3"',
               "    status: accepted",
               '    text: Kitchen UI.',
               "    children:",
-              '      - id: "2"',
+              '      - id: "c4d5"',
               "        status: accepted",
               '        text: The list shows each recipe title.',
-              '      - id: "3"',
+              '      - id: "e6f7"',
               "        status: accepted",
               '        text: The list shows each favorite.',
-              '  - id: "4"',
+              '  - id: "g8h9"',
               "    status: accepted",
               '    text: Another screen.',
               "    children:",
-              '      - ref: "2"',
-              '      - id: "5"',
+              '      - ref: "c4d5"',
+              '      - id: "j2k3"',
               "        status: accepted",
               '        text: Settings uses the same list row.',
               "",
@@ -1247,24 +1271,24 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "1"',
+              '  - id: "a2b3"',
               "    kind: shared",
               "    status: accepted",
               '    text: Shared a.',
               "    children:",
-              '      - id: "2"',
+              '      - id: "c4d5"',
               "        status: accepted",
               '        text: Leaf a.',
-              '      - ref: "3"',
-              '  - id: "3"',
+              '      - ref: "e6f7"',
+              '  - id: "e6f7"',
               "    kind: shared",
               "    status: accepted",
               '    text: Shared b.',
               "    children:",
-              '      - id: "4"',
+              '      - id: "g8h9"',
               "        status: accepted",
               '        text: Leaf b.',
-              '      - ref: "1"',
+              '      - ref: "a2b3"',
               "",
             ].join("\n"),
           ),
@@ -1282,14 +1306,14 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "1"',
+              '  - id: "a2b3"',
               "    status: verified",
               '    text: Agents can read a recipe.',
               "    children:",
-              '      - id: "2"',
+              '      - id: "c4d5"',
               "        status: implemented",
               '        text: Given a recipe ID, the agent receives that recipe.',
-              '      - id: "3"',
+              '      - id: "e6f7"',
               "        status: verified",
               '        text: Without a recipe ID, the agent is told an ID is required.',
               "",
@@ -1309,14 +1333,14 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "1"',
+              '  - id: "a2b3"',
               "    status: implemented",
               '    text: Agents can read a recipe.',
               "    children:",
-              '      - id: "2"',
+              '      - id: "c4d5"',
               "        status: implemented",
               '        text: Given a recipe ID, the agent receives that recipe.',
-              '      - id: "3"',
+              '      - id: "e6f7"',
               "        status: verified",
               '        text: Without a recipe ID, the agent is told an ID is required.',
               "",
@@ -1327,12 +1351,12 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it("requires an id", verifies("3", "${fp3}", () => {}));\n`,
+          text: `it("requires an id", verifies("e6f7", "${fp3}", () => {}));\n`,
         },
       ],
-      evidence: [{ id: "3", fingerprint: fp3, passed: true }],
+      evidence: [{ id: "e6f7", fingerprint: fp3, passed: true }],
     },
-    ["1", "2", "3"],
+    ["a2b3", "c4d5", "e6f7"],
   );
   pass(
     "shared refs count toward children and rollup",
@@ -1342,25 +1366,25 @@ function runCanary() {
           name: CATALOG_NAME,
           text: catalogYaml(
             [
-              '  - id: "10"',
+              '  - id: "p2q3"',
               "    kind: shared",
               "    status: verified",
               '    text: MCP liveness.',
               "    children:",
-              '      - id: "11"',
+              '      - id: "r4s5"',
               "        status: verified",
               '        text: Liveness does not ask for a secret.',
-              '      - id: "12"',
+              '      - id: "t6u7"',
               "        status: verified",
               '        text: Liveness does not return recipes.',
-              '  - id: "13"',
+              '  - id: "v8w9"',
               "    status: verified",
               '    text: Health checks.',
               "    children:",
-              '      - id: "14"',
+              '      - id: "x2y3"',
               "        status: verified",
               '        text: The API answers without a secret.',
-              '      - ref: "11"',
+              '      - ref: "r4s5"',
               "",
             ].join("\n"),
           ),
@@ -1370,32 +1394,32 @@ function runCanary() {
         {
           name: "health.test.ts",
           text: [
-            `it("mcp no secret", verifies("11", "${requirementFingerprint("11", "Liveness does not ask for a secret.")}", () => {}));`,
-            `it("mcp no recipes", verifies("12", "${requirementFingerprint("12", "Liveness does not return recipes.")}", () => {}));`,
-            `it("api no secret", verifies("14", "${requirementFingerprint("14", "The API answers without a secret.")}", () => {}));`,
+            `it("mcp no secret", verifies("r4s5", "${requirementFingerprint("r4s5", "Liveness does not ask for a secret.")}", () => {}));`,
+            `it("mcp no recipes", verifies("t6u7", "${requirementFingerprint("t6u7", "Liveness does not return recipes.")}", () => {}));`,
+            `it("api no secret", verifies("x2y3", "${requirementFingerprint("x2y3", "The API answers without a secret.")}", () => {}));`,
             "",
           ].join("\n"),
         },
       ],
       evidence: [
         {
-          id: "11",
-          fingerprint: requirementFingerprint("11", "Liveness does not ask for a secret."),
+          id: "r4s5",
+          fingerprint: requirementFingerprint("r4s5", "Liveness does not ask for a secret."),
           passed: true,
         },
         {
-          id: "12",
-          fingerprint: requirementFingerprint("12", "Liveness does not return recipes."),
+          id: "t6u7",
+          fingerprint: requirementFingerprint("t6u7", "Liveness does not return recipes."),
           passed: true,
         },
         {
-          id: "14",
-          fingerprint: requirementFingerprint("14", "The API answers without a secret."),
+          id: "x2y3",
+          fingerprint: requirementFingerprint("x2y3", "The API answers without a secret."),
           passed: true,
         },
       ],
     },
-    ["10", "11", "12", "13", "14"],
+    ["p2q3", "r4s5", "t6u7", "v8w9", "x2y3"],
   );
   fail(
     "kind on a nested node",
@@ -1404,8 +1428,8 @@ function runCanary() {
         {
           name: CATALOG_NAME,
           text: catalogYaml(twoLeaves("accepted")).replace(
-            '      - id: "2"\n        status: accepted',
-            '      - id: "2"\n        kind: shared\n        status: accepted',
+            '      - id: "c4d5"\n        status: accepted',
+            '      - id: "c4d5"\n        kind: shared\n        status: accepted',
           ),
         },
       ],
@@ -1429,9 +1453,9 @@ function runCanary() {
     {
       requirementFiles: accepted,
       testFiles: [],
-      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See req:2.\n" }],
+      decisionFiles: [{ name: "docs/decisions/0001-choice.md", text: "See req:c4d5.\n" }],
     },
-    "cites requirement id 2",
+    "cites requirement id c4d5",
   );
   pass(
     "wcag 2.2 is not a requirement id",
@@ -1440,7 +1464,7 @@ function runCanary() {
       testFiles: [],
       decisionFiles: [{ name: "docs/decisions/0016-kitchen-ui.md", text: "The floor is WCAG 2.2 AA.\n" }],
     },
-    ["1", "2", "3"],
+    ["a2b3", "c4d5", "e6f7"],
   );
   fail(
     "yaml names a time",
@@ -1462,7 +1486,7 @@ function runCanary() {
     "req prefix in a title",
     {
       requirementFiles: accepted,
-      testFiles: [{ name: "read.test.ts", text: 'it("req:2 reads", () => {});\n' }],
+      testFiles: [{ name: "read.test.ts", text: 'it("req:c4d5 reads", () => {});\n' }],
     },
     "is not coverage",
   );
@@ -1473,18 +1497,18 @@ function runCanary() {
       testFiles: [
         {
           name: "read.test.ts",
-          text: `it("missing", verifies("9", "${requirementFingerprint("9", "nope")}", () => {}));\n`,
+          text: `it("missing", verifies("z9y8", "${requirementFingerprint("z9y8", "nope")}", () => {}));\n`,
         },
       ],
     },
-    "unknown id 9",
+    "unknown id z9y8",
   );
 
   const known = requirementFingerprint(
-    "1",
+    "k7m2",
     "Without the shared secret, the agent is told the call is not allowed.",
   );
-  if (known !== "d631eefaf753e9d7") {
+  if (known !== "90bf8e79d16f88da") {
     failures.push(`fingerprint fixture: got ${known}`);
   }
 
@@ -1564,6 +1588,22 @@ if (isMain) {
       console.log(`${node.id}\t${node.status}\t${node.fingerprint}\t${node.text}`);
     }
     process.exit(parsed.errors.length > 0 ? 1 : 0);
+  }
+  if (process.argv.includes("--new-id")) {
+    const idx = process.argv.indexOf("--new-id");
+    const rawCount = Number(process.argv[idx + 1] ?? 1);
+    const count = Number.isInteger(rawCount) && rawCount > 0 && rawCount <= 50 ? rawCount : 1;
+    const parsed = parseCatalog(
+      CATALOG_NAME,
+      readFileSync(path.join(REQUIREMENTS_DIR, CATALOG_NAME), "utf8"),
+    );
+    for (const id of generateUnusedIds(
+      parsed.nodes.map((node) => node.id),
+      count,
+    )) {
+      console.log(id);
+    }
+    process.exit(0);
   }
   const canary = runCanary();
   if (canary.length > 0) {

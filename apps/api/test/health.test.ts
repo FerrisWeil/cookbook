@@ -75,7 +75,7 @@ describe("http health", () => {
 
   it(
     "serves /health without touching the database",
-    verifies("140", "db5d5e336e9799ef", async () => {
+    verifies("67n7", "3d574b8764d4e8a0", async () => {
       const response = await fetch(`${baseUrl}/health`);
       assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), { status: "ok" });

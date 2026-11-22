@@ -145,7 +145,7 @@ describe("read-only recipe proxy", () => {
 describe("cooking session proxy", () => {
   it(
     "forwards a same-origin session call and refuses a cross-origin write",
-    verifies("209", "d8381f0354b89484", () => {
+    verifies("jawx", "3fa850184ef267a7", () => {
       const headers = {
         origin: "http://127.0.0.1:8080",
         host: "127.0.0.1:8080",
@@ -186,7 +186,7 @@ describe("cooking session proxy", () => {
 describe("facts mutation proxy", () => {
   it(
     "lets the browser update facts from the same origin and refuses a full recipe save",
-    verifies("187", "636ac7e770b30442", () => {
+    verifies("ge3b", "95cfc6a8673df478", () => {
       const ok = recipeProxyDecision("PATCH", "/api/recipes/alpha/facts", {
         origin: "http://127.0.0.1:8080",
         host: "127.0.0.1:8080",
@@ -222,7 +222,7 @@ describe("facts mutation proxy", () => {
 
   it(
     "refuses a facts update from a different origin",
-    verifies("188", "9ba9d7157047d0fe", () => {
+    verifies("f2ja", "93f0e68186917f85", () => {
       const cross = recipeProxyDecision("PATCH", "/api/recipes/alpha/facts", {
         origin: "https://evil.example",
         host: "127.0.0.1:8080",
@@ -256,7 +256,7 @@ describe("facts mutation proxy", () => {
 
   it(
     "refuses a facts update that is not PATCH or not JSON",
-    verifies("189", "f116930ae5df1bae", () => {
+    verifies("8h9d", "560df936c5acfae4", () => {
       const post = recipeProxyDecision("POST", "/api/recipes/alpha/facts", {
         origin: "http://127.0.0.1:8080",
         host: "127.0.0.1:8080",

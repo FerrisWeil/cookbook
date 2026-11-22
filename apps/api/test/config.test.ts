@@ -209,7 +209,7 @@ describe("api config", () => {
 describe("local supply-chain files", () => {
   it(
     "the request role cannot change the schema",
-    verifies("75", "ff426d469064cb1c", () => {
+    verifies("nrsm", "b2a4383d3ad0eeb8", () => {
       const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
       assert.match(script, /cookbook_app/);
       assert.match(script, /NOSUPERUSER/);
@@ -219,7 +219,7 @@ describe("local supply-chain files", () => {
 
   it(
     "the migrator is a different role",
-    verifies("76", "c78249a06dc160cb", () => {
+    verifies("a2sg", "38b30fe51c7fac57", () => {
       const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
       assert.match(script, /cookbook_migrator/);
       assert.match(script, /cookbook_app/);
@@ -232,7 +232,7 @@ describe("local supply-chain files", () => {
 
   it(
     "the image superuser is used only to initialize the database",
-    verifies("77", "791e5cd76c5ba8df", () => {
+    verifies("x7xt", "68c0ac6a8700966c", () => {
       const script = readFileSync(join(repoRoot, "db/init/01-roles.sh"), "utf8");
       assert.match(script, /NOSUPERUSER/);
       assert.doesNotMatch(script, /PASSWORD 'cookbook'/);
@@ -242,7 +242,7 @@ describe("local supply-chain files", () => {
 
   it(
     "does not publish Postgres or fall back to the old password",
-    verifies("74", "38d3682bcad65d8e", () => {
+    verifies("ajn7", "b0f3fecefa62fe35", () => {
       const compose = readFileSync(join(repoRoot, "docker-compose.yml"), "utf8");
       assert.doesNotMatch(compose, /5432:5432/);
       assert.doesNotMatch(compose, /:-cookbook/);
@@ -254,7 +254,7 @@ describe("local supply-chain files", () => {
 
   it(
     ".env.example holds placeholders and no real secret",
-    verifies("72", "4b113974714836df", () => {
+    verifies("t97u", "859ce63b64506dd2", () => {
       const example = readFileSync(join(repoRoot, ".env.example"), "utf8");
       assert.match(example, /replace-with-a-long-random-token/);
       assert.match(example, /replace-me/);
@@ -263,7 +263,7 @@ describe("local supply-chain files", () => {
 
   it(
     "the local MCP token is a documented placeholder",
-    verifies("79", "7004af68e72576c8", () => {
+    verifies("ucu7", "a4589e39a0392420", () => {
       const example = readFileSync(join(repoRoot, ".env.example"), "utf8");
       assert.match(example, /local-dev-token-not-for-nas|MCP_ALLOW_DEV_TOKEN/);
     }),

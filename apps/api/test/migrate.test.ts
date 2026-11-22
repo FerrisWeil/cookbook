@@ -84,7 +84,7 @@ function memoryClient(): SqlClient & { statements: string[] } {
 describe("applyMigrations", () => {
   it(
     "applies each file on one connection and skips ones already recorded",
-    verifies("144", "d24b989f24a3acdf", async () => {
+    verifies("edj7", "42487d26fa5947ec", async () => {
     const db = memoryDb();
     const files = {
       async list() {
@@ -152,7 +152,7 @@ describe("applyMigrations", () => {
 describe("applySeed", () => {
   it(
     "runs the seed file",
-    verifies("145", "98e5e8ef58230839", async () => {
+    verifies("j9xs", "b9f8d123ef08fe9a", async () => {
     const client = memoryClient();
     await applySeed(client, "/db/seed.sql", {
       async list() {

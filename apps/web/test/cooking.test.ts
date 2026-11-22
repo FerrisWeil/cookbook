@@ -134,7 +134,7 @@ async function settle(): Promise<void> {
 describe("cooking session on the device", () => {
   it(
     "replays a step change stored while disconnected",
-    verifies("205", "6286367590d2b97d", async () => {
+    verifies("v849", "57e0e732ff1e347d", async () => {
       const first = harness({ session: session(), online: false });
       await first.client.open();
       await first.client.show(1);
@@ -174,7 +174,7 @@ describe("cooking session on the device", () => {
 
   it(
     "rejects start and finish while disconnected",
-    verifies("206", "1f6e432581dbcd19", async () => {
+    verifies("k8jt", "22f8e0b333bfda12", async () => {
       const box = harness({ session: session(), online: false });
       await box.client.open();
       await box.client.begin("other");
@@ -189,7 +189,7 @@ describe("cooking session on the device", () => {
 
   it(
     "shows a late write failure and drops the rejected step change",
-    verifies("210", "19dfce056805e7df", async () => {
+    verifies("yd7c", "7fa05758341aef97", async () => {
       const box = harness({
         session: session(),
         onSend: async () => ({
@@ -241,7 +241,7 @@ describe("cooking session on the device", () => {
 
   it(
     "applies a server session change without a local step command",
-    verifies("211", "25e52bf85b5e5a02", async () => {
+    verifies("vg2p", "c85865d1625d7654", async () => {
       let handlers: { onSession(): void } | undefined;
       const box = harness({
         session: session(),
@@ -263,7 +263,7 @@ describe("cooking session on the device", () => {
 
   it(
     "restores the confirmed session and queued steps after an offline reload",
-    verifies("212", "1175a9b17023c820", async () => {
+    verifies("3rjw", "06f58fffc775e85b", async () => {
       const cache = memorySessionCache();
       const storage = memoryStorage();
       const first = harness({ session: session(), sessions: cache, storage });
@@ -298,7 +298,7 @@ describe("cooking session on the device", () => {
 
   it(
     "retries a transient step write while the stream stays connected",
-    verifies("213", "d6eae1618eb5d9ae", async () => {
+    verifies("y77u", "d8ebc3198c7c8506", async () => {
       let time = 0;
       let calls = 0;
       let armed: { delayMs: number; run: () => void } | null = null;
@@ -340,7 +340,7 @@ describe("cooking session on the device", () => {
 
   it(
     "keeps the active session when finish is not confirmed",
-    verifies("214", "714e351c40b62940", async () => {
+    verifies("twka", "fa51c52af62e60c7", async () => {
       let finishes = 0;
       const box = harness({
         session: session(),
@@ -366,7 +366,7 @@ describe("cooking session on the device", () => {
 
   it(
     "ignores a slower refresh after a newer session or a finish",
-    verifies("215", "b32bdfb19e54eea0", async () => {
+    verifies("bzv6", "ec1eb51d2c203bd5", async () => {
       let handlers: { onSession(): void } | undefined;
       let releaseStale: (() => void) | undefined;
       const staleGate = new Promise<void>((resolve) => {

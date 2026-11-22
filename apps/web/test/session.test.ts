@@ -149,7 +149,7 @@ describe("kitchen session", () => {
 
   it(
     "shows a facts save before confirm and replays it from storage after reload",
-    verifies("194", "6a1db171a1875073", async () => {
+    verifies("bspf", "4ac57140af8b1767", async () => {
       const storage = memoryStorage();
       const gate = deferred<void>();
       const network: NetworkPort = {
@@ -203,7 +203,7 @@ describe("kitchen session", () => {
 
   it(
     "does not loop a permanent reject and keeps the failed fields visible",
-    verifies("196", "1dd370ab8f5727c1", async () => {
+    verifies("nu7c", "aa3a84b9010f7030", async () => {
     let calls = 0;
     const harness = makeHarness({
       async send() {
@@ -228,7 +228,7 @@ describe("kitchen session", () => {
 
   it(
     "refetches on stream events and on reconnect without dropping drafts",
-    verifies("193", "ffe022007107c585", async () => {
+    verifies("6atx", "757ba32b207d97ec", async () => {
     const harness = makeHarness();
     const session = createKitchenSession(harness.ports);
     await session.start();
@@ -263,7 +263,7 @@ describe("kitchen session", () => {
 
   it(
     "reports connection health separately from save counts",
-    verifies("195", "352a6b35957bbf8e", async () => {
+    verifies("xe36", "d778bae1538b4478", async () => {
     const harness = makeHarness({
       async send() {
         return { ok: false, kind: "unavailable", message: "no route" };
@@ -467,7 +467,7 @@ describe("kitchen session", () => {
 
   it(
     "ignores a stale list response and refetches the active query from the stream",
-    verifies("236", "b453dbde2f61d8f0", async () => {
+    verifies("jrnx", "ca87f5a6b266cda1", async () => {
     const harness = makeHarness();
     const session = createKitchenSession(harness.ports);
     await session.start();

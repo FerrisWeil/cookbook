@@ -16,7 +16,7 @@ import {
 describe("theme", () => {
   it(
     "first paint follows the system",
-    verifies("59", "600fa410a0cfb6d9", () => {
+    verifies("k5zv", "e2a29eaaadea9437", () => {
       assert.equal(readThemeChoice(null), "system");
       assert.equal(
         readThemeChoice({ getItem: () => null }),

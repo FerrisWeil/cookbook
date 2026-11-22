@@ -116,7 +116,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "returns that recipe for a known id",
-    verifies("6", "c4b8cb4c3b9ed214", async () => {
+    verifies("9mar", "32c8001111e0aec3", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({
           name: "read",
@@ -133,7 +133,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent an ID is required",
-    verifies("7", "f4272c3548da20bf", async () => {
+    verifies("t9wx", "c91774fc8d8cf31f", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({ name: "read", arguments: {} });
         assert.equal(result.isError, true);
@@ -144,7 +144,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent a missing recipe was not found",
-    verifies("8", "5838f24e627e217f", async () => {
+    verifies("f5ea", "40e5d3fa56dc54d1", async () => {
       await withClient(async (client) => {
         const missing = await client.callTool({
           name: "read",
@@ -158,7 +158,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent a hidden recipe was not found",
-    verifies("9", "ee67cfa455745b62", async () => {
+    verifies("tgph", "0f15df104c711f1d", async () => {
       await withClient(async (client) => {
         const hidden = await client.callTool({
           name: "read",
@@ -172,7 +172,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "returns only the requested fields",
-    verifies("10", "fb2475e336a9527b", async () => {
+    verifies("ejq3", "233bf6cca7338f8f", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({
           name: "read",
@@ -189,7 +189,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent which field is invalid",
-    verifies("11", "2d4debdfae81448c", async () => {
+    verifies("b738", "70ce5fbcdadae422", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({
           name: "read",
@@ -203,7 +203,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "returns title, steps, servings, and nutrition when present",
-    verifies("12", "e173b2b0baceb2fc", async () => {
+    verifies("ddqh", "f44be30f7e9891dc", async () => {
       await withClient(async (client) => {
         const withNutrition = await client.callTool({
           name: "read",
@@ -238,7 +238,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "omits a deleted recipe from the list",
-    verifies("14", "7076e5f4bd72a2cd", async () => {
+    verifies("symt", "fb1e099707c52064", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({ name: "list", arguments: {} });
         assert.equal(result.isError, undefined);
@@ -255,7 +255,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves a nutrition row",
-    verifies("15", "41e1339cbfa4f303", async () => {
+    verifies("quj5", "224c3e11f8d1d3ae", async () => {
       await withClient(async (client) => {
         const saved = await client.callTool({
           name: "save",
@@ -288,7 +288,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves an actor",
-    verifies("16", "0db27c8c931ca88d", async () => {
+    verifies("sb5n", "dd9457446e3b6644", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -311,7 +311,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent an actor is required",
-    verifies("17", "5dd6eb71fdeb08da", async () => {
+    verifies("eb8d", "7020e36d2426b479", async () => {
       await withClient(async (client) => {
         const noActor = await client.callTool({
           name: "save",
@@ -329,7 +329,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves a non-empty title",
-    verifies("18", "b7ce4640ae4f5ef3", async () => {
+    verifies("z6h8", "c4e850fda8370440", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -352,7 +352,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent a title is required",
-    verifies("19", "1311de5739bd6ba1", async () => {
+    verifies("zfqe", "189fe7bb37d9e442", async () => {
       await withClient(async (client) => {
         const noTitle = await client.callTool({
           name: "save",
@@ -366,7 +366,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves steps in order",
-    verifies("20", "c3fe40bf94887c63", async () => {
+    verifies("czhp", "10b2380b535bab90", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -389,7 +389,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent steps are required",
-    verifies("21", "93c6bdc492e58cbf", async () => {
+    verifies("tc73", "c024d6b24d5363e5", async () => {
       await withClient(async (client) => {
         const noSteps = await client.callTool({
           name: "save",
@@ -403,7 +403,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves servings",
-    verifies("22", "39fc39a9f2647f7a", async () => {
+    verifies("zw9y", "3ef3237691e94c0e", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -426,7 +426,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent servings are required",
-    verifies("23", "fe2b6bc4158042fa", async () => {
+    verifies("j76x", "93f5c39d59b09771", async () => {
       await withClient(async (client) => {
         const noServings = await client.callTool({
           name: "save",
@@ -444,7 +444,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves a favorite",
-    verifies("24", "66c03d1d117246f7", async () => {
+    verifies("k6np", "f4fc4581e8b20f9b", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -468,7 +468,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "saves a rating",
-    verifies("25", "b5e3de80f5ee4ac9", async () => {
+    verifies("vd2v", "1ec9ea2e99862633", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -492,7 +492,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent journal is not available",
-    verifies("28", "901c6415b1cbb6c2", async () => {
+    verifies("rt8m", "128e257e0c8b83fe", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({ name: "journal", arguments: {} });
         assert.equal(result.isError, true);
@@ -503,7 +503,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent tag is not available",
-    verifies("29", "c782cf229481b17a", async () => {
+    verifies("m39p", "422d683394890ea9", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({ name: "tag", arguments: {} });
         assert.equal(result.isError, true);
@@ -514,7 +514,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "tells the agent search is not available",
-    verifies("30", "ccf205dd6927409c", async () => {
+    verifies("5jby", "d6a17d2c8816a0f9", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({ name: "search", arguments: {} });
         assert.equal(result.isError, true);
@@ -525,7 +525,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "returns facts when they are in the field list",
-    verifies("174", "dd5d402773900745", async () => {
+    verifies("5k3y", "31f2fc9b132de0a7", async () => {
       await withClient(async (client) => {
         await client.callTool({
           name: "save",
@@ -571,7 +571,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "records facts on save",
-    verifies("175", "0405e448d6fdca0d", async () => {
+    verifies("qm78", "866b7e94cb9c804c", async () => {
       await withClient(async (client) => {
         const saved = await client.callTool({
           name: "save",
@@ -610,7 +610,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "includes facts on the recipe list",
-    verifies("176", "0fd018a3b8c0d157", async () => {
+    verifies("qa7w", "298f367481cf26da", async () => {
       await withClient(async (client) => {
         const result = await client.callTool({ name: "list", arguments: {} });
         assert.equal(result.isError, undefined);
@@ -631,7 +631,7 @@ describe("mcp recipe tools", () => {
 
   it(
     "lists without a query using the existing recipe array and keeps search unavailable",
-    verifies("228", "7f1d7c2acfd22d21", async () => {
+    verifies("avr2", "523f72725d720d77", async () => {
       await withClient(async (client) => {
         const listed = await client.callTool({ name: "list", arguments: {} });
         assert.equal(listed.isError, undefined);

@@ -27,7 +27,7 @@ function base(overrides: SaveRecipeInput = {}): SaveRecipeInput {
 describe("recipe facts", () => {
   it(
     "stores a primary protein as arbitrary text or unset",
-    verifies("165", "6a24393e2b7f6916", async () => {
+    verifies("pv59", "1300131aeb1b6b9a", async () => {
       const store = createMemoryRecipeStore();
       const unset = await store.save(base());
       assert.equal(unset.facts.primaryProtein, null);
@@ -72,7 +72,7 @@ describe("recipe facts", () => {
 
   it(
     "stores total elapsed time as whole minutes including prep and waiting, or unset",
-    verifies("166", "5ca8730f39ef61db", async () => {
+    verifies("jrt3", "05c06195509c08ac", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -102,7 +102,7 @@ describe("recipe facts", () => {
 
   it(
     "stores effort as low, medium, or high, or unset",
-    verifies("167", "baef8ae9fe2e5d7c", async () => {
+    verifies("mzjy", "b31701683dc035fb", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -127,7 +127,7 @@ describe("recipe facts", () => {
 
   it(
     "stores meal types as a subset of breakfast, lunch, dinner, snack, and dessert",
-    verifies("168", "8486562569d7cf0f", async () => {
+    verifies("56sb", "9258179e11313142", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -145,7 +145,7 @@ describe("recipe facts", () => {
 
   it(
     "keeps stored facts when a save omits them",
-    verifies("169", "3305becfd4a352bd", async () => {
+    verifies("7sqh", "656b5ec1e3f1f6fb", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -172,7 +172,7 @@ describe("recipe facts", () => {
 
   it(
     "clears facts when a save or facts update unsets them",
-    verifies("170", "cd5af3ea736a979c", async () => {
+    verifies("jsq5", "021237a5c58af8b0", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -208,7 +208,7 @@ describe("recipe facts", () => {
 
   it(
     "refuses invalid facts and leaves the stored recipe unchanged",
-    verifies("171", "c932a496bb0f6796", async () => {
+    verifies("2ubd", "485450f084bf0d83", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -292,7 +292,7 @@ describe("recipe facts", () => {
 
   it(
     "leaves title, ingredients, steps, servings, nutrition, favorite, rating, and actor unchanged on a facts-only update",
-    verifies("172", "29785d2e0ff21215", async () => {
+    verifies("j733", "cb756752bcd5fc29", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -342,7 +342,7 @@ describe("recipe facts", () => {
 
   it(
     "applies only submitted facts fields and leaves omitted fields unchanged",
-    verifies("190", "ed9a4d548924818c", async () => {
+    verifies("keg6", "e68dbb3bcdbe1d6f", async () => {
     const store = createMemoryRecipeStore();
     const created = await store.save(
       base({
@@ -375,7 +375,7 @@ describe("recipe facts", () => {
 
   it(
     "acknowledges the same mutation id without a second effect",
-    verifies("191", "6eb309098e9bcdac", async () => {
+    verifies("mycp", "1797f3c882dd5b82", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({
@@ -414,7 +414,7 @@ describe("recipe facts", () => {
 
   it(
     "refuses a reused mutation id with a different payload",
-    verifies("192", "1e302e6f8d2e63be", async () => {
+    verifies("n2zw", "3a44f4f2cc55b3e3", async () => {
       const store = createMemoryRecipeStore();
       const created = await store.save(
         base({

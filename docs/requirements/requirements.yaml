@@ -1,817 +1,817 @@
 # Canonical application requirements. Shape: schema.json. Rules: CONTRIBUTING.md.
-# IDs are stable numeric strings. Do not renumber on move or reorder.
+# Current HEAD state source of truth; freely reorganize, rewrite, or delete requirements. IDs are 4-character alphanumeric strings.
 requirements:
-  - id: "5"
+  - id: "5j7q"
     kind: shared
     status: verified
     text: "The MCP refuses recipe calls without the shared secret and answers liveness without a secret or recipe data."
     children:
-      - id: "1"
+      - id: "6kbq"
         status: verified
         text: "Without the shared secret, the agent is told the call is not allowed."
-      - id: "2"
+      - id: "wn8s"
         status: verified
         text: "Given a liveness check, the agent is not asked for the shared secret."
-      - id: "3"
+      - id: "vhfs"
         status: verified
         text: "Given a liveness check, the agent is told whether the server is up."
-      - id: "4"
+      - id: "r8f2"
         status: verified
         text: "Given a liveness check, the agent is not given recipe data."
-  - id: "32"
+  - id: "6df2"
     status: accepted
     text: "Agents can read, list, and save recipes through MCP with the shared secret, and those are the only recipe tools."
     children:
-      - id: "13"
+      - id: "c3vf"
         status: accepted
         text: "Agents can retrieve the details of one recipe."
         children:
-          - id: "6"
+          - id: "9mar"
             status: verified
             text: "Given a recipe ID, the agent receives that recipe."
-          - id: "7"
+          - id: "t9wx"
             status: verified
             text: "Without a recipe ID, the agent is told an ID is required."
-          - id: "8"
+          - id: "f5ea"
             status: verified
             text: "Given an ID that matches no recipe, the agent is told the recipe was not found."
-          - id: "9"
+          - id: "tgph"
             status: verified
             text: "Given the ID of a deleted recipe, the agent is told the recipe was not found."
-          - id: "10"
+          - id: "ejq3"
             status: verified
             text: "Given any combination of fields, the agent receives only those fields."
-          - id: "11"
+          - id: "b738"
             status: verified
             text: "Given an unknown field, the agent is told which field is invalid."
-          - id: "12"
+          - id: "ddqh"
             status: verified
             text: "Without fields, the agent receives the title, steps in saved order, servings, and nutrition when present."
-          - id: "174"
+          - id: "5k3y"
             status: accepted
             text: "Given facts in the field list, the agent receives those facts."
-      - id: "14"
+      - id: "symt"
         status: verified
         text: "Given a deleted recipe, the list does not include it."
-      - id: "176"
+      - id: "qa7w"
         status: accepted
         text: "The recipe list includes each recipe's facts."
-      - id: "26"
+      - id: "gezz"
         status: accepted
         text: "Agents can save a recipe."
         children:
-          - id: "15"
+          - id: "quj5"
             status: verified
             text: "Given a nutrition row, the saved recipe records that one row."
-          - id: "16"
+          - id: "sb5n"
             status: verified
             text: "Given an actor, the saved recipe records that actor."
-          - id: "17"
+          - id: "eb8d"
             status: verified
             text: "Without an actor, the agent is told an actor is required."
-          - id: "18"
+          - id: "z6h8"
             status: verified
             text: "Given a non-empty title, the saved recipe records that title."
-          - id: "19"
+          - id: "zfqe"
             status: verified
             text: "Without a non-empty title, the agent is told a title is required."
-          - id: "20"
+          - id: "czhp"
             status: verified
             text: "Given steps, the saved recipe records them in that order."
-          - id: "21"
+          - id: "tc73"
             status: verified
             text: "Without steps, the agent is told steps are required."
-          - id: "22"
+          - id: "zw9y"
             status: verified
             text: "Given servings, the saved recipe records those servings."
-          - id: "23"
+          - id: "j76x"
             status: verified
             text: "Without servings, the agent is told servings are required."
-          - id: "24"
+          - id: "k6np"
             status: verified
             text: "Given a favorite, the saved recipe records that favorite."
-          - id: "25"
+          - id: "vd2v"
             status: verified
             text: "Given a rating, the saved recipe records that rating."
-          - id: "175"
+          - id: "qm78"
             status: accepted
             text: "Given facts, the saved recipe records those facts."
-      - id: "27"
+      - id: "2quq"
         status: verified
         text: "Recipe calls require the shared secret."
         children:
-          - ref: "1"
-          - ref: "2"
-          - ref: "3"
-          - ref: "4"
-      - id: "31"
+          - ref: "6kbq"
+          - ref: "wn8s"
+          - ref: "vhfs"
+          - ref: "r8f2"
+      - id: "cys6"
         status: verified
         text: "The MCP offers read, list, save, hello, and cooking-session tools, and refuses journal, tag, and search."
         children:
-          - id: "28"
+          - id: "rt8m"
             status: verified
             text: "Given a journal request, the agent is told that operation is not available."
-          - id: "29"
+          - id: "m39p"
             status: verified
             text: "Given a tag request, the agent is told that operation is not available."
-          - id: "30"
+          - id: "5jby"
             status: verified
             text: "Given a search request, the agent is told that operation is not available."
-  - id: "67"
+  - id: "twcx"
     status: accepted
     text: "A user can open and install the app on a desktop or phone, use three accessible screens, choose a theme, on a phone write favorite and rating, check off steps on the recipe, keep the screen awake while a recipe is open, and show only favorites on the list."
     children:
-      - id: "35"
+      - id: "cqx4"
         status: implemented
         text: "A user can open the app on a desktop browser or a phone."
         children:
-          - id: "33"
+          - id: "z53a"
             status: implemented
             text: "Given a desktop browser, the user can open the app."
-          - id: "34"
+          - id: "s79b"
             status: implemented
             text: "Given a phone, the user can open the app."
-      - id: "40"
+      - id: "geat"
         status: accepted
         text: "The app is an installable responsive web app."
         children:
-          - id: "36"
+          - id: "xpk2"
             status: verified
             text: "The layout responds to the screen size."
-          - id: "37"
+          - id: "rarm"
             status: accepted
             text: "Given a secure context, the app can be installed to the home screen."
-          - id: "38"
+          - id: "kcq6"
             status: accepted
             text: "Given a document that fails to load, the browser shows its own error."
-          - id: "39"
+          - id: "nzab"
             status: verified
             text: "Given a loaded app, a failed read is told in words."
-      - id: "52"
+      - id: "qa6r"
         status: accepted
         text: "The user reaches the recipe list, one recipe, and settings."
         children:
-          - id: "41"
+          - id: "db7a"
             status: accepted
             text: "The screens are the recipe list, one recipe, and settings."
-          - id: "42"
+          - id: "2wu8"
             status: accepted
             text: "The settings screen is where a theme is chosen."
-          - id: "43"
+          - id: "5xxm"
             status: verified
             text: "The list shows each recipe's title."
-          - id: "44"
+          - id: "jne2"
             status: accepted
             text: "The list shows each recipe's favorite."
-          - id: "45"
+          - id: "sxey"
             status: verified
             text: "The recipe screen shows the title."
-          - id: "46"
+          - id: "jsjn"
             status: verified
             text: "The recipe screen shows the ingredient lines."
-          - id: "47"
+          - id: "kfe8"
             status: verified
             text: "The recipe screen shows the steps in saved order."
-          - id: "48"
+          - id: "xyab"
             status: accepted
             text: "Given a nutrition row, the recipe screen shows it."
-          - id: "49"
+          - id: "8q9w"
             status: accepted
             text: "Given a rating, the recipe screen shows it."
-          - id: "50"
+          - id: "6x6h"
             status: verified
             text: "The recipe screen shows each ingredient as one written line."
-          - id: "51"
+          - id: "pesf"
             status: implemented
             text: "The list includes a recipe whose favorite is off."
-          - id: "177"
+          - id: "ptzh"
             status: accepted
             text: "The list shows each recipe's facts."
-          - id: "178"
+          - id: "5h4n"
             status: accepted
             text: "The recipe screen shows the recipe's facts."
-          - id: "180"
+          - id: "ejy8"
             status: accepted
             text: "Missing facts show a dash and an accessible explanation."
-          - id: "181"
+          - id: "6rzs"
             status: accepted
             text: "The recipe screen offers a form to edit that recipe's facts."
-          - id: "182"
+          - id: "zz4u"
             status: accepted
             text: "Given a failed facts save, the draft stays and the stored facts are unchanged."
-          - id: "183"
+          - id: "m54s"
             status: accepted
             text: "Canceling the facts form leaves the stored facts unchanged."
-      - id: "58"
+      - id: "h5gm"
         status: accepted
         text: "The three screens meet WCAG 2.2 AA, with large primary targets, click or tap, keyboard, visible focus, press feedback, reduced motion, zoom, and no overlap on the recipe."
         children:
-          - id: "53"
+          - id: "pd7f"
             status: accepted
             text: "The three screens meet WCAG 2.2 AA."
-          - id: "54"
+          - id: "52b9"
             status: verified
             text: "A primary action target is at least 44 by 44 CSS pixels."
-          - id: "55"
+          - id: "mwbn"
             status: verified
             text: "Every action is reachable by a click or a tap."
-          - id: "161"
+          - id: "ry7t"
             status: implemented
             text: "Every action is reachable from the keyboard."
-          - id: "162"
+          - id: "3dr4"
             status: implemented
             text: "A focused control shows a visible focus indication."
-          - id: "163"
+          - id: "x7br"
             status: implemented
             text: "A pressed control shows immediate feedback."
-          - id: "164"
+          - id: "hgxg"
             status: implemented
             text: "Given a request for less motion, a press does not scale or slide."
-          - id: "56"
+          - id: "mbvk"
             status: verified
             text: "The user can zoom the page."
-          - id: "57"
+          - id: "rdv6"
             status: verified
             text: "On the recipe screen, no control overlaps the title, ingredient lines, or steps."
-      - id: "61"
+      - id: "eryp"
         status: accepted
         text: "The user can select a theme."
         children:
-          - id: "59"
+          - id: "k5zv"
             status: verified
             text: "The first paint follows the system."
-          - id: "60"
+          - id: "sxwa"
             status: accepted
             text: "Given a theme chosen on settings, the three screens use that theme."
-      - id: "66"
+      - id: "3n9y"
         status: accepted
         text: "A phone write is attributed to system."
         children:
-          - id: "62"
+          - id: "ejhq"
             status: accepted
             text: "A phone write records the actor as system."
-          - id: "63"
+          - id: "zxbv"
             status: accepted
             text: "A phone write may set the favorite and the rating."
-          - id: "64"
+          - id: "uewp"
             status: accepted
             text: "A phone write leaves the title, ingredient lines, steps, servings, and nutrition unchanged."
-          - id: "65"
+          - id: "jd86"
             status: accepted
             text: "The phone write screen offers the favorite and the rating."
-      - id: "155"
+      - id: "qpb5"
         status: accepted
         text: "On the recipe screen, steps can be checked off."
         children:
-          - id: "160"
+          - id: "arts"
             status: accepted
             text: "On the recipe screen, steps can be checked off."
-          - id: "156"
+          - id: "8cke"
             status: accepted
             text: "A checked step is stored on the device."
-          - id: "157"
+          - id: "pz6m"
             status: accepted
             text: "A checked step is not sent to the API."
-      - id: "158"
+      - id: "5d2b"
         status: accepted
         text: "While a recipe is open, the screen stays awake where the browser supports it."
-      - id: "159"
+      - id: "marb"
         status: accepted
         text: "On the recipe list, a user can show only favorites."
-  - id: "84"
+  - id: "7b57"
     status: accepted
     text: "The public tree holds no secret, the database is unpublished with separate roles, a local documented token may boot, only web and MCP call the API, and an API call does not ask for a shared secret."
     children:
-      - id: "73"
+      - id: "69zq"
         status: accepted
         text: "The public repo contains no secret, recipe, or personal note."
         children:
-          - id: "68"
+          - id: "jqh6"
             status: implemented
             text: "CI rejects a secret in the tree."
-          - id: "69"
+          - id: "agkv"
             status: accepted
             text: "A demo, fixture, or doc uses no real recipe, note, token, or tailnet name."
-          - id: "70"
+          - id: "sd45"
             status: accepted
             text: "A stand-in title starts with Example:."
-          - id: "71"
+          - id: "ua2d"
             status: accepted
             text: "Git refuses a .env file."
-          - id: "72"
+          - id: "t97u"
             status: implemented
             text: ".env.example holds placeholders and no real secret."
-      - id: "74"
+      - id: "ajn7"
         status: verified
         text: "The database is not on a published port."
-      - id: "78"
+      - id: "8ca8"
         status: implemented
         text: "Database roles stay separate."
         children:
-          - id: "75"
+          - id: "nrsm"
             status: implemented
             text: "The request role cannot change the schema."
-          - id: "76"
+          - id: "a2sg"
             status: implemented
             text: "The migrator is a different role."
-          - id: "77"
+          - id: "x7xt"
             status: implemented
             text: "The image superuser is used only to initialize the database."
-      - id: "81"
+      - id: "8n28"
         status: implemented
         text: "A local stack may boot with a documented token."
         children:
-          - id: "79"
+          - id: "ucu7"
             status: implemented
             text: "That token is a documented placeholder."
-          - id: "80"
+          - id: "yg2s"
             status: verified
             text: "Given that documented token, the server starts only when the local flag is set."
-      - id: "82"
+      - id: "secc"
         status: implemented
         text: "Only the web app and the MCP server can call the API."
-      - id: "83"
+      - id: "q4rw"
         status: accepted
         text: "Given an API call, the caller is not asked for a shared secret."
-      - id: "187"
+      - id: "ge3b"
         status: accepted
         text: "The browser can update a recipe's facts from the same origin and cannot save a full recipe."
-      - id: "188"
+      - id: "f2ja"
         status: accepted
         text: "A facts update from a different origin is refused."
-      - id: "189"
+      - id: "8h9d"
         status: accepted
         text: "A facts update that is not PATCH with a JSON body is refused."
-  - id: "135"
+  - id: "7zrs"
     status: accepted
     text: "A recipe stores ingredient lines, favorite, rating, optional nutrition, optional facts, title, steps, servings, and a stable id, and delete hides it."
     children:
-      - id: "90"
+      - id: "tcq9"
         status: verified
         text: "The ingredient line is the source of truth."
         children:
-          - id: "85"
+          - id: "8dvg"
             status: verified
             text: "Amount, unit, and name may be empty."
-          - id: "86"
+          - id: "8wxr"
             status: verified
             text: "Given a written line, an unstated amount, unit, or name is stored empty."
-          - id: "87"
+          - id: "b4fe"
             status: verified
             text: "The written ingredient line is required."
-          - id: "88"
+          - id: "cww3"
             status: verified
             text: "The order of the ingredient list is the stored order."
-          - id: "89"
+          - id: "duwp"
             status: verified
             text: "A save replaces the stored ingredient lines."
-      - id: "94"
+      - id: "5afb"
         status: implemented
         text: "A recipe has a favorite flag."
         children:
-          - id: "91"
+          - id: "scfv"
             status: verified
             text: "A recipe has one favorite."
-          - id: "92"
+          - id: "yfxf"
             status: implemented
             text: "The favorite is the household's."
-          - id: "93"
+          - id: "2fp6"
             status: verified
             text: "The favorite defaults to off."
-      - id: "98"
+      - id: "n8td"
         status: verified
         text: "A recipe has one optional rating."
         children:
-          - id: "95"
+          - id: "9zcr"
             status: verified
             text: "A rating is one score for the recipe, empty or a whole number from 1 to 5."
-          - id: "96"
+          - id: "gfnm"
             status: verified
             text: "Given a new rating, the stored favorite stays."
-          - id: "97"
+          - id: "5xwe"
             status: verified
             text: "A recipe can be a favorite while the rating is empty."
-      - id: "109"
+      - id: "df6z"
         status: accepted
         text: "A recipe may have nutrition."
         children:
-          - id: "99"
+          - id: "chgk"
             status: implemented
             text: "A recipe has at most one nutrition row."
-          - id: "100"
+          - id: "xtvz"
             status: implemented
             text: "The numbers are per serving."
-          - id: "101"
+          - id: "hxvx"
             status: accepted
             text: "Given the label estimated, the numbers were calculated from the ingredients."
-          - id: "102"
+          - id: "9yha"
             status: implemented
             text: "Given the label entered, a person typed the numbers."
-          - id: "103"
+          - id: "tr86"
             status: implemented
             text: "Given the label copied, the numbers were taken from a package label or a published recipe."
-          - id: "104"
+          - id: "ra6n"
             status: verified
             text: "A nutrition row has exactly one label, and that label is estimated, entered, or copied."
-          - id: "105"
+          - id: "78dv"
             status: implemented
             text: "The divisor is the recipe's stored servings."
-          - id: "106"
+          - id: "a5bm"
             status: verified
             text: "That servings is greater than zero."
-          - id: "107"
+          - id: "z3ua"
             status: verified
             text: "Given a save that omits nutrition, the stored nutrition row stays."
-          - id: "108"
+          - id: "89xm"
             status: verified
             text: "Given a save that clears nutrition, that nutrition row is removed."
-      - id: "115"
+      - id: "da7e"
         status: verified
         text: "Delete hides a recipe."
         children:
-          - id: "110"
+          - id: "chjv"
             status: verified
             text: "A deleted recipe is hidden from read and from list."
-          - id: "111"
+          - id: "p6wz"
             status: verified
             text: "The recipe stays stored."
-          - id: "112"
+          - id: "zdgk"
             status: verified
             text: "A save does not make a deleted recipe visible again."
-          - id: "113"
+          - id: "7zay"
             status: verified
             text: "The hidden recipe records when it was hidden."
-          - id: "114"
+          - id: "pwz2"
             status: verified
             text: "The hidden recipe records who hid it."
-      - id: "118"
+      - id: "y8vh"
         status: verified
         text: "Git ships the household actors."
         children:
-          - id: "116"
+          - id: "mrjj"
             status: verified
             text: "The actors shipped in git are taylor, chef, and system."
-          - id: "117"
+          - id: "2ajm"
             status: verified
             text: "Given no actor, a save is refused."
-      - id: "121"
+      - id: "72r4"
         status: verified
         text: "A recipe has a title."
         children:
-          - id: "119"
+          - id: "v2vv"
             status: verified
             text: "The title is non-empty."
-          - id: "120"
+          - id: "b8yu"
             status: verified
             text: "Two recipes may share a title."
-      - id: "124"
+      - id: "923u"
         status: verified
         text: "A recipe stores steps."
         children:
-          - id: "122"
+          - id: "amu3"
             status: verified
             text: "Steps are stored in the order they were saved."
-          - id: "123"
+          - id: "8tpz"
             status: verified
             text: "A step is stored as plain text."
-      - id: "128"
+      - id: "qef7"
         status: accepted
         text: "A recipe has servings."
         children:
-          - id: "125"
+          - id: "r6t9"
             status: verified
             text: "A recipe stores its servings."
-          - id: "126"
+          - id: "x4mp"
             status: verified
             text: "Without a servings count greater than zero, a save is refused."
-          - id: "127"
+          - id: "qdkk"
             status: accepted
             text: "Given a scaled view, the stored recipe stays the authored one."
-      - id: "134"
+      - id: "u3r5"
         status: verified
         text: "A recipe keeps a stable id."
         children:
-          - id: "129"
+          - id: "pjr8"
             status: verified
             text: "A recipe id is opaque."
-          - id: "130"
+          - id: "qe3z"
             status: verified
             text: "Given an id from the caller, the saved recipe uses that id."
-          - id: "131"
+          - id: "jk6v"
             status: verified
             text: "Given the id of a visible recipe, a save updates that recipe."
-          - id: "132"
+          - id: "djas"
             status: verified
             text: "The actor recorded at creation does not change."
-          - id: "133"
+          - id: "mn6v"
             status: verified
             text: "Given a changed title, the recipe keeps its id."
-      - id: "179"
+      - id: "az8z"
         status: accepted
         text: "A recipe may have optional explicit facts for primary protein, total elapsed time, effort, and meal types."
         children:
-          - id: "165"
+          - id: "pv59"
             status: accepted
             text: "A primary protein is arbitrary text, or unset."
-          - id: "166"
+          - id: "jrt3"
             status: accepted
             text: "Total elapsed time is finite nonnegative whole minutes including preparation and waiting, or unset."
-          - id: "167"
+          - id: "mzjy"
             status: accepted
             text: "Effort is low, medium, or high, or unset."
-          - id: "168"
+          - id: "56sb"
             status: accepted
             text: "Meal types are a subset of breakfast, lunch, dinner, snack, and dessert, or unset."
-          - id: "169"
+          - id: "7sqh"
             status: accepted
             text: "Given a save that omits facts, the stored facts stay."
-          - id: "170"
+          - id: "jsq5"
             status: accepted
             text: "Given a save or facts update that clears facts, those facts are unset."
-          - id: "171"
+          - id: "2ubd"
             status: accepted
             text: "Invalid facts are refused and the stored recipe is unchanged."
-          - id: "172"
+          - id: "j733"
             status: accepted
             text: "A facts-only update leaves the title, ingredient lines, steps, servings, nutrition, favorite, rating, and actor unchanged."
-          - id: "173"
+          - id: "wmqa"
             status: accepted
             text: "Facts persist in Postgres."
-          - id: "190"
+          - id: "keg6"
             status: accepted
             text: "A facts-only update applies only the submitted fields and leaves omitted facts unchanged."
-          - id: "191"
+          - id: "mycp"
             status: accepted
             text: "Given a facts update whose mutation id was already applied with the same payload, stored facts are unchanged."
-          - id: "192"
+          - id: "n2zw"
             status: accepted
             text: "Given a facts update whose mutation id was already applied with a different payload, the update is refused and stored facts are unchanged."
-  - id: "147"
+  - id: "7xhx"
     status: accepted
     text: "A local compose stack runs the apps, the home page reports readiness, health needs no secret, MCP requires the bearer, and Postgres applies the schema."
     children:
-      - id: "136"
+      - id: "fvqg"
         status: implemented
         text: "Given docker compose up --build, web, the API, Postgres, and MCP are running."
-      - id: "139"
+      - id: "jkwe"
         status: accepted
         text: "The home page reports the stack."
         children:
-          - id: "137"
+          - id: "xt3k"
             status: verified
             text: "Given the home page, it loads."
-          - id: "138"
+          - id: "e5xu"
             status: accepted
             text: "Given the home page, it shows whether the API and the database are ready."
-      - id: "141"
+      - id: "sznt"
         status: verified
         text: "A health check does not ask for a secret."
         children:
-          - id: "140"
+          - id: "67n7"
             status: verified
             text: "Given a health check, the API answers without a secret."
-          - ref: "2"
-      - id: "143"
+          - ref: "wn8s"
+      - id: "8ey2"
         status: verified
         text: "The MCP server requires the bearer secret."
         children:
-          - ref: "1"
-          - id: "142"
+          - ref: "6kbq"
+          - id: "jzjp"
             status: verified
             text: "Given an authorized caller, the hello tool returns a structured greeting."
-      - id: "146"
+      - id: "u7s2"
         status: implemented
         text: "Postgres applies the foundation schema."
         children:
-          - id: "144"
+          - id: "edj7"
             status: implemented
             text: "Given the migrations, each pending one is applied."
-          - id: "145"
+          - id: "j9xs"
             status: implemented
             text: "Given the seed, app_meta receives the seed row."
-  - id: "154"
+  - id: "c8f6"
     status: accepted
     text: "A theme stays readable, and screens use shared components in that theme."
     children:
-      - id: "150"
+      - id: "qjna"
         status: verified
         text: "A theme's colors stay readable."
         children:
-          - id: "148"
+          - id: "wpnb"
             status: verified
             text: "Given a theme, its text on its background meets WCAG 2.2 AA contrast."
-          - id: "149"
+          - id: "m4cc"
             status: verified
             text: "Given a theme, a control's boundary on its background meets WCAG 2.2 AA contrast."
-      - id: "153"
+      - id: "ezyq"
         status: accepted
         text: "Screens use the shared components."
         children:
-          - id: "151"
+          - id: "wn9d"
             status: accepted
             text: "A control on a screen is a component from the shared UI package."
-          - id: "152"
+          - id: "w886"
             status: accepted
             text: "Given a selected theme, that component uses the theme's colors."
-  - id: "197"
+  - id: "ajh6"
     status: accepted
     text: "The kitchen shows committed recipe changes without a refresh, queues facts saves on the device, and reports stream health separately from pending and failed saves."
     children:
-      - id: "193"
+      - id: "6atx"
         status: accepted
         text: "A committed recipe change updates the list and the open recipe without a refresh."
-      - id: "194"
+      - id: "bspf"
         status: accepted
         text: "A facts save is visible before the server confirms it and remains queued across a reload."
-      - id: "195"
+      - id: "xe36"
         status: accepted
         text: "The status line names stream health and pending or failed saves and does not say all saved while a save is pending or failed."
-      - id: "196"
+      - id: "nu7c"
         status: accepted
         text: "Given a permanent facts save rejection, the submitted fields stay visible and the save is not retried."
-  - id: "198"
+  - id: "a9sf"
     status: accepted
     text: "The household shares one cooking session across devices, with an explicit start, resume, and finish, a fixed recipe snapshot, separate displayed and completed steps, offline replay from an open session, and a visible failure after finish."
     children:
-      - id: "199"
+      - id: "caqe"
         status: accepted
         text: "At most one cooking session is active, and repeating a start does not open another or revive a finished session."
-      - id: "200"
+      - id: "uaje"
         status: accepted
         text: "The session keeps the recipe title, ingredients, and steps from the moment it started."
-      - id: "201"
+      - id: "8pqu"
         status: accepted
         text: "Changing the displayed step does not change which steps are complete, and completing or undoing a step does not change the displayed step."
-      - id: "202"
+      - id: "n2z8"
         status: accepted
         text: "Completing a step keeps it complete when repeated, and undoing a step keeps it not complete when repeated."
-      - id: "203"
+      - id: "u3pr"
         status: accepted
         text: "Resuming returns the active session, and finishing it leaves no active session when repeated."
-      - id: "204"
+      - id: "qusb"
         status: accepted
         text: "A step change after the session has ended fails and names that the session has ended."
-      - id: "205"
+      - id: "v849"
         status: accepted
         text: "An open session can record a step change while disconnected and send that change when the connection returns."
-      - id: "206"
+      - id: "k8jt"
         status: accepted
         text: "Starting or finishing a session while disconnected fails with a visible error and is not queued."
-      - id: "207"
+      - id: "4sew"
         status: accepted
         text: "Chef can start, resume, and finish the session, can complete, undo, or show a step, and is told when the session has ended."
-      - id: "208"
+      - id: "27wy"
         status: accepted
         text: "A cooking session change is sent on the open recipe event stream."
-      - id: "209"
+      - id: "jawx"
         status: accepted
         text: "A same-origin browser can call cooking-session routes, and a cross-origin session write is refused."
-      - id: "210"
+      - id: "yd7c"
         status: accepted
         text: "After the session has ended, an open device shows that error and does not keep the rejected step change."
-      - id: "211"
+      - id: "vg2p"
         status: accepted
         text: "An open device applies a cooking session change from the server without a refresh."
-      - id: "212"
+      - id: "3rjw"
         status: accepted
         text: "An already-open cooking session and its queued step changes remain usable after the device reloads while disconnected."
-      - id: "213"
+      - id: "y77u"
         status: accepted
         text: "A step change that fails briefly is sent again while the device stays connected."
-      - id: "214"
+      - id: "twka"
         status: accepted
         text: "A finish that does not confirm the session has ended keeps the active session and is not queued."
-      - id: "215"
+      - id: "bzv6"
         status: accepted
         text: "A slower session refresh does not replace a newer session or restore a session that has finished."
-  - id: "216"
+  - id: "tgvr"
     status: implemented
     text: "A user or agent can narrow the visible library by title, ingredients, and facts filters over the whole saved library using one validated query."
     children:
-      - id: "217"
+      - id: "9jkx"
         status: implemented
         text: "Title, ingredient, and facts matching agree in memory and Postgres over the saved library."
         children:
-          - id: "218"
+          - id: "7x9n"
             status: implemented
             text: "Title search matches a case-insensitive contiguous phrase in the title and does not search ingredients."
-          - id: "219"
+          - id: "gzhs"
             status: implemented
             text: "An ingredient phrase matches inside one ingredient name and does not match by splitting across two ingredients."
-          - id: "237"
+          - id: "7q6z"
             status: implemented
             text: "A selected primary-protein phrase matches whole whitespace or slash-separated terms and does not match a substring inside a longer term."
-          - id: "220"
+          - id: "ebtu"
             status: implemented
             text: "Every ingredient entry is required, and extra ingredients may remain."
-          - id: "221"
+          - id: "wmxp"
             status: implemented
             text: "Selected values in one facts category match by OR, and title, ingredients, and active categories combine by AND, including nested mixed groups."
-          - id: "222"
+          - id: "j894"
             status: implemented
             text: "A max total-minutes filter includes that many minutes and excludes unknown totals, and an active filter does not match a missing value while an inactive filter does not hide missing data."
-          - id: "223"
+          - id: "huh8"
             status: implemented
             text: "Empty criteria return the full visible library in the current list order."
-          - id: "224"
+          - id: "2znd"
             status: implemented
             text: "Matching applies the same whitespace and case normalization to the query and to stored text."
-          - id: "225"
+          - id: "m6p7"
             status: implemented
             text: "A title or ingredient phrase treats percent, underscore, and backslash as literal characters."
-      - id: "226"
+      - id: "cywg"
         status: implemented
         text: "The list accepts one bounded typed query tree and keeps the existing unfiltered list contract."
         children:
-          - id: "227"
+          - id: "cfjk"
             status: implemented
             text: "The list query is a bounded typed AND/OR tree of known fields and refuses malformed, unknown, empty, or over-limit queries."
-          - id: "228"
+          - id: "avr2"
             status: implemented
             text: "List without a query keeps the existing recipe array, and a separate search tool stays unavailable."
-          - id: "229"
+          - id: "ex9g"
             status: implemented
             text: "Matching runs on the server against the whole saved library and does not filter only loaded cards or fetch each card to match."
-          - id: "230"
+          - id: "guaf"
             status: implemented
             text: "Protein filter choices are the full library's values plus the recommended names."
-      - id: "231"
+      - id: "5qru"
         status: implemented
         text: "The kitchen list offers title search and filters without changing the current cards, and it restores query, scroll, and live updates."
         children:
-          - id: "232"
+          - id: "v7qg"
             status: implemented
             text: "The list has a labeled title search and a compact Filters control, keeps the current cards and order, and lets the user remove a filter or clear title and filters."
-          - id: "233"
+          - id: "skfy"
             status: implemented
             text: "Query and scroll restore after opening a recipe and using Back, and Back and Forward restore the criteria."
-          - id: "234"
+          - id: "79hq"
             status: implemented
             text: "Empty library, no matches, pending, and failure are distinct; retry keeps the criteria; no matches offers removal or clear."
-          - id: "235"
+          - id: "v34u"
             status: implemented
             text: "The filters sheet closes from keyboard, touch, or Escape and returns focus, and a settled result count is announced once."
-          - id: "236"
+          - id: "jrnx"
             status: implemented
             text: "A stale list response is ignored; live updates refetch the active criteria without dropping focus, drafts, or scroll; prior results show as updating."
-  - id: "238"
+  - id: "n7f5"
     status: accepted
     text: "Recipes support optional dish artwork, short card titles, and raw-ingredient visuals across the list, detail, and prep views."
     children:
-      - id: "239"
+      - id: "rhrp"
         status: accepted
         text: "A recipe stores an optional short card title capped at 26 characters and falls back to the full title when unset."
-      - id: "240"
+      - id: "kbkv"
         status: accepted
         text: "A recipe stores an optional dish image rendered on a 16:10 list card and as a recipe detail hero."
-      - id: "241"
+      - id: "y5tc"
         status: accepted
         text: "A list card renders the title at the lower left over the artwork, total time paired with effort at the top left, and primary protein at the top right, omitting meal-type labels and card footers."
-      - id: "242"
+      - id: "rbpe"
         status: accepted
         text: "Ingredients support raw pantry ingredient images shown alongside ingredient lines on the recipe detail screen and on prep cards."
-  - id: "243"
+  - id: "x4kn"
     status: accepted
     text: "The library provides inline discovery controls and persists user preferences for appearance, cooking flow, and timer chimes."
     children:
-      - id: "244"
+      - id: "hfhk"
         status: accepted
         text: "The list pairs title search and quick category tabs for all dishes, quick meals, and desserts with a desktop filters drawer beside the card grid."
-      - id: "245"
+      - id: "6keq"
         status: accepted
         text: "Appearance defaults to the dark palette when unset while supporting light, dark, and system choices in settings."
-      - id: "246"
+      - id: "67ay"
         status: accepted
         text: "Settings stores preferences for auto-collapsing completed steps, auto-advancing on completion, ready-at timestamps, auto-opening finished timers, and audio chime checkpoints."
-  - id: "247"
+  - id: "tqvr"
     status: accepted
     text: "Cooking mode opens on an expandable prep step, focuses the active step in a single column, and keeps an active-cooking banner across routes."
     children:
-      - id: "248"
+      - id: "jc7z"
         status: accepted
         text: "Cooking mode starts at an expandable step 0 prep stage rendering ingredients as a selectable card grid in a single centered step column."
-      - id: "249"
+      - id: "mggn"
         status: accepted
         text: "Selecting an ingredient card in step 0 prep highlights the card with crisp unstruck text and stays on step 0 until the user starts cooking steps."
-      - id: "250"
+      - id: "znyd"
         status: accepted
         text: "Cooking step 1 can start while ingredients remain ungathered, collapsing step 0 prep into a compact summary bar that re-expands on demand."
-      - id: "251"
+      - id: "czmx"
         status: accepted
         text: "Each step card displays only its step-specific ingredients with strikethrough on checkoff, hides recipe facts metadata, and settles to the nearest step on scroll."
-      - id: "252"
+      - id: "abzs"
         status: accepted
         text: "Outside active cooking mode, a compact global top banner shows active recipe progress, running timer count, and a return control."
-  - id: "253"
+  - id: "2jkg"
     status: accepted
     text: "Users can run synchronized recipe and ad-hoc timers from a persistent right-side drawer with 7-segment clocks, overtime count-up, and checkpoint chimes."
     children:
-      - id: "254"
+      - id: "sqjc"
         status: accepted
         text: "Timers start from step durations or ad-hoc quick presets in a persistent right-side drawer shared across routes and survive step navigation or completion."
-      - id: "255"
+      - id: "he96"
         status: accepted
         text: "Running timers align expiration boundaries to whole seconds and show remaining countdown, elapsed overtime past zero, and optional ready-at clock times on a 7-segment display."
-      - id: "256"
+      - id: "2kam"
         status: accepted
         text: "Each timer reveals adjust, pause, restart, fullscreen, and dismiss actions on interaction, accepts positive and negative nudges, and fires configured chime checkpoints."

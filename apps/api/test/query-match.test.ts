@@ -151,7 +151,7 @@ describe("library query matching", () => {
 
   it(
     "matches a title phrase in the title and not in ingredients",
-    verifies("218", "73f27bce6d821103", async () => {
+    verifies("7x9n", "572f0dbd5b9b3d9e", async () => {
     await onBoth(async (store, label) => {
       const ids = await listedIds(store, TITLE_QUERY);
       assert.deepEqual(ids, ["title-hit"], label);
@@ -162,7 +162,7 @@ describe("library query matching", () => {
 
   it(
     "keeps an ingredient phrase inside one ingredient name",
-    verifies("219", "9eb55c873c616b1e", async () => {
+    verifies("gzhs", "06f41d18247484a5", async () => {
     await onBoth(async (store, label) => {
       const ids = await listedIds(store, INGREDIENT_PHRASE_QUERY);
       assert.deepEqual(ids, ["ingredient-hit"], label);
@@ -174,7 +174,7 @@ describe("library query matching", () => {
 
   it(
     "requires every ingredient entry and allows extra ingredients",
-    verifies("220", "5b431cc8f1563945", async () => {
+    verifies("ebtu", "faf83e475f5537be", async () => {
     await onBoth(async (store, label) => {
       const ids = await listedIds(store, MULTI_INGREDIENT_QUERY);
       assert.deepEqual(ids, ["both-ings"], label);
@@ -184,7 +184,7 @@ describe("library query matching", () => {
 
   it(
     "ORs within a category and ANDs nested mixed groups",
-    verifies("221", "037ae391081d9d1a", async () => {
+    verifies("wmxp", "28740fec03d013e4", async () => {
     await onBoth(async (store, label) => {
       const ids = await listedIds(store, CATEGORY_NESTED_QUERY);
       assert.deepEqual(ids, ["lunch-bowl"], label);
@@ -196,7 +196,7 @@ describe("library query matching", () => {
 
   it(
     "includes 30 minutes and excludes unknown totals when the time filter is active",
-    verifies("222", "8acf370eb4264293", async () => {
+    verifies("j894", "c2ebc2e13c787826", async () => {
     await onBoth(async (store, label) => {
       const ids = await listedIds(store, TIME_QUERY);
       assert.deepEqual(ids, ["fast-30"], label);
@@ -211,7 +211,7 @@ describe("library query matching", () => {
 
   it(
     "returns the full visible library in saved order when the query is empty",
-    verifies("223", "1a97901675348180", async () => {
+    verifies("huh8", "ae6381843be42bc6", async () => {
     await onBoth(async (store, label) => {
       assert.deepEqual(await listedIds(store, null), FULL_LIBRARY_ORDER, label);
       assert.equal((await listedIds(store, null)).includes("hidden-query"), false, label);
@@ -221,7 +221,7 @@ describe("library query matching", () => {
 
   it(
     "applies the same whitespace collapse on stored titles",
-    verifies("224", "13bf081deb973b7a", async () => {
+    verifies("2znd", "ff766045518de769", async () => {
     await onBoth(async (store, label) => {
       assert.deepEqual(await listedIds(store, SPACED_QUERY), ["spaced-title"], label);
     });
@@ -230,7 +230,7 @@ describe("library query matching", () => {
 
   it(
     "treats percent, underscore, and backslash as literals in Postgres and memory",
-    verifies("225", "cc7290e3d2eca51e", async () => {
+    verifies("m6p7", "bf9f7becfa0214ce", async () => {
     await onBoth(async (store, label) => {
       assert.deepEqual(await listedIds(store, WILDCARD_QUERY), ["wildcard-title"], label);
     });
@@ -239,7 +239,7 @@ describe("library query matching", () => {
 
   it(
     "matches a selected protein by whole terms, not a substring of another term",
-    verifies("237", "68f294c5344ec854", async () => {
+    verifies("7q6z", "b467e9b28d585859", async () => {
     await onBoth(async (store, label) => {
       const ids = await listedIds(store, PROTEIN_FISH_QUERY);
       assert.deepEqual(ids, ["protein-fish", "protein-white-fish"], label);
@@ -250,7 +250,7 @@ describe("library query matching", () => {
 
   it(
     "builds protein choices from the full library plus recommendations",
-    verifies("230", "e5e631eab715e1f6", async () => {
+    verifies("guaf", "827b740ffa44b58a", async () => {
     await onBoth(async (store, label) => {
       const filtered = await store.list(TITLE_QUERY);
       assert.deepEqual(

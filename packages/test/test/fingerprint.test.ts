@@ -7,21 +7,21 @@ describe("requirementFingerprint", () => {
   it("hashes id and text with fp-v1 encoding", () => {
     assert.equal(
       requirementFingerprint(
-        "1",
+        "k7m2",
         "Without the shared secret, the agent is told the call is not allowed.",
       ),
-      "d631eefaf753e9d7",
+      "90bf8e79d16f88da",
     );
   });
 
   it("changes when the leaf text changes and not when a sibling would", () => {
-    const base = requirementFingerprint("6", "Given a recipe ID, the agent receives that recipe.");
+    const base = requirementFingerprint("p4w9", "Given a recipe ID, the agent receives that recipe.");
     const edited = requirementFingerprint(
-      "6",
+      "p4w9",
       "Given a recipe ID, the agent receives that recipe now.",
     );
     const otherId = requirementFingerprint(
-      "7",
+      "b3x8",
       "Given a recipe ID, the agent receives that recipe.",
     );
     assert.notEqual(base, edited);

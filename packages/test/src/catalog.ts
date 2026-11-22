@@ -43,11 +43,10 @@ export function findRepoRoot(): string {
   throw new Error("cannot find docs/requirements/requirements.yaml from the repo root");
 }
 
+const REQUIREMENT_ID_RE = /^(?=.*[a-z])[a-z0-9]{4}$/;
+
 function asId(value: unknown): string | null {
-  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
-    return String(value);
-  }
-  if (typeof value === "string" && /^[1-9][0-9]*$/.test(value)) return value;
+  if (typeof value === "string" && REQUIREMENT_ID_RE.test(value)) return value;
   return null;
 }
 

@@ -70,7 +70,7 @@ describe("mcp hello over streamable HTTP", () => {
 
   it(
     "calls hello",
-    verifies("142", "cf0c8fb4dd16c601", async () => {
+    verifies("jzjp", "1579dad978600646", async () => {
     const client = await connectClient(baseUrl);
     try {
       const result = await client.callTool({ name: "hello", arguments: {} });

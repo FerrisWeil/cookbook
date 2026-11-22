@@ -63,7 +63,7 @@ describe("recipe HTTP", () => {
     assert.deepEqual(await response.json(), { error: "unauthorized" });
   });
 
-  it("accepts either caller token and omits hidden recipes", verifies("82", "45088ea5d955657a", async () => {
+  it("accepts either caller token and omits hidden recipes", verifies("secc", "be2da6ec1cbc6d3a", async () => {
     const mcp = await fetch(`${baseUrl}/recipes`, {
       headers: { authorization: `Bearer ${MCP_TOKEN}` },
     });

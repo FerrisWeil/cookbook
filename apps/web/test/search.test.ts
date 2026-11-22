@@ -63,7 +63,7 @@ describe("kitchen list search", () => {
 
   it(
     "shows a labeled title search, filters, removable chips, and clear all",
-    verifies("232", "a761124937ca6732", () => {
+    verifies("v7qg", "8b4978d81997d0ff", () => {
     const page = html(
       createElement(ListScreen, {
         state: {
@@ -92,7 +92,7 @@ describe("kitchen list search", () => {
 
   it(
     "keeps empty library, no matches, pending, and failure distinct",
-    verifies("234", "da18f2b3e5684924", () => {
+    verifies("79hq", "ca35f5e5e82e6355", () => {
     const empty = html(
       createElement(ListScreen, {
         state: { kind: "ready", recipes: [] },
@@ -155,7 +155,7 @@ describe("kitchen list search", () => {
 
   it(
     "announces a settled count and closes the filters dialog",
-    verifies("235", "9dc5493ce8ea025a", () => {
+    verifies("v34u", "f5db90a31de3bd14", () => {
     const open = html(
       createElement(ListScreen, {
         state: {

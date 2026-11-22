@@ -44,7 +44,7 @@ const light = tokens.split(":root[data-theme=\"dark\"]")[0] ?? tokens;
 describe("tokens", () => {
   it(
     "keeps theme text readable on its background",
-    verifies("148", "b5349828263d5b4a", () => {
+    verifies("wpnb", "152cc6d8cf656ef3", () => {
       const bg = firstHex("--bg", light);
       const elevated = firstHex("--bg-elevated", light);
       const text = firstHex("--text", light);
@@ -88,7 +88,7 @@ describe("tokens", () => {
 
   it(
     "keeps control boundaries readable on their background",
-    verifies("149", "8cc3676112d49172", () => {
+    verifies("m4cc", "3189f0df0405aeec", () => {
       const bg = firstHex("--bg", light);
       const elevated = firstHex("--bg-elevated", light);
       const border = firstHex("--border", light);
@@ -110,7 +110,7 @@ describe("tokens", () => {
 
   it(
     "sizes primary actions at least 44 by 44 CSS pixels",
-    verifies("54", "ac2dc4173fce5d98", () => {
+    verifies("52b9", "e96dd1bac16db40f", () => {
       assert.match(tokens, /--hit:\s*2\.75rem;/);
       assert.match(components, /min-height:\s*var\(--hit\)/);
       assert.match(components, /min-width:\s*var\(--hit\)/);
@@ -120,7 +120,7 @@ describe("tokens", () => {
 
   it(
     "shows a visible focus indication on controls",
-    verifies("162", "0e4301b59f95d35d", () => {
+    verifies("3dr4", "7c82fd228ab08ca1", () => {
       assert.match(components, /\.ui-button:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/);
       assert.match(components, /\.ui-card:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--focus\)/);
       assert.match(
@@ -132,7 +132,7 @@ describe("tokens", () => {
 
   it(
     "shows immediate press feedback on controls",
-    verifies("163", "529a5ef4bdf5ce1d", () => {
+    verifies("x7br", "c1e2692bc2105d46", () => {
       assert.match(components, /\.ui-button:active\s*\{[\s\S]*filter:/);
       assert.match(components, /\.ui-card:active\s*\{[\s\S]*filter:/);
       assert.match(
@@ -144,7 +144,7 @@ describe("tokens", () => {
 
   it(
     "drops press scale and slide when less motion is requested",
-    verifies("164", "43aa4bd6a4762990", () => {
+    verifies("hgxg", "b28147ab25e6f5b7", () => {
       const reduced = components.split("@media (prefers-reduced-motion: reduce)")[1] ?? "";
       assert.match(reduced, /\.ui-button:active,\s*\.ui-card:active\s*\{[\s\S]*transform:\s*none/);
       assert.doesNotMatch(reduced, /scale\(/);

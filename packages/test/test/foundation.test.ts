@@ -17,7 +17,7 @@ function readRepo(...parts: string[]): string {
 describe("local compose stack", () => {
   it(
     "starts web, the API, Postgres, and MCP and checks health",
-    verifies("136", "da26cbcc295301fe", () => {
+    verifies("fvqg", "9bdf46f5e84f382d", () => {
       const pkg = JSON.parse(readRepo("package.json")) as {
         scripts: Record<string, string>;
       };

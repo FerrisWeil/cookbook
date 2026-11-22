@@ -62,7 +62,7 @@ describe("recipe list query HTTP", () => {
 
   it(
     "matches the whole library for a title query without loading card details",
-    verifies("229", "e6d885dd0e0904c2", async () => {
+    verifies("ex9g", "8b8a18fa15011ca3", async () => {
     const encoded = encodeListQueryParam(TITLE_QUERY);
     assert.ok(encoded);
     const response = await list(encoded);
@@ -80,7 +80,7 @@ describe("recipe list query HTTP", () => {
 
   it(
     "refuses malformed, unknown, empty, and injected queries",
-    verifies("227", "dbc288c2a9e4fbf1", async () => {
+    verifies("cfjk", "f95729553aee00e3", async () => {
     const invalid = [
       "{",
       "{}",

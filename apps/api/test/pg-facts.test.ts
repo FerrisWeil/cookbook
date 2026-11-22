@@ -126,7 +126,7 @@ describe("postgres recipe facts", () => {
 
   it(
     "persists facts in Postgres through save, list, read, and a facts-only update",
-    verifies("173", "bd1814ff01f3fd65", async () => {
+    verifies("wmqa", "3d94e08dce7844d7", async () => {
       assert.ok(pool);
       const store = createPgRecipeStore(clientFrom(pool).checkout);
       const created = await store.save({

@@ -64,7 +64,7 @@ describe("in-app Back", () => {
 
   it(
     "restores list query href and scroll from history",
-    verifies("233", "f6a81c70d242f531", () => {
+    verifies("skfy", "9ae9cf49725bb63d", () => {
     const history = memoryHistory("/");
     const listHref = "/?title=lemon";
     rememberListPosition(history, listHref, 240);
