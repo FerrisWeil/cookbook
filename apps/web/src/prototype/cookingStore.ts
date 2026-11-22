@@ -32,6 +32,7 @@ export type PrototypeCookingExtras = {
   fullIngredients: string[];
   checkedIngredients: number[];
   checkedStepIngredients: string[];
+  prepCompleted?: boolean;
   timers: PrototypeTimer[];
   fullscreenTimerId: string | null;
 };
@@ -52,6 +53,7 @@ export type PrototypeCookingClient = CookingClient & {
   getFullscreenTimerId(): string | null;
   toggleStepCompleted(stepIndex: number): void;
   toggleIngredient(index: number): void;
+  setPrepCompleted(done: boolean): void;
   clearIngredients(): void;
   toggleStepIngredient(stepIndex: number, ingredientIndex: number): void;
   startTimer(stepIndex: number, timer: PrototypeStepTimer): void;
@@ -431,6 +433,7 @@ export function createPrototypeCookingClient(options: {
           fullIngredients,
           checkedIngredients: [],
           checkedStepIngredients: [],
+          prepCompleted: false,
           timers: carriedTimers,
           fullscreenTimerId: carriedFullscreen,
         },
@@ -572,6 +575,22 @@ export function createPrototypeCookingClient(options: {
           ...state.extras,
           checkedIngredients: [],
           checkedStepIngredients: [],
+        },
+      });
+    },
+
+    setPrepCompleted(done) {
+      if (!state) {
+        return;
+      }
+      if (state.extras.prepCompleted === done) {
+        return;
+      }
+      commitSession({
+        ...state,
+        extras: {
+          ...state.extras,
+          prepCompleted: done,
         },
       });
     },

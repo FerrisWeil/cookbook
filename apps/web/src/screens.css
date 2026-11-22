@@ -2661,3 +2661,176 @@
   padding: 0 0.85rem;
   font-size: var(--text-meta);
 }
+
+/* ==========================================================================
+   Cooking Mode Step 0 (Prep / Gather Ingredients Card Grid) & Solo Steps
+   ========================================================================== */
+
+.cooking-steps-panel--solo {
+  width: 100%;
+  max-width: 58rem;
+  margin: 0 auto;
+}
+
+.cooking-control-ingredients-btn {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.cooking-prep-card {
+  gap: 1rem;
+}
+
+.cooking-prep-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cooking-prep-hint {
+  margin: 0;
+  font-size: var(--text-meta);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.prep-ingredient-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  gap: 0.7rem;
+}
+
+.prep-ingredient-grid > li {
+  display: flex;
+}
+
+.prep-ingredient-card {
+  width: 100%;
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-ui);
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .prep-ingredient-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+.prep-ingredient-card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.prep-ingredient-card:active {
+  transform: scale(0.99);
+}
+
+.prep-ingredient-card.is-checked {
+  border: 1.5px solid var(--success);
+  background: var(--completed-bg);
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.prep-ingredient-thumb {
+  flex: 0 0 auto;
+  width: 3.15rem;
+  height: 3.15rem;
+  border-radius: 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0.2rem;
+}
+
+.prep-ingredient-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.prep-ingredient-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.prep-ingredient-card.is-checked .prep-ingredient-text {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.prep-ingredient-check {
+  flex: 0 0 auto;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.prep-ingredient-check.is-checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.cooking-step-card--partial-prep {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.cooking-step-collapsed-check.is-partial {
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 16%, transparent));
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.cooking-step-card--partial-prep .cooking-step-collapsed-label {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prep-ingredient-card,
+  .prep-ingredient-check {
+    transition: none;
+  }
+
+  .prep-ingredient-card:active {
+    transform: none;
+  }
+}

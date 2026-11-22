@@ -236,109 +236,137 @@ describe("TAY-36 cooking mode client & UI", () => {
       now: () => 1_000,
       persist: false,
     });
-    await client.begin("jammy-eggs-ricotta-toast");
-    const timerDef = client.getExtras()!.steps[0]!.timers![0]!;
-    client.startTimer(0, timerDef);
+    try {
+      await client.begin("jammy-eggs-ricotta-toast");
+      const timerDef = client.getExtras()!.steps[0]!.timers![0]!;
+      client.startTimer(0, timerDef);
 
-    const page = html(
-      createElement(RecipeScreen, {
-        state: {
-          kind: "ready",
-          recipe: {
-            title: "6-Minute Jammy Eggs with Whipped Ricotta Toast",
-            ingredients: ["4 large eggs"],
-            steps: ["Boil."],
-            facts: {
-              primaryProtein: "eggs",
-              totalMinutes: 12,
-              effort: "low",
-              mealTypes: ["breakfast"],
+      const page = html(
+        createElement(RecipeScreen, {
+          state: {
+            kind: "ready",
+            recipe: {
+              title: "6-Minute Jammy Eggs with Whipped Ricotta Toast",
+              ingredients: ["4 large eggs"],
+              steps: ["Boil."],
+              facts: {
+                primaryProtein: "eggs",
+                totalMinutes: 12,
+                effort: "low",
+                mealTypes: ["breakfast"],
+              },
             },
           },
-        },
-        editing: false,
-        draft: null,
-        formStatus: { kind: "idle" },
-        onBack() {},
-        onRetry() {},
-        onEditFacts() {},
-        onDraftChange() {},
-        onSaveFacts() {},
-        onCancelFacts() {},
-        cooking: {
-          mode: "here",
-          session: client.view()!,
-          error: null,
-          onShow() {},
-          onComplete() {},
-          onUndo() {},
-          onFinish() {},
-          prototype: {
-            client,
-            extras: client.getExtras()!,
+          editing: false,
+          draft: null,
+          formStatus: { kind: "idle" },
+          onBack() {},
+          onRetry() {},
+          onEditFacts() {},
+          onDraftChange() {},
+          onSaveFacts() {},
+          onCancelFacts() {},
+          cooking: {
+            mode: "here",
+            session: client.view()!,
+            error: null,
+            onShow() {},
+            onComplete() {},
+            onUndo() {},
+            onFinish() {},
+            prototype: {
+              client,
+              extras: client.getExtras()!,
+            },
           },
-        },
-      }),
-    );
+        }),
+      );
 
-    assert.doesNotMatch(page, /ui-facts/);
-    assert.doesNotMatch(page, /Edit recipe facts/);
-    assert.match(page, /Active step/);
-    assert.match(page, /Upcoming/);
-    assert.match(page, /role="checkbox"/);
-    assert.match(page, /For this step/);
-    assert.match(page, /Timers \(1\)/);
-    assert.match(page, /End cooking session/);
+      assert.doesNotMatch(page, /ui-facts/);
+      assert.doesNotMatch(page, /Edit recipe facts/);
+      assert.match(page, /Step 0 · Prep/);
+      assert.match(page, /prep-ingredient-grid/);
+      assert.match(page, /prep-ingredient-card/);
+      assert.match(page, /Active step/);
+      assert.match(page, /Upcoming/);
+      assert.match(page, /role="checkbox"/);
+      assert.match(page, /For this step/);
+      assert.match(page, /Timers \(1\)/);
+      assert.match(page, /End cooking session/);
 
-    const pureCooking = html(
-      createElement(CookingModeView, {
-        client,
-        extras: client.getExtras()!,
-        displayedStep: 0,
-        completedSteps: [],
-        error: null,
-        onBack() {},
-        onShow() {},
-        onFinish() {},
-      }),
-    );
-    assert.match(pureCooking, /Jammy eggs/);
-    assert.match(pureCooking, /cooking-sticky-dock/);
-    assert.match(pureCooking, /cooking-control-bar/);
+      const pureCooking = html(
+        createElement(CookingModeView, {
+          client,
+          extras: client.getExtras()!,
+          displayedStep: 0,
+          completedSteps: [],
+          error: null,
+          onBack() {},
+          onShow() {},
+          onFinish() {},
+        }),
+      );
+      assert.match(pureCooking, /Jammy eggs/);
+      assert.match(pureCooking, /cooking-steps-panel--solo/);
+      assert.doesNotMatch(pureCooking, /cooking-ingredients-panel/);
+      assert.match(pureCooking, /cooking-sticky-dock/);
+      assert.match(pureCooking, /cooking-control-bar/);
+      assert.match(pureCooking, /Ingredients \(0\//);
+      assert.match(pureCooking, /Start Step 1/);
 
-    const collapsedView = html(
-      createElement(CookingModeView, {
-        client,
-        extras: client.getExtras()!,
-        displayedStep: 1,
-        completedSteps: [0],
-        error: null,
-        onBack() {},
-        onShow() {},
-        onFinish() {},
-      }),
-    );
-    assert.match(collapsedView, /cooking-step-card--collapsed/);
-    assert.match(collapsedView, /Expand step 1/);
-    assert.match(collapsedView, /Undo step 1 completion/);
-    assert.match(collapsedView, /Step 1/);
-    assert.match(collapsedView, /Step 2 of /);
+      client.toggleIngredient(0);
+      client.setPrepCompleted(true);
+      const partialCollapsed = html(
+        createElement(CookingModeView, {
+          client,
+          extras: client.getExtras()!,
+          displayedStep: 0,
+          completedSteps: [],
+          error: null,
+          onBack() {},
+          onShow() {},
+          onFinish() {},
+        }),
+      );
+      assert.match(partialCollapsed, /cooking-step-card--partial-prep/);
+      assert.match(partialCollapsed, /1 of \d+ ingredients gathered/);
+      assert.match(partialCollapsed, /Expand ingredients/);
 
-    const focusedCompletedView = html(
-      createElement(CookingModeView, {
-        client,
-        extras: client.getExtras()!,
-        displayedStep: 0,
-        completedSteps: [0],
-        error: null,
-        onBack() {},
-        onShow() {},
-        onFinish() {},
-      }),
-    );
-    assert.doesNotMatch(focusedCompletedView, /cooking-step-card--collapsed/);
-    assert.match(focusedCompletedView, /Undo step/);
-    client.close();
+      const collapsedView = html(
+        createElement(CookingModeView, {
+          client,
+          extras: client.getExtras()!,
+          displayedStep: 1,
+          completedSteps: [0],
+          error: null,
+          onBack() {},
+          onShow() {},
+          onFinish() {},
+        }),
+      );
+      assert.match(collapsedView, /cooking-step-card--collapsed/);
+      assert.match(collapsedView, /Expand step 1/);
+      assert.match(collapsedView, /Undo step 1 completion/);
+      assert.match(collapsedView, /Step 1/);
+      assert.match(collapsedView, /Step 2 of /);
+
+      const focusedCompletedView = html(
+        createElement(CookingModeView, {
+          client,
+          extras: client.getExtras()!,
+          displayedStep: 0,
+          completedSteps: [0],
+          error: null,
+          onBack() {},
+          onShow() {},
+          onFinish() {},
+        }),
+      );
+      assert.doesNotMatch(focusedCompletedView, /Expand step 1/);
+      assert.match(focusedCompletedView, /Undo step/);
+    } finally {
+      client.close();
+    }
   });
 
   it("defaults theme to dark, chime checkpoints to 1m + 0s, Ready-at off, and renders /settings", () => {
