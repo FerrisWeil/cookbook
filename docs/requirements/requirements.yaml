@@ -754,3 +754,64 @@ requirements:
           - id: "236"
             status: implemented
             text: "A stale list response is ignored; live updates refetch the active criteria without dropping focus, drafts, or scroll; prior results show as updating."
+  - id: "238"
+    status: accepted
+    text: "Recipes support optional dish artwork, short card titles, and raw-ingredient visuals across the list, detail, and prep views."
+    children:
+      - id: "239"
+        status: accepted
+        text: "A recipe stores an optional short card title capped at 26 characters and falls back to the full title when unset."
+      - id: "240"
+        status: accepted
+        text: "A recipe stores an optional dish image rendered on a 16:10 list card and as a recipe detail hero."
+      - id: "241"
+        status: accepted
+        text: "A list card renders the title at the lower left over the artwork, total time paired with effort at the top left, and primary protein at the top right, omitting meal-type labels and card footers."
+      - id: "242"
+        status: accepted
+        text: "Ingredients support raw pantry ingredient images shown alongside ingredient lines on the recipe detail screen and on prep cards."
+  - id: "243"
+    status: accepted
+    text: "The library provides inline discovery controls and persists user preferences for appearance, cooking flow, and timer chimes."
+    children:
+      - id: "244"
+        status: accepted
+        text: "The list pairs title search and quick category tabs for all dishes, quick meals, and desserts with a desktop filters drawer beside the card grid."
+      - id: "245"
+        status: accepted
+        text: "Appearance defaults to the dark palette when unset while supporting light, dark, and system choices in settings."
+      - id: "246"
+        status: accepted
+        text: "Settings stores preferences for auto-collapsing completed steps, auto-advancing on completion, ready-at timestamps, auto-opening finished timers, and audio chime checkpoints."
+  - id: "247"
+    status: accepted
+    text: "Cooking mode opens on an expandable prep step, focuses the active step in a single column, and keeps an active-cooking banner across routes."
+    children:
+      - id: "248"
+        status: accepted
+        text: "Cooking mode starts at an expandable step 0 prep stage rendering ingredients as a selectable card grid in a single centered step column."
+      - id: "249"
+        status: accepted
+        text: "Selecting an ingredient card in step 0 prep highlights the card with crisp unstruck text and stays on step 0 until the user starts cooking steps."
+      - id: "250"
+        status: accepted
+        text: "Cooking step 1 can start while ingredients remain ungathered, collapsing step 0 prep into a compact summary bar that re-expands on demand."
+      - id: "251"
+        status: accepted
+        text: "Each step card displays only its step-specific ingredients with strikethrough on checkoff, hides recipe facts metadata, and settles to the nearest step on scroll."
+      - id: "252"
+        status: accepted
+        text: "Outside active cooking mode, a compact global top banner shows active recipe progress, running timer count, and a return control."
+  - id: "253"
+    status: accepted
+    text: "Users can run synchronized recipe and ad-hoc timers from a persistent right-side drawer with 7-segment clocks, overtime count-up, and checkpoint chimes."
+    children:
+      - id: "254"
+        status: accepted
+        text: "Timers start from step durations or ad-hoc quick presets in a persistent right-side drawer shared across routes and survive step navigation or completion."
+      - id: "255"
+        status: accepted
+        text: "Running timers align expiration boundaries to whole seconds and show remaining countdown, elapsed overtime past zero, and optional ready-at clock times on a 7-segment display."
+      - id: "256"
+        status: accepted
+        text: "Each timer reveals adjust, pause, restart, fullscreen, and dismiss actions on interaction, accepts positive and negative nudges, and fires configured chime checkpoints."
